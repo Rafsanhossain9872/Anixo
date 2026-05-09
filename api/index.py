@@ -177,8 +177,16 @@ TTL_SEARCH = 600      # 10 minutes
 TTL_DETAILS = 1800    # 30 minutes
 TTL_EPISODES = 3600   # 60 minutes
 TTL_PROXY = 600       # 10 minutes (AniList)
+TTL_TRENDING = 3600    # 1 hour (Trending/Popular)
 TTL_FALLBACK = 300    # 5 minutes (Jikan)
 TTL_STATIC = 86400    # 24 hours (Genres, etc.)
+
+# Global Rate Limit Tracker
+_anilist_status = {
+    "remaining": 90,
+    "reset": 0,
+    "is_blocked": False
+}
 
 
 def cached(prefix, ttl=TTL_SEARCH):
@@ -1214,22 +1222,34 @@ def api_anilist_proxy():
         return {"error": "Invalid payload"}, 400
 
     # 1. Hashing for Cache Key
-    # We stringify the payload (query + variables) to create a unique key
     payload_str = json.dumps(payload, sort_keys=True)
     payload_hash = hashlib.md5(payload_str.encode()).hexdigest()
     cache_key = f"anilist:proxy:{payload_hash}"
+    
+    query_str = str(payload.get("query", "")).lower()
+    variables = payload.get("variables", {})
+    sort_vars = str(variables.get("sort", [])).lower()
 
     # 2. Check Cache
     entry = _cache.get(cache_key)
+    stale_data = None
     if entry:
+        stale_data = entry.get("data")
         is_fallback = entry.get("source") == "jikan"
-        ttl_to_use = TTL_FALLBACK if is_fallback else TTL_PROXY
+        
+        # Determine TTL: Trending/Popular queries get longer cache
+        is_popular = "trending" in sort_vars or "popularity" in sort_vars or "score" in sort_vars
+        ttl_to_use = TTL_TRENDING if is_popular and not is_fallback else (TTL_FALLBACK if is_fallback else TTL_PROXY)
         
         if (time.time() - entry["ts"]) < ttl_to_use:
             log.info(f"AniList Proxy: ⚡ Cache Hit ({entry.get('source', 'anilist')})")
             return entry["data"]
         else:
             log.info(f"AniList Proxy: ⌛ Cache Expired ({entry.get('source', 'anilist')})")
+            # If we already know we are blocked, serve stale immediately
+            if _anilist_status["is_blocked"] and stale_data:
+                 log.info("AniList Proxy: 🛡️ Circuit Breaker - Serving stale cache")
+                 return stale_data
 
     # 3. Basic abuse mitigation: Ensure query contains AniList keywords
     query_str = str(payload.get("query", "")).lower()
@@ -1237,46 +1257,61 @@ def api_anilist_proxy():
     if not any(k in query_str for k in allowed_keywords):
          return {"error": "Forbidden: Non-AniList query pattern detected"}, 403
 
-    log.info("AniList Proxy: 🌐 Fetching from Source...")
-    import requests
+    log.info(f"AniList Proxy: 🌐 Fetching (Rem: {_anilist_status['remaining']})...")
     
-    # 3. Controlled Fetch with Fallback
-    use_fallback = False
-    try:
-        resp = requests.post(
-            ANILIST_API_URL,
-            json=payload,
-            headers={
-                "Content-Type": "application/json", 
-                "Accept": "application/json", 
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            },
-            timeout=3 # Strict 3-second timeout
-        )
-        
-        # 4. Handle Response
-        if resp.status_code == 200:
-            data = resp.json()
-            # Even if 200, check for AniList's "temporarily disabled" or severe errors
-            if "errors" in data and any("disabled" in str(e.get("message", "")).lower() for e in data["errors"]):
-                log.warning("AniList Proxy: ⚠️ API reported as DISABLED. Triggering fallback...")
+    # Pre-emptive check: If we know we are blocked, don't even try
+    if _anilist_status["is_blocked"] and time.time() < _anilist_status["reset"]:
+        log.warning(f"AniList Proxy: 🛡️ Circuit Breaker Active (Reset in {int(_anilist_status['reset'] - time.time())}s)")
+        use_fallback = True
+    else:
+        import requests, random
+        uas = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0"
+        ]
+        try:
+            resp = requests.post(
+                ANILIST_API_URL,
+                json=payload,
+                headers={
+                    "Content-Type": "application/json", 
+                    "Accept": "application/json", 
+                    "User-Agent": random.choice(uas)
+                },
+                timeout=10
+            )
+            
+            # Update Rate Limit Info from Headers
+            rem = resp.headers.get("X-RateLimit-Remaining")
+            if rem is not None:
+                _anilist_status["remaining"] = int(rem)
+            
+            # 4. Handle Response
+            if resp.status_code == 200:
+                _anilist_status["is_blocked"] = False
+                data = resp.json()
+                if "errors" in data and any("disabled" in str(e.get("message", "")).lower() for e in data["errors"]):
+                    log.warning("AniList Proxy: ⚠️ API reported as DISABLED. Triggering fallback...")
+                    use_fallback = True
+                else:
+                    data["source"] = "anilist"
+                    _cache[cache_key] = {"data": data, "ts": time.time(), "source": "anilist"}
+                    return data, 200
+            elif resp.status_code == 429:
+                log.warning("AniList Proxy: ⚠️ Rate Limited (429). Triggering fallback...")
+                _anilist_status["is_blocked"] = True
+                # AniList reset is usually a Unix timestamp
+                reset_at = resp.headers.get("X-RateLimit-Reset")
+                _anilist_status["reset"] = int(reset_at) if reset_at else (time.time() + 60)
                 use_fallback = True
             else:
-                # Success
-                data["source"] = "anilist"
-                # Success from AniList always overwrites
-                _cache[cache_key] = {"data": data, "ts": time.time(), "source": "anilist"}
-                return data, 200
-        elif resp.status_code == 429:
-            log.warning("AniList Proxy: ⚠️ Rate Limited (429). Triggering fallback...")
+                log.warning(f"AniList Proxy: ⚠️ Status {resp.status_code}. Triggering fallback...")
+                use_fallback = True
+                
+        except (requests.Timeout, requests.RequestException) as e:
+            log.warning(f"AniList Proxy: ⚠️ Connection Failure ({type(e).__name__}). Triggering fallback...")
             use_fallback = True
-        else:
-            log.warning(f"AniList Proxy: ⚠️ Status {resp.status_code}. Triggering fallback...")
-            use_fallback = True
-            
-    except (requests.Timeout, requests.RequestException) as e:
-        log.warning(f"AniList Proxy: ⚠️ Connection Failure ({type(e).__name__}). Triggering fallback...")
-        use_fallback = True
 
     # 5. Jikan Fallback Implementation
     if use_fallback:
@@ -1357,17 +1392,24 @@ def api_anilist_proxy():
             # Retry logic for Jikan Rate Limits (429)
             j_resp = None
             for attempt in range(3):
-                j_resp = requests.get(jikan_url, timeout=5)
-                if j_resp.status_code == 200:
-                    break
-                if j_resp.status_code == 429:
-                    log.warning(f"AniList Fallback: ⏳ Jikan Rate Limited (429). Retrying in {attempt + 1}s...")
-                    time.sleep(attempt + 1)
-                else:
-                    break
+                try:
+                    j_resp = requests.get(jikan_url, timeout=10)
+                    if j_resp.status_code == 200:
+                        break
+                    if j_resp.status_code == 429:
+                        log.warning(f"AniList Fallback: ⏳ Jikan Rate Limited (429). Retrying in {attempt + 1}s...")
+                        time.sleep(attempt + 1)
+                    else:
+                        break
+                except Exception as je:
+                    log.warning(f"AniList Fallback: ⏳ Connection attempt {attempt+1} failed: {je}")
+                    time.sleep(1)
 
             if not j_resp or j_resp.status_code != 200:
                 log.error(f"AniList Fallback: ❌ Jikan failed with status {j_resp.status_code if j_resp else 'Unknown'}")
+                if stale_data:
+                    log.info("AniList Fallback: 🔄 Both failed, but found STALE cache. Using it.")
+                    return stale_data, 200
                 return {"error": "Both AniList and Fallback failed", "source": "error", "jikan_status": j_resp.status_code if j_resp else None}, 503
             
             j_data = j_resp.json()
@@ -1414,8 +1456,8 @@ def api_anilist_proxy():
                     "broadcast": item.get("broadcast", {}).get("string") if isinstance(item.get("broadcast"), dict) else None,
                     "averageScore": int(item.get("score") * 10) if item.get("score") else None,
                     "description": item.get("synopsis"),
-                    "format": item.get("type", "TV").upper(),
-                    "genres": [g.get("name") for g in item.get("genres", []) if g.get("name")],
+                    "format": (item.get("type") or "TV").upper(),
+                    "genres": [g.get("name") for g in item.get("genres", []) if isinstance(g, dict) and g.get("name")],
                     "startDate": {
                         "year": from_date.get("year"),
                         "month": from_date.get("month"),
