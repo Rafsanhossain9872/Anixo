@@ -261,29 +261,54 @@ export default function Watch() {
     const title = getTitle(anime.title) || "Watch Anime";
     const coverImage = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
     const descText = anime.description ? anime.description.replace(/<[^>]+>/g, '').substring(0, 160) : "Watch this anime online for free in high quality.";
+    
+    const epTitle = `Episode ${activeEpisode}`;
+    const pageTitle = `Watch ${title} ${epTitle} English Sub/Dub`;
+    const pageKeywords = `${title}, ${title} ${epTitle}, watch ${title} online, ${title} english sub, ${title} english dub, anixo, free anime streaming`;
 
     // Update Meta Tags
     updateMetaTags({
-      title: `${title} Episode ${activeEpisode}`,
-      description: `Watch ${title} Episode ${activeEpisode} English Sub/Dub in High Quality. ${descText}`,
+      title: pageTitle,
+      description: `Watch ${title} ${epTitle} English Sub/Dub in High Quality. ${descText}`,
       image: coverImage,
-      url: `/watch/${id}?ep=${activeEpisode}`
+      keywords: pageKeywords,
+      type: "video.episode",
+      url: `/watch/${id}?ep=${activeEpisode}${isMal ? '&mal=true' : ''}`
     });
 
-    // Generate Schema.org structured data for this Episode
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "TVEpisode",
-      "episodeNumber": activeEpisode,
-      "name": `Episode ${activeEpisode}`,
-      "partOfSeries": {
-        "@type": "TVSeries",
-        "name": title,
+    // Generate Schema.org structured data for this Episode + VideoObject
+    const schema = [
+      {
+        "@context": "https://schema.org",
+        "@type": "TVEpisode",
+        "episodeNumber": activeEpisode,
+        "name": `${title} - ${epTitle}`,
         "image": coverImage,
-        "description": descText,
-        "url": `${import.meta.env.VITE_SITE_URL || 'https://anixo.online'}/watch/${id}`
+        "partOfSeries": {
+          "@type": "TVSeries",
+          "name": title,
+          "image": coverImage,
+          "description": descText,
+          "url": `${import.meta.env.VITE_SITE_URL || 'https://anixo.online'}/watch/${id}`
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": `${title} ${epTitle} Sub/Dub`,
+        "description": `Stream ${title} ${epTitle} for free on Anixo.`,
+        "thumbnailUrl": coverImage,
+        "uploadDate": new Date().toISOString(),
+        "contentUrl": window.location.href,
+        "embedUrl": window.location.href,
+        "interactionCount": "1000",
+        "potentialAction": {
+          "@type": "SeekAction",
+          "target": `${window.location.href}&t={seek_to_second_number}`,
+          "startOffset-input": "required name=seek_to_second_number"
+        }
       }
-    };
+    ];
 
     updateStructuredData(schema);
 
@@ -296,7 +321,7 @@ export default function Watch() {
         url: "/"
       });
     };
-  }, [anime, activeEpisode, getTitle, id]);
+  }, [anime, activeEpisode, getTitle, id, isMal]);
 
   // AniSkip skip times are now handled by the useAniSkip hook above
 

@@ -3,14 +3,17 @@ export const updateMetaTags = ({
   description,
   image,
   url,
+  keywords,
+  type = "website",
   noindex = false,
 }) => {
   // Update Title
   if (title) {
-    document.title = `${title} - AniXo`;
-    document.querySelector('meta[name="title"]')?.setAttribute("content", `${title} - AniXo`);
-    document.querySelector('meta[property="og:title"]')?.setAttribute("content", `${title} - AniXo`);
-    document.querySelector('meta[property="twitter:title"]')?.setAttribute("content", `${title} - AniXo`);
+    const fullTitle = `${title} - AniXo`;
+    document.title = fullTitle;
+    document.querySelector('meta[name="title"]')?.setAttribute("content", fullTitle);
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", fullTitle);
+    document.querySelector('meta[property="twitter:title"]')?.setAttribute("content", fullTitle);
   }
 
   // Update Description
@@ -19,6 +22,20 @@ export const updateMetaTags = ({
     document.querySelector('meta[property="og:description"]')?.setAttribute("content", description);
     document.querySelector('meta[property="twitter:description"]')?.setAttribute("content", description);
   }
+
+  // Update Keywords
+  if (keywords) {
+    let keywordsTag = document.querySelector('meta[name="keywords"]');
+    if (!keywordsTag) {
+      keywordsTag = document.createElement('meta');
+      keywordsTag.setAttribute('name', 'keywords');
+      document.head.appendChild(keywordsTag);
+    }
+    keywordsTag.setAttribute("content", keywords);
+  }
+
+  // Update OG Type
+  document.querySelector('meta[property="og:type"]')?.setAttribute("content", type);
 
   // Update Image
   if (image) {
@@ -29,7 +46,7 @@ export const updateMetaTags = ({
   // Update URL
   if (url) {
     const siteUrl = import.meta.env.VITE_SITE_URL || "https://anixo.online";
-    const fullUrl = `${siteUrl}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url}`;
     document.querySelector('meta[property="og:url"]')?.setAttribute("content", fullUrl);
     document.querySelector('meta[property="twitter:url"]')?.setAttribute("content", fullUrl);
     
