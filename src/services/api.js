@@ -188,35 +188,78 @@ export async function getAnigoStream(animeData, episodeNumber = 1, serverName = 
   }
 }
 
-// --- SUPER CACHE MANAGER ---
+// --- ADVANCED HYBRID CACHE MANAGER ---
 const CACHE_TTL = {
   GENRES: 1000 * 60 * 60 * 24 * 30, // 30 days
   RECENT_DUBS: 1000 * 60 * 60 * 2,  // 2 hours
   BROWSE: 1000 * 60 * 60 * 24,      // 24 hours
   TRENDING: 1000 * 60 * 60 * 2,     // 2 hours
   POPULAR: 1000 * 60 * 60 * 24,     // 24 hours
-  DETAILS: 1000 * 60 * 60 * 2,      // 2 hours (Reduced from 24h for accuracy)
+  DETAILS: 1000 * 60 * 60 * 2,      // 2 hours
   SCHEDULE: 1000 * 60 * 60 * 6,     // 6 hours
 };
+
+const MemoryCache = new Map();
 
 const cache = {
   get: (key) => {
     try {
-      const item = localStorage.getItem(`anixo_cache_${key}`);
+      const cacheKey = `anixo_cache_${key}`;
+      
+      // 1. Check In-Memory Cache (Fastest)
+      if (MemoryCache.has(cacheKey)) {
+        const { value, expiry } = MemoryCache.get(cacheKey);
+        if (new Date().getTime() < expiry) return value;
+        MemoryCache.delete(cacheKey);
+      }
+
+      // 2. Check LocalStorage (Persistent)
+      const item = localStorage.getItem(cacheKey);
       if (!item) return null;
+      
       const { value, expiry } = JSON.parse(item);
       if (new Date().getTime() > expiry) {
-        localStorage.removeItem(`anixo_cache_${key}`);
+        localStorage.removeItem(cacheKey);
         return null;
       }
+
+      // 3. Sync back to memory for next request
+      MemoryCache.set(cacheKey, { value, expiry });
       return value;
     } catch { return null; }
   },
+  
   set: (key, value, ttl) => {
     try {
+      const cacheKey = `anixo_cache_${key}`;
       const expiry = new Date().getTime() + ttl;
-      localStorage.setItem(`anixo_cache_${key}`, JSON.stringify({ value, expiry }));
-    } catch { /* Storage full or private mode */ }
+      const cacheData = { value, expiry };
+
+      // Update both layers
+      MemoryCache.set(cacheKey, cacheData);
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      
+      // Cleanup older entries if localStorage gets full (simple pruning)
+      if (localStorage.length > 50) {
+        cache.prune();
+      }
+    } catch {
+      // Storage might be full or in private mode, silently fail
+    }
+  },
+
+  prune: () => {
+    try {
+      const now = new Date().getTime();
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('anixo_cache_')) {
+          const item = JSON.parse(localStorage.getItem(key));
+          if (item.expiry < now) localStorage.removeItem(key);
+        }
+      });
+    } catch {
+      // Silently fail if pruning fails due to invalid JSON in storage
+    }
   }
 };
 
