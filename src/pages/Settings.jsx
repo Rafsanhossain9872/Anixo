@@ -98,24 +98,24 @@ export default function Settings() {
         <div className="max-w-[700px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
           <form onSubmit={handleSubmit} className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
             
-            <div className="p-6 md:p-10 space-y-12">
+            <div className="p-5 md:p-10 space-y-8 md:space-y-12">
               
-              {/* 1. Sync Section - Simplified */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-10 border-b border-white/5">
-                <div className="flex items-center gap-5">
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center shrink-0">
+              {/* 1. Sync Section - Mobile Optimized */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-5 pb-8 md:pb-10 border-b border-white/5">
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-xl flex items-center justify-center shrink-0">
                     <img 
                       src="https://anilist.co/img/icons/icon.svg" 
                       alt="AL" 
-                      className={`w-7 h-7 ${user?.anilist?.username ? 'opacity-100' : 'opacity-20 grayscale'}`} 
+                      className={`w-6 h-6 md:w-7 md:h-7 ${user?.anilist?.username ? 'opacity-100' : 'opacity-20 grayscale'}`} 
                     />
                   </div>
-                  <div>
-                    <h4 className="text-[15px] font-bold text-white">
+                  <div className="text-left">
+                    <h4 className="text-[14px] md:text-[15px] font-bold text-white leading-tight">
                       {user?.anilist?.username ? `Connected as ${user.anilist.username}` : 'AniList Sync'}
                     </h4>
-                    <p className="text-[11px] font-medium text-white/30">
-                      Sync your progress and library automatically.
+                    <p className="text-[10px] md:text-[11px] font-medium text-white/30">
+                      Mirror your progress automatically.
                     </p>
                   </div>
                 </div>
@@ -124,7 +124,7 @@ export default function Settings() {
                   <button 
                     type="button"
                     onClick={() => setShowConfirmModal(true)}
-                    className="text-[11px] font-bold text-red-500 hover:text-red-400 transition-colors px-4 py-2 bg-red-500/5 rounded-lg border border-red-500/10"
+                    className="w-full md:w-auto text-[10px] font-bold text-red-500 hover:text-red-400 transition-colors px-4 py-2 bg-red-500/5 rounded-lg border border-red-500/10"
                   >
                     Disconnect
                   </button>
@@ -132,26 +132,26 @@ export default function Settings() {
                   <button 
                     type="button"
                     onClick={() => window.location.href = getAnilistAuthUrl()}
-                    className="bg-[#02A9FF] text-white text-[11px] font-bold px-6 py-2.5 rounded-lg transition-all active:scale-95"
+                    className="w-full md:w-auto bg-[#02A9FF] text-white text-[11px] font-bold px-6 py-2.5 rounded-lg transition-all active:scale-95"
                   >
                     Connect
                   </button>
                 )}
               </div>
 
-              {/* 2. Title Language - Simplified Row */}
+              {/* 2. Title Language - Refined Mobile Layout */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
+                <div className="text-left">
                   <h3 className="text-[14px] font-bold text-white">Title Language</h3>
-                  <p className="text-[11px] text-white/30">How anime names are displayed.</p>
+                  <p className="text-[11px] text-white/30">Anime name display preference.</p>
                 </div>
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 w-full md:w-auto">
                   {['EN', 'JP'].map((lang) => (
                     <button
                       key={lang}
                       type="button"
                       onClick={() => setFormData({...formData, titleLanguage: lang})}
-                      className={`px-6 py-2 rounded-lg text-[11px] font-bold transition-all ${formData.titleLanguage === lang ? 'bg-red-600 text-white shadow-lg' : 'text-white/30 hover:text-white/60'}`}
+                      className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-[11px] font-bold transition-all ${formData.titleLanguage === lang ? 'bg-red-600 text-white shadow-lg' : 'text-white/30 hover:text-white/60'}`}
                     >
                       {lang === 'EN' ? 'English' : 'Japanese'}
                     </button>

@@ -347,12 +347,12 @@ export default function ImportExport() {
         <div className="max-w-[700px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="bg-[#111] border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
 
-            {/* Import / Export Tabs */}
-            <div className="flex items-center gap-2 p-6 pb-0">
+            {/* Import / Export Tabs - Mobile Optimized */}
+            <div className="flex p-1.5 bg-white/5 m-4 md:m-6 mb-0 rounded-2xl border border-white/5">
               <button
                 onClick={() => { setActiveTab("import"); setImportResult(null); }}
-                className={`flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all rounded-xl ${
-                  activeTab === "import" ? "bg-red-600 text-white shadow-lg" : "bg-white/5 text-white/30 hover:text-white hover:bg-white/10"
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wider transition-all rounded-xl ${
+                  activeTab === "import" ? "bg-red-600 text-white shadow-lg" : "text-white/30 hover:text-white"
                 }`}
               >
                 <Upload size={14} />
@@ -360,8 +360,8 @@ export default function ImportExport() {
               </button>
               <button
                 onClick={() => { setActiveTab("export"); setImportResult(null); }}
-                className={`flex items-center gap-2 px-6 py-3 text-[11px] font-black uppercase tracking-[0.2em] transition-all rounded-xl ${
-                  activeTab === "export" ? "bg-red-600 text-white shadow-lg" : "bg-white/5 text-white/30 hover:text-white hover:bg-white/10"
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[10px] md:text-[11px] font-bold uppercase tracking-wider transition-all rounded-xl ${
+                  activeTab === "export" ? "bg-red-600 text-white shadow-lg" : "text-white/30 hover:text-white"
                 }`}
               >
                 <Download size={14} />
@@ -371,141 +371,148 @@ export default function ImportExport() {
 
             {/* ═══ IMPORT TAB ═══ */}
             {activeTab === "import" && (
-              <form onSubmit={handleImport} className="p-8 space-y-8">
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
-                   <div className="space-y-2 text-[11px] font-bold text-white/20 uppercase tracking-widest leading-relaxed">
-                    <p className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Your MAL / AL list must be public</p>
-                    <p className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Only matching anime will be imported</p>
-                    <p className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Process may take up to a minute</p>
+              <form onSubmit={handleImport} className="p-5 md:p-10 space-y-8 md:space-y-10">
+                {/* Notice - Compact */}
+                <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div className="space-y-0.5 text-[10px] font-medium text-white/20 uppercase tracking-widest text-center md:text-left">
+                    <p>• Your lists must be public</p>
+                    <p>• Only matching titles will sync</p>
+                    <p>• May take up to a minute</p>
                   </div>
                 </div>
 
-                {/* From */}
-                <div className="flex flex-col gap-4">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Source Platform</label>
-                  <div className="flex flex-wrap items-center gap-6 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                    <Radio checked={importFrom === "MAL"} onChange={() => setImportFrom("MAL")} label="MyAnimeList" />
-                    <Radio checked={importFrom === "AL"} onChange={() => setImportFrom("AL")} label="AniList" />
-                    <Radio checked={importFrom === "File"} onChange={() => setImportFrom("File")} label="JSON/Text" />
+                {/* Source Platform */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="text-left">
+                    <h3 className="text-[14px] font-bold text-white">Source Platform</h3>
+                    <p className="text-[11px] text-white/30">Import source preference.</p>
+                  </div>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 w-full md:w-auto">
+                    {['MAL', 'File'].map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setImportFrom(p)}
+                        className={`flex-1 md:flex-none px-6 py-2 rounded-lg text-[10px] font-bold transition-all ${importFrom === p ? 'bg-red-600 text-white shadow-lg' : 'text-white/30 hover:text-white'}`}
+                      >
+                        {p === 'MAL' ? 'MyAnimeList' : 'JSON/File'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Username (for AL only) */}
+                {/* Username Input */}
                 {importFrom === "AL" && (
-                  <div className="flex flex-col gap-3">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Account Username</label>
+                  <div className="space-y-3">
+                    <h3 className="text-[14px] font-bold text-white">Username</h3>
                     <input
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter your AniList username"
-                      className="w-full bg-white/[0.03] border border-white/5 rounded-xl px-5 py-4 text-[13px] text-white placeholder-white/10 outline-none focus:border-red-600/30 focus:bg-white/[0.05] transition-all"
+                      placeholder="AniList Username"
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3.5 text-[13px] text-white placeholder-white/10 outline-none focus:border-red-600/30 transition-all"
                     />
                   </div>
                 )}
 
-                {/* File Upload (for MAL and File) */}
+                {/* File Upload */}
                 {importFrom !== "AL" && (
-                  <div className="flex flex-col gap-3">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Upload Data File</label>
-                    <div className="w-full">
-                      <label className="flex items-center gap-0 cursor-pointer w-full group">
-                        <span className="bg-white/5 text-white/50 text-[11px] font-black uppercase tracking-widest px-5 py-4 border border-white/10 rounded-l-xl group-hover:bg-white/10 group-hover:text-white transition-all whitespace-nowrap">
-                          Pick File
+                  <div className="space-y-3">
+                    <h3 className="text-[14px] font-bold text-white">Select File</h3>
+                    <label className="flex items-center cursor-pointer group">
+                      <div className="flex-1 bg-white/5 border border-white/5 rounded-xl px-5 py-3.5 flex items-center justify-between group-hover:bg-white/[0.08] transition-all">
+                        <span className={`text-[13px] ${importFile ? 'text-white' : 'text-white/20'}`}>
+                          {importFile ? importFile.name : "Choose file..."}
                         </span>
-                        <span className="flex-1 bg-white/[0.02] text-white/20 text-[13px] font-medium px-5 py-4 border border-l-0 border-white/10 rounded-r-xl truncate">
-                          {importFile ? importFile.name : "Select your export file..."}
-                        </span>
-                        <input
-                          type="file"
-                          accept={importFrom === "MAL" ? ".xml" : ".json,.txt"}
-                          onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
+                        <Upload size={14} className="text-white/20" />
+                      </div>
+                      <input
+                        type="file"
+                        accept={importFrom === "MAL" ? ".xml" : ".json,.txt"}
+                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 )}
 
-                {/* Mode */}
-                <div className="flex flex-col gap-4">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Import Mode</label>
-                  <div className="flex items-center gap-8 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                    <Radio checked={importMode === "Merge"} onChange={() => setImportMode("Merge")} label="Merge Collection" />
-                    <Radio checked={importMode === "Replace"} onChange={() => setImportMode("Replace")} label="Replace All" />
+                {/* Mode Selector */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-[14px] font-bold text-white">Import Mode</h3>
+                    <p className="text-[11px] text-white/30">How to handle existing items.</p>
+                  </div>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                    {['Merge', 'Replace'].map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setImportMode(m)}
+                        className={`px-5 py-2 rounded-lg text-[10px] font-bold transition-all ${importMode === m ? 'bg-red-600 text-white shadow-lg' : 'text-white/30 hover:text-white'}`}
+                      >
+                        {m === 'Merge' ? 'Merge' : 'Replace All'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Progress indicator */}
+                {/* Progress & Result */}
                 {importProgress && (
-                  <div className="flex items-center gap-3 p-4 bg-red-600/5 border border-red-600/10 rounded-xl text-[12px] font-bold text-red-500 animate-pulse">
-                    <Loader2 size={16} className="animate-spin shrink-0" />
+                  <div className="p-4 bg-red-600/5 border border-red-600/10 rounded-xl text-[11px] font-bold text-red-500 animate-pulse text-center">
                     {importProgress}
                   </div>
                 )}
 
-                {/* Result Message */}
                 {importResult && (
-                  <div className={`p-5 rounded-2xl text-[12px] font-bold flex items-start gap-4 ${
-                    importResult.success 
-                      ? 'bg-green-500/5 text-green-500 border border-green-500/10' 
-                      : 'bg-red-500/5 text-red-500 border border-red-500/10'
+                  <div className={`p-4 rounded-xl text-[12px] font-bold text-center ${
+                    importResult.success ? 'bg-green-500/5 text-green-500 border border-green-500/10' : 'bg-red-500/5 text-red-500 border border-red-500/10'
                   }`}>
-                    {importResult.success ? <CheckCircle2 size={18} className="shrink-0" /> : <AlertTriangle size={18} className="shrink-0" />}
-                    <span className="leading-relaxed">{importResult.message}</span>
+                    {importResult.message}
                   </div>
                 )}
 
-                {/* Submit */}
                 <button
                   type="submit"
                   disabled={isImporting}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black py-4 text-[11px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-3 rounded-xl active:scale-[0.98]"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-4 text-[12px] uppercase tracking-widest transition-all rounded-xl active:scale-[0.98]"
                 >
-                  {isImporting ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <>
-                      <Upload size={18} />
-                      Start Import
-                    </>
-                  )}
+                  {isImporting ? <Loader2 size={18} className="animate-spin mx-auto" /> : "Start Import"}
                 </button>
               </form>
             )}
 
             {/* ═══ EXPORT TAB ═══ */}
             {activeTab === "export" && (
-              <div className="p-8 space-y-10">
-                <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
-                  <p className="text-[13px] text-white/30 leading-relaxed font-medium">
-                    Export your collection as a backup or to use in other services.<br/>
-                    We support native JSON, readable Text, and MAL-compatible XML.
+              <div className="p-6 md:p-10 space-y-10">
+                <div className="text-center space-y-2">
+                  <h3 className="text-[16px] font-bold text-white">Backup Collection</h3>
+                  <p className="text-[11px] text-white/30 leading-relaxed max-w-[300px] mx-auto">
+                    Download your entire watchlist as a file to keep it safe or move to other services.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-4">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Export Format</label>
-                  <div className="flex flex-wrap items-center gap-8 bg-white/[0.02] p-6 rounded-2xl border border-white/5">
-                    <Radio checked={exportFormat === "TEXT"} onChange={() => setExportFormat("TEXT")} label="Text Document" />
-                    <Radio checked={exportFormat === "JSON"} onChange={() => setExportFormat("JSON")} label="JSON Data" />
-                    <Radio checked={exportFormat === "MAL XML"} onChange={() => setExportFormat("MAL XML")} label="MAL Export" />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <h3 className="text-[14px] font-bold text-white">Format</h3>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                    {['TEXT', 'JSON', 'MAL XML'].map((f) => (
+                      <button
+                        key={f}
+                        type="button"
+                        onClick={() => setExportFormat(f)}
+                        className={`px-5 py-2 rounded-lg text-[10px] font-bold transition-all ${exportFormat === f ? 'bg-red-600 text-white shadow-lg' : 'text-white/30 hover:text-white'}`}
+                      >
+                        {f}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
                 <button
                   onClick={handleExport}
                   disabled={isExporting}
-                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-black py-5 text-[11px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-3 rounded-xl active:scale-[0.98]"
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-4 text-[12px] uppercase tracking-widest transition-all rounded-xl active:scale-[0.98]"
                 >
-                  {isExporting ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <>
-                      <Download size={18} />
-                      Download Backup
-                    </>
-                  )}
+                  {isExporting ? <Loader2 size={18} className="animate-spin mx-auto" /> : "Download Backup"}
                 </button>
               </div>
             )}
