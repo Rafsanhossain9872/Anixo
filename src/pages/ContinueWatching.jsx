@@ -131,7 +131,7 @@ export default function ContinueWatching() {
             >
               <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
               <span>
-                <span className="inline sm:hidden">{isSyncing ? 'Syncing...' : 'Sync'}</span>
+                <span className="inline sm:hidden">{isSyncing ? 'Syncing...' : 'AniList Sync'}</span>
                 <span className="hidden sm:inline">{isSyncing ? 'Syncing Library...' : 'AniList Sync'}</span>
               </span>
             </button>
