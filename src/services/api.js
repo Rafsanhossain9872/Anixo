@@ -173,7 +173,7 @@ async function smartRequest(method, path, options = {}) {
 export const backendApi = axios.create({
   baseURL: (typeof window !== "undefined" && window.location.hostname === "localhost")
     ? (import.meta.env.VITE_BACKEND_API || "http://localhost:5001")
-    : (import.meta.env.VITE_BACKEND_API || "/api/v1"), // Using /api/v1 to avoid conflict with frontend routes
+    : (import.meta.env.VITE_BACKEND_API || ""), 
 });
 
 backendApi.interceptors.request.use((config) => {
@@ -181,6 +181,8 @@ backendApi.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Add a special header to help Vercel distinguish API calls from page refreshes
+  config.headers['x-api'] = 'true';
   return config;
 });
 
