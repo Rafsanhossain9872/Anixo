@@ -115,20 +115,20 @@ export default function Settings() {
                   )}
                 </div>
 
-                <div className="p-6 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8 md:gap-12 text-center md:text-left">
-                  <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10">
-                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[22px] flex items-center justify-center border transition-colors duration-300 ${user?.anilist?.username ? 'bg-[#02A9FF]/10 border-[#02A9FF]/20' : 'bg-white/5 border-white/10'}`}>
+                <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 text-center md:text-left">
+                  <div className="flex flex-col md:flex-row items-center gap-5 md:gap-6">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-colors duration-300 ${user?.anilist?.username ? 'bg-[#02A9FF]/10 border-[#02A9FF]/20' : 'bg-white/5 border-white/10'}`}>
                       <img 
                         src="https://anilist.co/img/icons/icon.svg" 
                         alt="AniList" 
-                        className={`w-9 h-9 md:w-11 md:h-11 ${user?.anilist?.username ? 'brightness-110' : 'opacity-20 grayscale'}`} 
+                        className={`w-8 h-8 ${user?.anilist?.username ? 'brightness-110' : 'opacity-20 grayscale'}`} 
                       />
                     </div>
-                    <div className="space-y-2 md:space-y-3">
-                      <h4 className="text-[18px] md:text-[20px] font-bold text-white tracking-tight">
+                    <div className="space-y-1">
+                      <h4 className="text-[16px] font-bold text-white tracking-tight">
                         {user?.anilist?.username ? `Synced as ${user.anilist.username}` : 'AniList Connection'}
                       </h4>
-                      <p className="text-[12px] md:text-[13px] font-medium text-white/30 leading-relaxed max-w-[320px] md:max-w-[400px] mx-auto md:mx-0">
+                      <p className="text-[11px] font-medium text-white/30 leading-relaxed max-w-[350px] mx-auto md:mx-0">
                         {user?.anilist?.username 
                           ? `Your account is linked. All watch progress will be mirrored to your AniList profile.`
                           : 'Connect your AniList account to track progress, scores, and status automatically.'
