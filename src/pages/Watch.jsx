@@ -185,7 +185,7 @@ export default function Watch() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const targetEp = parseInt(params.get("ep")) || 1;
-    
+
     setTimeout(() => {
       setActiveEpisode(targetEp);
       setEpisodePage(0);
@@ -272,7 +272,14 @@ export default function Watch() {
 
     const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
 
-    // Trigger instant save in the background
+    // Only trigger instant save if we are NOT at episode 1 (unless intended) 
+    // or if this is the target episode from the URL to prevent overwriting progress.
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlEp = parseInt(urlParams.get("ep"));
+
+    // Prevent overwriting higher progress with episode 1 on initial load if user navigated to a specific ep
+    if (urlEp && activeEpisode !== urlEp) return;
+
     updateProgress(String(id), activeEpisode, currTime, duration, getTitle(anime.title), coverImg, anime?.id)
       .then(res => {
         if (res.success && res.progress) {
@@ -616,17 +623,22 @@ export default function Watch() {
     if (!user || !anime || !id) return;
 
     const interval = setInterval(() => {
+      const now = Date.now();
+      // Ensure at least 10s have passed since last save to prevent spam if dependencies change
+      if (now - lastIntervalSave.current < 10000) return;
+
       if (lastCapturedTime.current <= 5) return; // Don't save if no progress
 
+      lastIntervalSave.current = now;
       const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
       const titleStr = getTitle(anime.title);
-      
+
       updateProgress(
-        String(id), 
-        activeEpisode, 
-        lastCapturedTime.current, 
-        lastCapturedDuration.current, 
-        titleStr, 
+        String(id),
+        activeEpisode,
+        lastCapturedTime.current,
+        lastCapturedDuration.current,
+        titleStr,
         coverImg,
         anime?.id
       ).catch(err => console.error("[Progress] Periodic save failed:", err));
@@ -936,8 +948,8 @@ export default function Watch() {
     setActiveEpisode(prev => Math.max(1, prev - 1));
   }, []);
 
+  const lastIntervalSave = useRef(0);
   const iframeRef = useRef(null);
-  const lastProgressSync = useRef(0);
 
   // ── Megaplay Player Events Listener ──
   useEffect(() => {
@@ -978,49 +990,8 @@ export default function Watch() {
       // AutoSkip Logic Removed
 
 
-      // 3. Track Progress for Continue Watching
-      // Robustly extract time and duration from various player message structures
-      const getNum = (...vals) => {
-        for (const val of vals) {
-          const num = Number(val);
-          if (!isNaN(num) && typeof num === 'number' && num > 0) return num;
-        }
-        return null;
-      };
-
-      const currentTime = getNum(
-        data.currentTime, data.time, data.seconds, data.position,
-        data.progress?.seconds, data.progress?.position,
-        data.data?.currentTime, data.data?.position, data.data?.seconds,
-        data.value?.currentTime, data.value?.position
-      );
-
-      const duration = getNum(
-        data.duration, data.totalTime,
-        data.progress?.duration,
-        data.data?.duration,
-        data.value?.duration
-      );
-
-      if (user && currentTime && currentTime > 0) {
-        const now = Date.now();
-        // Instant sync: update every 2 seconds instead of 10
-        if (now - lastProgressSync.current > 2000) {
-          lastProgressSync.current = now;
-          const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
-
-          updateProgress(String(id), activeEpisode, Math.floor(currentTime), duration ? Math.floor(duration) : null, getTitle(anime?.title), coverImg)
-            .then(res => {
-              if (res.success && res.progress) {
-                setGlobalProgress(prev => {
-                  const filtered = prev.filter(p => p.animeId !== String(id));
-                  return [res.progress, ...filtered].slice(0, 100);
-                });
-              }
-            })
-            .catch(err => console.error("Failed to sync progress:", err));
-        }
-      }
+      // 3. Progress tracking is now handled globally by the 30s interval and beforeunload events.
+      // We no longer spam the backend every 2 seconds here.
     };
 
     window.addEventListener("message", handleMessage);
