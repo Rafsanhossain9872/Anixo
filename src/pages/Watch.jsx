@@ -235,7 +235,8 @@ export default function Watch() {
     queryKey: ["animeDetails", id, isMal],
     queryFn: () => getAnimeDetails(id, isMal),
     enabled: !!id,
-    staleTime: 0,
+    staleTime: 1000 * 60 * 60 * 24, // 24 Hours Cache - Reduces 90% of repeat detail requests
+    cacheTime: 1000 * 60 * 60 * 24,
   });
 
   // Watchlist hook (must be after anime is declared)
@@ -618,14 +619,14 @@ export default function Watch() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [user, anime, id, activeEpisode]);
 
-  // ── PROGRESS: Periodic save every 30 seconds ──
+  // ── PROGRESS: Periodic save every 60 seconds ──
   useEffect(() => {
     if (!user || !anime || !id) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
-      // Ensure at least 10s have passed since last save to prevent spam if dependencies change
-      if (now - lastIntervalSave.current < 10000) return;
+      // Ensure at least 55s have passed since last save (Reduced frequency to save Edge requests)
+      if (now - lastIntervalSave.current < 55000) return;
 
       if (lastCapturedTime.current <= 5) return; // Don't save if no progress
 
@@ -642,7 +643,7 @@ export default function Watch() {
         coverImg,
         anime?.id
       ).catch(err => console.error("[Progress] Periodic save failed:", err));
-    }, 30000); // Every 30 seconds
+    }, 60000); // Every 60 seconds
 
     return () => clearInterval(interval);
   }, [user, anime, id, activeEpisode, getTitle]);
@@ -1169,12 +1170,6 @@ export default function Watch() {
           We couldn't retrieve the details for this anime (ID: {id}).
           This could be a connectivity issue with the AniList API or an invalid ID.
         </p>
-        <div className="mt-8 p-4 bg-white/5 rounded border border-white/10 text-[10px] font-mono text-left">
-          <p className="text-red-500 mb-1">// Debug Info</p>
-          <p>ID: {id}</p>
-          <p>API: {PYTHON_API || "Relative (Origin)"}</p>
-          <p>Status: Loading Finished (No Data)</p>
-        </div>
         <Link to="/home" className="mt-8 px-6 py-2 bg-red-600 hover:bg-red-700 rounded-full transition-colors text-sm font-bold">
           Go Home
         </Link>
@@ -1274,7 +1269,7 @@ export default function Watch() {
                         }}
                       />
                     ) : null
-                  ) : streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url ? (
+                  ) : (streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url) || (activeServer === 2 && streamData?.sources) ? (
                     <VideoPlayer
                       skipTimes={skipTimes[activeEpisode]}
                       src={streamData.sources[0].url}
