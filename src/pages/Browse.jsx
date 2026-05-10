@@ -6,7 +6,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import AnimeCard from "../components/common/AnimeCard";
 import SkeletonCard from "../components/common/SkeletonCard";
-import { Search, ChevronDown, Check, X, RefreshCw, Trash2, ArrowRight } from "lucide-react";
+import { Search, ChevronDown, Check, X, RefreshCw, Trash2, ArrowRight, AlertTriangle } from "lucide-react";
 import { ALL_GENRES, OFFICIAL_GENRES, GENRE_MAP } from "../constants/genres";
 import Pagination from "../components/common/Pagination";
 
@@ -780,6 +780,20 @@ export default function Browse() {
 
         {/* Results */}
         <div className="relative min-h-[500px]">
+          {result.isJikanFallback && (
+            <div className="mb-6 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="p-2 bg-orange-500/20 rounded-lg shrink-0">
+                <AlertTriangle className="text-orange-500" size={20} />
+              </div>
+              <div>
+                <h4 className="text-orange-500 font-bold text-[13px] uppercase tracking-wider mb-1">AniList Search Degraded</h4>
+                <p className="text-orange-500/80 text-xs font-medium leading-relaxed">
+                  AniList is currently experiencing high load and has temporarily disabled text search. We're showing you results from MyAnimeList (Jikan) as a fallback. Results might be slightly different than usual.
+                </p>
+              </div>
+            </div>
+          )}
+
           {(isLoading || (isFetching && animeList.length === 0)) ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-x-3 gap-y-6 md:gap-x-5 md:gap-y-10 opacity-40">
               {Array.from({ length: 30 }).map((_, i) => <SkeletonCard key={i} />)}

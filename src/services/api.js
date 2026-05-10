@@ -442,8 +442,9 @@ export async function getBrowseAnime(variables) {
     try {
       const directRes = await getBrowseAnimeJikanDirect(variables);
       if (directRes?.media?.length > 0) {
-        cache.set(`browse_${varKey}`, directRes, CACHE_TTL.BROWSE);
-        return directRes;
+        const finalRes = { ...directRes, isJikanFallback: true };
+        cache.set(`browse_${varKey}`, finalRes, CACHE_TTL.BROWSE);
+        return finalRes;
       }
     } catch (err) {
       console.error("[Browse] Direct Jikan also failed:", err.message);
