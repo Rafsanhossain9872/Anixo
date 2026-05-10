@@ -22,7 +22,17 @@
       "destination": "/api/user.mjs"
     },
     {
+      "source": "/settings/(.*)",
+      "has": [{ "type": "header", "key": "x-api", "value": "true" }],
+      "destination": "/api/user.mjs"
+    },
+    {
       "source": "/watchlist",
+      "has": [{ "type": "header", "key": "x-api", "value": "true" }],
+      "destination": "/api/user.mjs"
+    },
+    {
+      "source": "/watchlist/(.*)",
       "has": [{ "type": "header", "key": "x-api", "value": "true" }],
       "destination": "/api/user.mjs"
     },
@@ -32,7 +42,16 @@
       "destination": "/api/user.mjs"
     },
     {
+      "source": "/notifications/(.*)",
+      "has": [{ "type": "header", "key": "x-api", "value": "true" }],
+      "destination": "/api/user.mjs"
+    },
+    {
       "source": "/progress",
+      "destination": "/api/user.mjs"
+    },
+    {
+      "source": "/progress/(.*)",
       "destination": "/api/user.mjs"
     },
     {
