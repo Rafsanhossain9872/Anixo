@@ -878,9 +878,20 @@ function buildJikanParams(variables) {
   if (status === "RELEASING") params.set("status", "airing");
   if (status === "FINISHED") params.set("status", "complete");
 
-  if (sort.includes("POPULARITY")) { params.set("order_by", "popularity"); params.set("sort", "desc"); }
-  else if (sort.includes("SCORE")) { params.set("order_by", "score"); params.set("sort", "desc"); }
-  else { params.set("order_by", "popularity"); params.set("sort", "desc"); }
+  // Handle AniList sort formats like ["POPULARITY_DESC"] or simple string "popularity"
+  const sortStr = Array.isArray(sort) ? sort[0]?.toUpperCase() : sort?.toUpperCase();
+
+  if (sortStr?.includes("SCORE")) { 
+    params.set("order_by", "score"); 
+    params.set("sort", "desc"); 
+  }
+  else { 
+    // Default to 'members' descending for popularity.
+    // WARNING: In Jikan v4, 'order_by=popularity&sort=desc' returns the LEAST popular anime 
+    // because MAL popularity is a rank (1 = most popular). We want 'members' desc.
+    params.set("order_by", "members"); 
+    params.set("sort", "desc"); 
+  }
 
   return params;
 }
@@ -890,11 +901,21 @@ function parseJikanResponse(data) {
   const items = data?.data || data?.results || [];
   if (!Array.isArray(items) || items.length === 0) return null;
 
+  // Deduplicate items based on mal_id to prevent double cards
+  const uniqueItemsMap = new Map();
+  items.forEach(item => {
+    if (item?.mal_id && !uniqueItemsMap.has(item.mal_id)) {
+      uniqueItemsMap.set(item.mal_id, item);
+    }
+  });
+  
+  const uniqueItems = Array.from(uniqueItemsMap.values());
+
   const pagination = data?.pagination || {};
   return {
-    media: items.map(mapJikanBrowseItem),
+    media: uniqueItems.map(mapJikanBrowseItem),
     pageInfo: {
-      total: pagination?.items?.total || items.length,
+      total: pagination?.items?.total || uniqueItems.length,
       currentPage: pagination?.current_page || 1,
       lastPage: pagination?.last_visible_page || 1,
       hasNextPage: pagination?.has_next_page || false,
