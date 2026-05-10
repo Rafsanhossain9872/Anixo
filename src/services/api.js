@@ -186,11 +186,15 @@ backendApi.interceptors.request.use((config) => {
   return config;
 });
 
+// Fields that are used internally but are NOT valid AniList GraphQL variables
+const NON_GRAPHQL_FIELDS = new Set(["genres", "language"]);
+
 async function fetchFromAniList(query, variables = {}) {
   try {
-    // Clean up variables to remove null/undefined/empty-string values
+    // Clean up variables: strip non-GraphQL fields and empty values
     const cleanVariables = Object.fromEntries(
-      Object.entries(variables).filter(([, v]) =>
+      Object.entries(variables).filter(([k, v]) =>
+        !NON_GRAPHQL_FIELDS.has(k) &&
         v !== null &&
         v !== undefined &&
         v !== "" &&
@@ -209,15 +213,21 @@ async function fetchFromAniList(query, variables = {}) {
 
     if (!data) throw new Error("No data received from proxy");
 
-    if (data.errors) {
+    // Log which source the proxy used (anilist or jikan fallback)
+    if (data.source) {
+      console.info(`[API] Data source: ${data.source}`);
+    }
+
+    // Check for GraphQL errors (but not the proxy's own "error" field for 4xx/5xx)
+    if (data.errors && Array.isArray(data.errors)) {
       console.error("AniList GraphQL Errors:", data.errors);
       return { media: [], pageInfo: { total: 0 } };
     }
 
-    // Support both direct data and data.data (depending on proxy implementation)
+    // The proxy's api_response wrapper returns: { success: true, data: { Page: {...} }, source: "..." }
+    // Support both proxy-wrapped and direct AniList responses
     const result = data.data?.Page || data.Page || data.data || data;
     if (!result || (!result.media && !result.Page)) {
-      // If it's a direct Media query (not Page)
       return result;
     }
     return result || { media: [], pageInfo: { total: 0 } };
@@ -371,20 +381,76 @@ export const BROWSE_QUERY = `
 `;
 
 export async function getBrowseAnime(variables) {
-  // Create a unique cache key based on variables
   const varKey = JSON.stringify(variables);
   const cachedData = cache.get(`browse_${varKey}`);
   if (cachedData) return cachedData;
 
-  const anilistRes = await fetchFromAniList(BROWSE_QUERY, variables);
-  if (anilistRes?.media?.length > 0) {
-    cache.set(`browse_${varKey}`, anilistRes, CACHE_TTL.BROWSE);
-    return anilistRes;
+  // Clean variables for AniList GraphQL (strip non-GraphQL fields)
+  const cleanVars = Object.fromEntries(
+    Object.entries(variables).filter(([k, v]) =>
+      !NON_GRAPHQL_FIELDS.has(k) &&
+      v !== null && v !== undefined && v !== "" &&
+      (Array.isArray(v) ? v.length > 0 : true)
+    )
+  );
+
+  const payload = { query: BROWSE_QUERY, variables: cleanVars };
+  const headers = { "Content-Type": "application/json", "Accept": "application/json" };
+
+  // 1. Try local API proxy
+  try {
+    const { data } = await axios.post("/api/anilist/proxy", payload, { headers, timeout: 12000 });
+    const page = data?.data?.Page || data?.Page;
+    if (page?.media?.length > 0) {
+      console.info("[Browse] ✓ Local proxy succeeded (AniList)");
+      const result = { media: page.media, pageInfo: page.pageInfo };
+      cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
+      return result;
+    }
+  } catch (err) {
+    console.warn("[Browse] Local proxy failed:", err.message);
   }
 
-  console.warn("[Failover] AniList Browse failed, switching to Jikan...");
-  const jikanRes = await getBrowseAnimeMAL(variables);
-  return jikanRes;
+  // 2. Direct AniList GraphQL call
+  try {
+    const { data } = await axios.post("https://graphql.anilist.co", payload, { headers, timeout: 12000 });
+    const page = data?.data?.Page;
+    if (page?.media?.length > 0) {
+      console.info("[Browse] ✓ Direct AniList succeeded");
+      const result = { media: page.media, pageInfo: page.pageInfo };
+      cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
+      return result;
+    }
+  } catch (err) {
+    console.warn("[Browse] Direct AniList failed:", err.message);
+  }
+
+  // 3. HuggingFace proxy
+  try {
+    const proxyRes = await fetchFromAniList(BROWSE_QUERY, variables);
+    if (proxyRes?.media?.length > 0) {
+      cache.set(`browse_${varKey}`, proxyRes, CACHE_TTL.BROWSE);
+      return proxyRes;
+    }
+  } catch (err) {
+    console.warn("[Browse] HF proxy failed:", err.message);
+  }
+
+  // 4. Jikan Fallback (CRITICAL: AniList API currently returns 0 results for text searches)
+  if (variables.search) {
+    console.warn("[Browse] All AniList attempts returned 0 results for search. Falling back to Jikan...");
+    try {
+      const directRes = await getBrowseAnimeJikanDirect(variables);
+      if (directRes?.media?.length > 0) {
+        cache.set(`browse_${varKey}`, directRes, CACHE_TTL.BROWSE);
+        return directRes;
+      }
+    } catch (err) {
+      console.error("[Browse] Direct Jikan also failed:", err.message);
+    }
+  }
+
+  return { media: [], pageInfo: { total: 0, hasNextPage: false } };
 }
 
 export const ANIME_QUERY = `
@@ -766,65 +832,104 @@ export async function checkDubAvailability(anilistId) {
   }
 }
 
-export async function getBrowseAnimeMAL(variables) {
-  const { page = 1, genres = [], search = "", status = "", sort = "popularity" } = variables;
-
-  // Map genre names to MAL IDs
-  const MAL_GENRE_MAP = {
-    "Action": 1, "Adventure": 2, "Avant Garde": 5, "Boys Love": 28, "Comedy": 4, "Demons": 6, "Drama": 8, "Ecchi": 9, "Fantasy": 10, "Girls Love": 26, "Gourmet": 47, "Harem": 35, "Horror": 14, "Isekai": 62, "Iyashikei": 63, "Josei": 43, "Kids": 15, "Magic": 16, "Mahou Shoujo": 66, "Martial Arts": 17, "Mecha": 18, "Military": 38, "Music": 19, "Mystery": 7, "Parody": 20, "Psychological": 40, "Reverse Harem": 73, "Romance": 22, "School": 23, "Sci-Fi": 24, "Seinen": 42, "Shoujo": 25, "Shounen": 27, "Slice of Life": 36, "Space": 29, "Sports": 30, "Super Power": 31, "Supernatural": 37, "Suspense": 41, "Thriller": 45, "Vampire": 32
+// Map Jikan anime item to the AniList-like structure used by Browse
+function mapJikanBrowseItem(item) {
+  return {
+    id: item.mal_id,
+    idMal: item.mal_id,
+    isMAL: true,
+    title: {
+      romaji: item.title,
+      english: item.title_english || item.title,
+      native: item.title_japanese
+    },
+    coverImage: {
+      large: item.images?.webp?.large_image_url || item.images?.jpg?.large_image_url,
+      medium: item.images?.webp?.image_url || item.images?.jpg?.image_url
+    },
+    genres: [
+      ...(item.genres || []).map(g => g.name),
+      ...(item.themes || []).map(t => t.name),
+      ...(item.demographics || []).map(d => d.name)
+    ],
+    format: item.type?.toUpperCase(),
+    episodes: item.episodes,
+    seasonYear: item.year || (item.aired?.from ? new Date(item.aired.from).getFullYear() : null),
+    averageScore: item.score ? item.score * 10 : null,
+    status: item.status === "Currently Airing" ? "RELEASING" : "FINISHED",
+    rating: item.rating ? item.rating.split(' - ')[0].trim() : null,
   };
+}
+
+const MAL_GENRE_MAP = {
+  "Action": 1, "Adventure": 2, "Avant Garde": 5, "Boys Love": 28, "Comedy": 4, "Demons": 6, "Drama": 8, "Ecchi": 9, "Fantasy": 10, "Girls Love": 26, "Gourmet": 47, "Harem": 35, "Horror": 14, "Isekai": 62, "Iyashikei": 63, "Josei": 43, "Kids": 15, "Magic": 16, "Mahou Shoujo": 66, "Martial Arts": 17, "Mecha": 18, "Military": 38, "Music": 19, "Mystery": 7, "Parody": 20, "Psychological": 40, "Reverse Harem": 73, "Romance": 22, "School": 23, "Sci-Fi": 24, "Seinen": 42, "Shoujo": 25, "Shounen": 27, "Slice of Life": 36, "Space": 29, "Sports": 30, "Super Power": 31, "Supernatural": 37, "Suspense": 41, "Thriller": 45, "Vampire": 32
+};
+
+function buildJikanParams(variables) {
+  const { page = 1, genres = [], search = "", status = "", sort = "popularity" } = variables;
+  const params = new URLSearchParams();
+  params.set("page", page.toString());
+  params.set("limit", "25");
+  if (search) params.set("q", search);
 
   const malGenreIds = genres.map(g => MAL_GENRE_MAP[g]).filter(Boolean);
-  const limit = 54;
-  let url = `${PYTHON_API}/api/jikan/proxy?path=/v4/anime&page=${page}&limit=${limit}`;
-  if (search) url += `&q=${encodeURIComponent(search)}`;
-  if (malGenreIds.length > 0) url += `&genres=${malGenreIds.join(',')}`;
+  if (malGenreIds.length > 0) params.set("genres", malGenreIds.join(","));
 
-  if (status === "RELEASING") url += "&status=airing";
-  if (status === "FINISHED") url += "&status=complete";
+  if (status === "RELEASING") params.set("status", "airing");
+  if (status === "FINISHED") params.set("status", "complete");
 
-  if (sort.includes("POPULARITY")) url += "&order_by=popularity&sort=desc";
-  else if (sort.includes("SCORE")) url += "&order_by=score&sort=desc";
-  else url += "&order_by=popularity&sort=desc";
+  if (sort.includes("POPULARITY")) { params.set("order_by", "popularity"); params.set("sort", "desc"); }
+  else if (sort.includes("SCORE")) { params.set("order_by", "score"); params.set("sort", "desc"); }
+  else { params.set("order_by", "popularity"); params.set("sort", "desc"); }
+
+  return params;
+}
+
+function parseJikanResponse(data) {
+  // Handle various response shapes from proxy vs direct API
+  const items = data?.data || data?.results || [];
+  if (!Array.isArray(items) || items.length === 0) return null;
+
+  const pagination = data?.pagination || {};
+  return {
+    media: items.map(mapJikanBrowseItem),
+    pageInfo: {
+      total: pagination?.items?.total || items.length,
+      currentPage: pagination?.current_page || 1,
+      lastPage: pagination?.last_visible_page || 1,
+      hasNextPage: pagination?.has_next_page || false,
+    }
+  };
+}
+
+export async function getBrowseAnimeMAL(variables) {
+  const params = buildJikanParams(variables);
+  const proxyPath = `/api/jikan/proxy?path=/v4/anime&${params.toString()}`;
 
   try {
-    const { data } = await smartRequest("get", url.replace(PYTHON_API, ""));
-    return {
-      media: data.data.map(item => ({
-        id: item.mal_id,
-        idMal: item.mal_id,
-        isMAL: true,
-        title: {
-          romaji: item.title,
-          english: item.title_english || item.title,
-          native: item.title_japanese
-        },
-        coverImage: {
-          large: item.images.webp.large_image_url || item.images.jpg.large_image_url,
-          medium: item.images.webp.image_url || item.images.jpg.image_url
-        },
-        genres: [
-          ...(item.genres || []).map(g => g.name),
-          ...(item.themes || []).map(t => t.name),
-          ...(item.demographics || []).map(d => d.name)
-        ],
-        format: item.type?.toUpperCase(),
-        episodes: item.episodes,
-        seasonYear: item.year || (item.aired?.from ? new Date(item.aired.from).getFullYear() : null),
-        averageScore: item.score ? item.score * 10 : null,
-        status: item.status === "Currently Airing" ? "RELEASING" : "FINISHED",
-        rating: item.rating ? item.rating.split(' - ')[0].trim() : null,
-      })),
-      pageInfo: {
-        total: data.pagination.items.total,
-        currentPage: data.pagination.current_page,
-        lastPage: data.pagination.last_visible_page,
-        hasNextPage: data.pagination.has_next_page,
-      }
-    };
+    const { data } = await smartRequest("get", proxyPath);
+    const result = parseJikanResponse(data);
+    if (result) return result;
+    throw new Error("Proxy returned empty data");
   } catch (err) {
-    console.error("Jikan API Error:", err);
-    throw err;
+    console.error("Jikan Proxy Error:", err.message);
+    return { media: [], pageInfo: { total: 0, hasNextPage: false } };
+  }
+}
+
+// Direct Jikan API fallback (bypasses the proxy entirely)
+async function getBrowseAnimeJikanDirect(variables) {
+  const params = buildJikanParams(variables);
+  const url = `${JIKAN_BASE_URL}/anime?${params.toString()}`;
+
+  try {
+    const { data } = await axios.get(url, { timeout: 10000 });
+    const result = parseJikanResponse(data);
+    if (result) return result;
+    throw new Error("Direct Jikan returned empty data");
+  } catch (err) {
+    console.error("Direct Jikan API Error:", err.message);
+    return { media: [], pageInfo: { total: 0, hasNextPage: false } };
   }
 }
 
