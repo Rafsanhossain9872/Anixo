@@ -533,14 +533,17 @@ export const syncAnilistLibrary = async (req, res) => {
       return res.status(400).json({ success: false, message: 'AniList account not connected' });
     }
 
-    // 1. Fetch Watching list from AniList
+    // 1. Fetch ALL lists from AniList
     const response = await axios.post('https://graphql.anilist.co', {
       query: `
         query ($userId: Int) {
-          MediaListCollection (userId: $userId, type: ANIME, status: CURRENT) {
+          MediaListCollection (userId: $userId, type: ANIME) {
             lists {
+              status
               entries {
+                status
                 progress
+                score (format: POINT_10)
                 media {
                   id
                   title {
@@ -570,44 +573,85 @@ export const syncAnilistLibrary = async (req, res) => {
     });
 
     if (!response.data?.data?.MediaListCollection) {
-      console.log(`[Sync] No MediaListCollection found for user ${user.username}`);
-      return res.json({ success: true, message: 'No active watching list found on AniList.', count: 0 });
+      return res.json({ success: true, message: 'No library found on AniList.', count: 0 });
     }
 
-    const entries = response.data.data.MediaListCollection.lists.flatMap(list => list.entries || []);
-    console.log(`[Sync] Found ${entries.length} entries for user ${user.username}`);
-    let syncedCount = 0;
+    const lists = response.data.data.MediaListCollection.lists;
+    let syncedProgressCount = 0;
+    let syncedWatchlistCount = 0;
 
-    // 2. Map and Save to Progress Collection
-    for (const entry of entries) {
-      const { media, progress } = entry;
-      const animeId = String(media.id);
-      
-      try {
-        // Upsert into local Progress
-        await Progress.findOneAndUpdate(
-          { user: user._id, animeId },
-          {
-            episode: progress || 1,
-            currentTime: 0, // Start at 0 if importing
-            duration: 0,
-            title: media.title.english || media.title.romaji || media.title.native,
-            coverImage: media.coverImage.extraLarge || media.coverImage.large,
-            updatedAt: Date.now()
-          },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-      } catch (err) {
-        console.error(`[Sync] Failed to save anime ${animeId}:`, err.message);
+    // Status Mapping Helper
+    const mapStatus = (anilistStatus) => {
+      const mapping = {
+        'CURRENT': 'Watching',
+        'PLANNING': 'Planning',
+        'COMPLETED': 'Completed',
+        'DROPPED': 'Dropped',
+        'PAUSED': 'Paused',
+        'REWATCHING': 'Watching'
+      };
+      return mapping[anilistStatus] || 'Planning';
+    };
+
+    // 2. Process each entry
+    for (const list of lists) {
+      for (const entry of list.entries) {
+        const { media, progress, score, status: anilistStatus } = entry;
+        const animeId = String(media.id);
+        const title = media.title.english || media.title.romaji || media.title.native;
+        const coverImage = media.coverImage.extraLarge || media.coverImage.large;
+        const localStatus = mapStatus(anilistStatus);
+
+        try {
+          // A. If CURRENT/REWATCHING, sync to Progress (Continue Watching)
+          if (anilistStatus === 'CURRENT' || anilistStatus === 'REWATCHING') {
+            await Progress.findOneAndUpdate(
+              { user: user._id, animeId },
+              {
+                episode: progress || 1,
+                currentTime: 0,
+                duration: 0,
+                title,
+                coverImage,
+                updatedAt: Date.now()
+              },
+              { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+            syncedProgressCount++;
+          }
+
+          // B. Sync to User Watchlist (Bookmarks)
+          const existingIdx = user.watchlist.findIndex(w => w.animeId === animeId);
+          const watchlistItem = {
+            animeId,
+            title,
+            coverImage,
+            status: localStatus,
+            progress: progress || 0,
+            score: score || 0,
+            addedAt: Date.now()
+          };
+
+          if (existingIdx > -1) {
+            user.watchlist[existingIdx] = { ...user.watchlist[existingIdx], ...watchlistItem };
+          } else {
+            user.watchlist.push(watchlistItem);
+          }
+          syncedWatchlistCount++;
+
+        } catch (err) {
+          console.error(`[Sync] Error processing anime ${animeId}:`, err.message);
+        }
       }
-      syncedCount++;
     }
-    console.log(`[Sync] Successfully processed ${syncedCount} items.`);
+
+    await user.save();
 
     res.json({
       success: true,
-      message: `Successfully synced ${syncedCount} anime from your AniList library.`,
-      count: syncedCount
+      message: `Sync Complete! Imported ${syncedWatchlistCount} items into your Watchlist and ${syncedProgressCount} into Continue Watching.`,
+      watchlistCount: syncedWatchlistCount,
+      progressCount: syncedProgressCount
     });
 
   } catch (error) {
