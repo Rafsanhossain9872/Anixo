@@ -189,7 +189,7 @@ export default function PlayerToolbar({
             </div>
 
             <div className="flex flex-nowrap items-center justify-center gap-1 sm:gap-1.5 sm:mr-auto sm:mr-20">
-              {[2, 3, 4, 6].map((s, i) => (
+              {[1, 2, 3, 4].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}
@@ -198,7 +198,7 @@ export default function PlayerToolbar({
                     : "border-white/5 text-white/40 hover:text-white hover:border-white/10 bg-white/5"
                     }`}
                 >
-                  S{i + 1}
+                  S{s}
                 </button>
               ))}
             </div>

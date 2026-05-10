@@ -1023,27 +1023,44 @@ export default function Watch() {
       try {
         let url = "";
 
-        // --- SERVER 3: MEGAPLAY INTEGRATION (MAL) ---
-        if (activeServer === 3) {
-          if (anime?.idMal) {
-            const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (MAL)", lang: langParam });
+        // --- SERVER 1: ALLANIME INTEGRATION (ArtPlayer) ---
+        if (activeServer === 1) {
+          if (allanimeId) {
+            const mode = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+            url = `${ALLANIME_API}/play?show_id=${allanimeId}&ep_no=${activeEpisode}&mode=${mode}&quality=${videoQuality}`;
+            setStreamData({ server_name: "SERVER 1 (Allanime)", lang: mode, quality: videoQuality });
           } else {
-            setFetchError("MAL ID not found for this anime. Try Server 4.");
+            setFetchError("Allanime ID not resolved yet. Please wait or try another server.");
           }
         }
 
-        // --- SERVER 4: MEGAPLAY INTEGRATION (AniList) ---
-        else if (activeServer === 4) {
+        // --- SERVER 2: MEGAPLAY SMART INTEGRATION (AniList Priority) ---
+        else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${id}/${activeEpisode}/${langParam}`;
-          setStreamData({ server_name: "SERVER 4 (AniList)", lang: langParam });
+          // If AniList ID exists, use it as priority (better for Dub)
+          if (id && !isNaN(parseInt(id)) && parseInt(id) > 10000) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (AniList-Linked)", lang: langParam });
+          } 
+          // If we ARE in fallback mode or only have MAL ID, use MAL ID
+          else if (anime?.idMal) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (MAL-Fallback)", lang: langParam });
+          } else {
+            setFetchError("Stream ID not found. Try Server 3.");
+          }
         }
 
-        // --- SERVER 6: MIRURO INTEGRATION ---
-        else if (activeServer === 6) {
-          // Miruro uses AniList ID directly — no slug resolution needed
+        // --- SERVER 3: MEGAPLAY INTEGRATION (AniList) ---
+        else if (activeServer === 3) {
+          const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+          url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${id}/${activeEpisode}/${langParam}`;
+          setStreamData({ server_name: "SERVER 3 (AniList)", lang: langParam });
+        }
+
+        // --- SERVER 4: MIRURO INTEGRATION ---
+        else if (activeServer === 4) {
+          // Miruro uses AniList ID directly
           const anilistId = anime?.id || id;
           const miruroData = await getMiruroStream(anilistId, activeEpisode);
 
@@ -1053,26 +1070,14 @@ export default function Watch() {
 
           if (iframeTag) {
             setMiruroIframeTag(iframeTag);
-            setStreamData({ server_name: "SERVER 6 (Miruro)", lang: playerLang });
+            setStreamData({ server_name: "SERVER 4 (Miruro)", lang: playerLang });
             setStreamLoading(false);
             setIframeLoaded(true);
             setFetchError(null);
-            // We return here to skip the default streamUrl injection logic
             return;
           } else {
             setFetchError("Miruro: No stream found for this episode.");
             setMiruroIframeTag("");
-          }
-        }
-
-        // --- SERVER 2: ALLANIME INTEGRATION ---
-        else if (activeServer === 2) {
-          if (allanimeId) {
-            const mode = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-            url = `${ALLANIME_API}/play?show_id=${allanimeId}&ep_no=${activeEpisode}&mode=${mode}&quality=${videoQuality}`;
-            setStreamData({ server_name: "SERVER 2 (Allanime)", lang: mode, quality: videoQuality });
-          } else {
-            setFetchError("Allanime ID not resolved yet. Please wait or try another server.");
           }
         }
 
@@ -1240,9 +1245,8 @@ export default function Watch() {
                 </div>
               )}
 
-              {/* Player */}
-              {/* Miruro Server 6: Raw iframe_tag rendering */}
-              {activeServer === 6 && miruroIframeTag ? (
+              {/* Miruro Server 4: Raw iframe_tag rendering */}
+              {activeServer === 4 && miruroIframeTag ? (
                 <div
                   key={`miruro-${activeEpisode}`}
                   className="w-full h-full"
@@ -1250,7 +1254,7 @@ export default function Watch() {
                 />
               ) : (
                 <div className="w-full h-full">
-                  {activeServer === 2 ? (
+                  {activeServer === 1 ? (
                     streamUrl ? (
                       <ArtPlayer
                         skipTimes={skipTimes[activeEpisode]}
