@@ -392,8 +392,6 @@ export default function Watch() {
     if (!anime || !malsyncMapping) return;
 
     const fetchAllanimeId = async () => {
-      const searchTitle = anime.title?.english || anime.title?.romaji || anime.title?.native;
-
       // --- STEP 1: Try Exact Mapping via MalSync (reuse React Query data, no extra API call) ---
       if (malsyncMapping && malsyncMapping.Sites && malsyncMapping.Sites.AllAnime) {
         const allAnimeKey = Object.keys(malsyncMapping.Sites.AllAnime)[0];
@@ -407,9 +405,16 @@ export default function Watch() {
       }
 
       // --- STEP 2: Fallback to Keyword Search (with improved scoring) ---
-      if (!searchTitle) return;
+      const titlesToTry = [
+        anime.title?.english,
+        anime.title?.romaji,
+        ...(anime.synonyms || [])
+      ].filter(Boolean).slice(0, 3); // Try top 3 most likely titles
 
-      const cacheKey = `allanime_search_${searchTitle}`;
+      if (titlesToTry.length === 0) return;
+
+      const mainSearchTitle = titlesToTry[0];
+      const cacheKey = `allanime_search_${mainSearchTitle}`;
       const cachedId = localStorage.getItem(cacheKey);
 
       if (cachedId) {
@@ -428,57 +433,82 @@ export default function Watch() {
       }
 
       try {
-        const res = await axios.get(`${ALLANIME_API}/search`, { params: { query: searchTitle } });
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          const targetTitle = searchTitle.toLowerCase();
-          let bestMatch = res.data[0];
-          let highestScore = -100;
+        // Search using top 2 titles (English and Romaji) concurrently for best results
+        const searchPromises = [
+          axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[0] } }).catch(() => ({ data: [] }))
+        ];
+        
+        if (titlesToTry[1]) {
+          searchPromises.push(
+            axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[1] } }).catch(() => ({ data: [] }))
+          );
+        }
 
-          res.data.forEach(result => {
+        const responses = await Promise.all(searchPromises);
+        
+        // Combine and deduplicate results by ID
+        const uniqueResultsMap = new Map();
+        responses.forEach(res => {
+          if (Array.isArray(res.data)) {
+            res.data.forEach(item => {
+              if (item && item.id && !uniqueResultsMap.has(item.id)) {
+                uniqueResultsMap.set(item.id, item);
+              }
+            });
+          }
+        });
+
+        const searchData = Array.from(uniqueResultsMap.values());
+
+        if (searchData.length > 0) {
+          const targetTitles = titlesToTry.map(t => t.toLowerCase());
+          let bestMatch = searchData[0];
+          let highestScore = -500;
+
+          searchData.forEach(result => {
             const resultTitle = (result.title || "").toLowerCase();
             const resultEnglish = (result.title_english || "").toLowerCase();
 
             let score = 0;
-            const words = targetTitle.split(/\s+/).filter(w => w.length > 2);
-            words.forEach(word => {
-              if (resultTitle.includes(word) || resultEnglish.includes(word)) {
-                score += 5;
+            
+            // Score against all possible titles we have
+            targetTitles.forEach((target, index) => {
+              const weight = index === 0 ? 1 : 0.8; // Priority to English, then Romaji
+              
+              if (resultTitle === target || resultEnglish === target) {
+                score += (100 * weight);
+              } else if (resultTitle.includes(target) || target.includes(resultTitle)) {
+                score += (50 * weight);
+              } else if (resultEnglish.includes(target) || target.includes(resultEnglish)) {
+                score += (50 * weight);
               }
             });
 
-            // Exact match bonus
-            if (resultTitle === targetTitle || resultEnglish === targetTitle) score += 50;
-
-            // Robust Season Detection
+            // Robust Season Detection (Keep existing logic)
             const getSeason = (str) => {
               if (!str) return null;
-              const s1 = str.match(/season\s+(\d+)/);
+              const s1 = str.match(/season\s+(\d+)/i);
               if (s1) return s1[1];
-              const s2 = str.match(/(\d+)(st|nd|rd|th)\s+season/);
+              const s2 = str.match(/(\d+)(st|nd|rd|th)\s+season/i);
               if (s2) return s2[1];
               const s3 = str.match(/\s+(\d+)$/);
               if (s3) return s3[1];
-              // Catch numbers attached to the end of a word (e.g., "rotten2") or "Part 2"
-              const s4 = str.match(/(?:part\s|cour\s|[a-z])(\d+)$/i);
+              const s4 = str.match(/(?:part|cour|vol|s)(\d+)/i);
               if (s4) return s4[1];
               return null;
             };
 
-            const targetSeason = getSeason(targetTitle);
+            const targetSeason = getSeason(titlesToTry[0]) || getSeason(titlesToTry[1]);
             const resultSeason = getSeason(resultTitle) || getSeason(resultEnglish);
 
             if (targetSeason && resultSeason) {
-              if (targetSeason === resultSeason) score += 40;
-              else score -= 100; // Strong penalty for wrong season
-            } else if (!targetSeason && resultSeason && resultSeason !== "1") {
-              score -= 40; // Penalty if target has no season but result does (and it's not S1)
-            } else if (targetSeason && !resultSeason) {
-              score -= 40;
+              if (targetSeason === resultSeason) score += 60;
+              else score -= 200; 
             }
 
-            // Length Penalty (prevents partial matches from winning)
-            const lengthDiff = Math.abs(resultTitle.length - targetTitle.length);
-            score -= (lengthDiff * 2);
+            // Length Penalty
+            const lengthDiff = Math.abs(resultTitle.length - titlesToTry[0].length);
+            score -= (lengthDiff * 1.5);
 
             if (score > highestScore) {
               highestScore = score;
@@ -486,18 +516,19 @@ export default function Watch() {
             }
           });
 
-          setAllanimeId(bestMatch.id);
-          setAllanimeSubCount(parseInt(bestMatch.episodes_sub) || 0);
-          setAllanimeDubCount(parseInt(bestMatch.episodes_dub) || 0);
-          console.log(`[Allanime] Best Search Match: ${bestMatch.title} (ID: ${bestMatch.id}) | Score: ${highestScore}`);
+          if (highestScore > -100) { // Only set if we have a somewhat decent match
+            setAllanimeId(bestMatch.id);
+            setAllanimeSubCount(parseInt(bestMatch.episodes_sub) || 0);
+            setAllanimeDubCount(parseInt(bestMatch.episodes_dub) || 0);
+            console.log(`[Allanime] Best Match: ${bestMatch.title} | Score: ${highestScore}`);
 
-          // Save to Cache for 24 Hours
-          localStorage.setItem(cacheKey, JSON.stringify({
-            id: bestMatch.id,
-            sub: parseInt(bestMatch.episodes_sub) || 0,
-            dub: parseInt(bestMatch.episodes_dub) || 0,
-            expiry: new Date().getTime() + (24 * 60 * 60 * 1000)
-          }));
+            localStorage.setItem(cacheKey, JSON.stringify({
+              id: bestMatch.id,
+              sub: parseInt(bestMatch.episodes_sub) || 0,
+              dub: parseInt(bestMatch.episodes_dub) || 0,
+              expiry: new Date().getTime() + (24 * 60 * 60 * 1000)
+            }));
+          }
         }
       } catch (err) {
         console.warn("Allanime search failed:", err);
