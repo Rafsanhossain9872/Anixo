@@ -580,38 +580,46 @@ export default function Watch() {
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Instant save: track if we have any progress at all
-      if (!user || !anime || !id || lastCapturedTime.current <= 0) return;
+      if (!anime || !id || lastCapturedTime.current <= 5) return;
 
       const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
       const title = anime?.title?.english || anime?.title?.romaji || anime?.title?.native || 'Unknown';
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      // Use absolute URL for the background fetch to ensure it hits the backend-core
-      // The backend-core is usually on port 5001 or proxied via /api
-      const payload = JSON.stringify({
+      
+      const progressData = {
         animeId: String(id),
         anilistId: anime?.id,
         episode: activeEpisode,
         currentTime: lastCapturedTime.current,
         duration: lastCapturedDuration.current,
         title,
-        coverImage: coverImg
-      });
+        coverImage: coverImg,
+        updatedAt: new Date().toISOString()
+      };
 
-      try {
-        // Use the correct proxy path /progress/save which points to port 5001
-        fetch('/progress/save', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: payload,
-          keepalive: true
-        });
-      } catch {
-        // Silently fail
+      if (user) {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+          fetch('/progress/save', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(progressData),
+            keepalive: true
+          });
+        } catch { /* Silently fail */ }
+      } else {
+        // Guest user local storage backup
+        try {
+          const localStr = localStorage.getItem("guest_progress");
+          let guestProg = localStr ? JSON.parse(localStr) : [];
+          guestProg = guestProg.filter(p => p.animeId !== progressData.animeId);
+          guestProg.unshift(progressData);
+          localStorage.setItem("guest_progress", JSON.stringify(guestProg.slice(0, 50)));
+        } catch { /* Silently fail */ }
       }
     };
 
@@ -619,31 +627,49 @@ export default function Watch() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [user, anime, id, activeEpisode]);
 
-  // ── PROGRESS: Periodic save every 60 seconds ──
+  // ── PROGRESS: Periodic save every 3 minutes (or local if guest) ──
   useEffect(() => {
-    if (!user || !anime || !id) return;
+    if (!anime || !id) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
-      // Ensure at least 55s have passed since last save (Reduced frequency to save Edge requests)
-      if (now - lastIntervalSave.current < 55000) return;
-
-      if (lastCapturedTime.current <= 5) return; // Don't save if no progress
+      if (now - lastIntervalSave.current < 175000) return;
+      if (lastCapturedTime.current <= 5) return;
 
       lastIntervalSave.current = now;
       const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
       const titleStr = getTitle(anime.title);
 
-      updateProgress(
-        String(id),
-        activeEpisode,
-        lastCapturedTime.current,
-        lastCapturedDuration.current,
-        titleStr,
-        coverImg,
-        anime?.id
-      ).catch(err => console.error("[Progress] Periodic save failed:", err));
-    }, 60000); // Every 60 seconds
+      const progressData = {
+        animeId: String(id),
+        episode: activeEpisode,
+        currentTime: lastCapturedTime.current,
+        duration: lastCapturedDuration.current,
+        title: titleStr,
+        coverImage: coverImg,
+        anilistId: anime?.id,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (user) {
+        // Logged-in users: Save to Vercel Database
+        updateProgress(
+          progressData.animeId, progressData.episode, progressData.currentTime,
+          progressData.duration, progressData.title, progressData.coverImage, progressData.anilistId
+        ).catch(err => console.error("[Progress] Periodic save failed:", err));
+      } else {
+        // Guest users: Save to LocalStorage (Zero Vercel hits!)
+        try {
+          const localStr = localStorage.getItem("guest_progress");
+          let guestProg = localStr ? JSON.parse(localStr) : [];
+          guestProg = guestProg.filter(p => p.animeId !== progressData.animeId);
+          guestProg.unshift(progressData);
+          localStorage.setItem("guest_progress", JSON.stringify(guestProg.slice(0, 50)));
+        } catch (e) {
+          console.warn("Could not save guest progress", e);
+        }
+      }
+    }, 180000); // Every 3 minutes
 
     return () => clearInterval(interval);
   }, [user, anime, id, activeEpisode, getTitle]);
