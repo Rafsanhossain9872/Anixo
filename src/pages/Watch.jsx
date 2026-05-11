@@ -202,10 +202,8 @@ export default function Watch() {
 
   const [streamUrl, setStreamUrl] = useState("");
   const [streamData, setStreamData] = useState(null);
-  const [streamLoading, setStreamLoading] = useState(false);
+  const [streamLoading, setStreamLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [miruroIframeTag, setMiruroIframeTag] = useState("");
-
   const [fetchError, setFetchError] = useState(null);
 
   // Sync global page loader with iframe loading
@@ -1094,7 +1092,6 @@ export default function Watch() {
       setPageLoading(true);
       setFetchError(null);
       setStreamUrl("");
-      setMiruroIframeTag("");
       setStreamData(null);
       setIframeLoaded(false);
 
@@ -1115,65 +1112,69 @@ export default function Watch() {
         // --- SERVER 2: MEGAPLAY SMART INTEGRATION ---
         else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+          const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
           
-          // If the user is on a MAL route, prioritize the MAL endpoint (fixes unmapped AniList IDs on Megaplay)
-          if (isMal) {
-            const malId = anime?.idMal || id;
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (MAL-Priority)", lang: langParam });
-          } 
-          // Otherwise, use real AniList ID from fetched data
-          else if (anime && anime.id) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (AniList)", lang: langParam });
-          } 
-          // Last resort fallback
-          else if (anime?.idMal) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (MAL-Fallback)", lang: langParam });
+          // Always prioritize MAL ID — Megaplay maps most anime under MAL IDs
+          if (anime?.idMal) {
+            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (MAL)", lang: langParam });
+          } else if (isMal) {
+            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (MAL-Route)", lang: langParam });
+          } else if (anime?.id) {
+            // Only use AniList ID if no MAL ID is available at all
+            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (AniList-Only)", lang: langParam });
           } else {
-            setFetchError("Stream ID not found. Try Server 3.");
+            setFetchError("Stream ID not found. Try Server 1.");
           }
         }
 
         // --- SERVER 3: MEGAPLAY INTEGRATION ---
         else if (activeServer === 3) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+          const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
           
-          if (isMal) {
-            const malId = anime?.idMal || id;
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (MAL-Priority)", lang: langParam });
-          } else if (anime && anime.id) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (AniList)", lang: langParam });
+          if (anime?.idMal) {
+            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (MAL)", lang: langParam });
+          } else if (isMal) {
+            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (MAL-Route)", lang: langParam });
+          } else if (anime?.id) {
+            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (AniList-Only)", lang: langParam });
           } else {
-            const malFallbackId = anime?.idMal || (isMal ? id : null);
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malFallbackId}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (Fallback)", lang: langParam });
+            setFetchError("Stream ID not found. Try Server 1.");
           }
         }
 
         // --- SERVER 4: MIRURO INTEGRATION ---
         else if (activeServer === 4) {
-          // Miruro uses AniList ID directly
           const anilistId = anime?.id || id;
           const miruroData = await getMiruroStream(anilistId, activeEpisode);
 
           if (cancelled) return;
 
-          const iframeTag = miruroData?.iframe_tag || miruroData?.result?.iframe_tag;
+          const streams = miruroData?.sources?.streams;
 
-          if (iframeTag) {
-            setMiruroIframeTag(iframeTag);
-            setStreamData({ server_name: "SERVER 4 (Miruro)", lang: playerLang });
-            setStreamLoading(false);
-            setIframeLoaded(true);
-            setFetchError(null);
-            return;
+          if (streams && streams.length > 0) {
+            // Priority: Embed URL is more reliable for Miruro (handles referers/IP locks)
+            const embedStream = streams.find(s => s.type === 'embed');
+            
+            if (embedStream) {
+              // Use Embed as Iframe
+              url = embedStream.url;
+              setStreamData({ 
+                server_name: "SERVER 4 (Miruro-Embed)", 
+                lang: miruroData?.category || playerLang,
+                iframe_url: embedStream.url // Mark as iframe URL
+              });
+            } else {
+              setFetchError("Miruro: No compatible stream found.");
+            }
           } else {
             setFetchError("Miruro: No stream found for this episode.");
-            setMiruroIframeTag("");
           }
         }
 
@@ -1197,12 +1198,10 @@ export default function Watch() {
             // This forces React to destroy the iframe and create a new one.
             const finalUrl = `${urlObj.toString()}#lang=${playerLang}`;
             setStreamUrl(finalUrl);
-            console.log(`[Player] Final Stream URL injected into iframe: ${finalUrl}`);
           } catch {
             // Fallback for non-URL strings
             const finalUrl = `${url}#lang=${playerLang}`;
             setStreamUrl(finalUrl);
-            console.log(`[Player] Final Stream URL (Fallback) injected: ${finalUrl}`);
           }
         } else {
           setFetchError("Stream link not found for this server.");
@@ -1314,7 +1313,7 @@ export default function Watch() {
             {/* Video Player Container */}
             <section className={`relative w-full aspect-video bg-[#000] overflow-hidden border-x border-white/5 shadow-2xl transition-all duration-500 ${isFocusMode ? 'max-w-[90vw] max-h-[85vh] pointer-events-auto ring-1 ring-white/10 rounded-sm' : ''}`}>
               {/* Loader & Error Overlay */}
-              {((streamLoading || (streamUrl && !iframeLoaded) || (activeServer === 6 && miruroIframeTag === "" && !fetchError)) || (!streamLoading && (!streamUrl && !miruroIframeTag || fetchError))) && (
+              {((streamLoading || (streamUrl && !iframeLoaded)) || (!streamLoading && (!streamUrl || fetchError))) && (
                 <div className="absolute inset-0 z-20 group">
                   <img
                     src={currentEpisodeImage}
@@ -1335,43 +1334,20 @@ export default function Watch() {
                 </div>
               )}
 
-              {/* Miruro Server 4: Raw iframe_tag rendering */}
-              {activeServer === 4 && miruroIframeTag ? (
-                <div
-                  key={`miruro-${activeEpisode}`}
-                  className="w-full h-full"
-                  dangerouslySetInnerHTML={{ __html: miruroIframeTag }}
-                />
-              ) : (
-                <div className="w-full h-full">
-                  {activeServer === 1 ? (
-                    streamUrl ? (
-                      <ArtPlayer
-                        skipTimes={skipTimes[activeEpisode]}
-                        key={`${id}-${activeEpisode}-${activeServer}-${videoQuality}`}
-                        src={streamUrl}
-                        poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
-                        initialTime={initialTime}
-                        videoQuality={videoQuality}
-                        availableQualities={availableQualities}
-                        onQualityChange={(q) => { setVideoQuality(q); localStorage.setItem("videoQuality", q); }}
-                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                        onEnded={() => {
-                          if (autoNext && activeEpisode < episodesList.length) {
-                            const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
-                            if (nextEp) setActiveEpisode(nextEp.number);
-                          }
-                        }}
-                      />
-                    ) : null
-                  ) : (streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url) || (activeServer === 2 && streamData?.sources) ? (
-                    <VideoPlayer
+              {/* Server Rendering Logic */}
+              <div className="w-full h-full">
+                {(activeServer === 1 || (activeServer === 4 && streamData?.sources && streamData.sources.length > 0)) ? (
+                  streamUrl ? (
+                    <ArtPlayer
                       skipTimes={skipTimes[activeEpisode]}
-                      src={streamData.sources[0].url}
-                      type={streamData.sources[0].type}
+                      key={`${id}-${activeEpisode}-${activeServer}-${videoQuality}`}
+                      src={streamUrl}
                       poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
-                      subtitles={streamData.subtitles || []}
+                      subtitles={streamData?.subtitles || []}
                       initialTime={initialTime}
+                      videoQuality={videoQuality}
+                      availableQualities={availableQualities}
+                      onQualityChange={(q) => { setVideoQuality(q); localStorage.setItem("videoQuality", q); }}
                       onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
                       onEnded={() => {
                         if (autoNext && activeEpisode < episodesList.length) {
@@ -1380,8 +1356,25 @@ export default function Watch() {
                         }
                       }}
                     />
-                  ) : (
-                    <iframe
+                  ) : null
+                ) : (streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url) || (activeServer === 2 && streamData?.sources) ? (
+                  <VideoPlayer
+                    skipTimes={skipTimes[activeEpisode]}
+                    src={streamData.sources[0].url}
+                    type={streamData.sources[0].type}
+                    poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
+                    subtitles={streamData.subtitles || []}
+                    initialTime={initialTime}
+                    onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                    onEnded={() => {
+                      if (autoNext && activeEpisode < episodesList.length) {
+                        const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
+                        if (nextEp) setActiveEpisode(nextEp.number);
+                      }
+                    }}
+                  />
+                ) : (
+                  <iframe
                       ref={iframeRef}
                       key={`${activeServer}-${activeEpisode}-${playerLang}`}
                       src={streamUrl || "about:blank"}
@@ -1396,8 +1389,7 @@ export default function Watch() {
                     />
                   )}
                 </div>
-              )}
-            </section>
+              </section>
 
             {/* Player Toolbar + Server Selector */}
             <PlayerToolbar

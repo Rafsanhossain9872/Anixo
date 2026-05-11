@@ -132,6 +132,40 @@ const ArtPlayer = ({ src, type, poster, subtitles = [], onEnded, onTimeUpdate, o
             },
         });
 
+        // --- Subtitle Selector ---
+        if (subtitles && subtitles.length > 0) {
+            const subOptions = [
+                { html: 'None', value: 'none', default: false },
+                ...subtitles.map((s, i) => ({
+                    html: s.lang || `Track ${i + 1}`,
+                    value: s.url,
+                    default: i === 0
+                }))
+            ];
+
+            customSettings.push({
+                name: 'subtitle-select',
+                width: 200,
+                html: 'Subtitles',
+                tooltip: subtitles[0]?.lang || 'English',
+                selector: subOptions,
+                onSelect: function (item) {
+                    const player = artInstance.current;
+                    if (!player) return item.html;
+                    
+                    if (item.value === 'none') {
+                        player.subtitle.show = false;
+                        player.setting.update({ name: 'subtitle-select', tooltip: 'None' });
+                    } else {
+                        player.subtitle.switch(item.value, { name: item.html });
+                        player.subtitle.show = true;
+                        player.setting.update({ name: 'subtitle-select', tooltip: item.html });
+                    }
+                    return item.html;
+                },
+            });
+        }
+
         const art = new Artplayer({
             container: artRef.current,
             url: src,
