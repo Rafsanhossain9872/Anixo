@@ -9,6 +9,7 @@ import connectDB from './config/db.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Load .env file if it exists (local dev). On HF/Vercel, env vars are injected by the platform.
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 connectDB();
