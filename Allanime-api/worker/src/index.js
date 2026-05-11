@@ -5,10 +5,27 @@ import * as scraper from './scraper.js';
 const app = new Hono();
 app.use('*', cors());
 
+// Helper for Cache-Control and Manual Cache Management
+const CACHE_NAME = 'allanime-api-v1';
+
+async function getCachedResponse(request) {
+    const cache = await caches.open(CACHE_NAME);
+    return await cache.match(request);
+}
+
+async function saveToCache(request, response, ttlSeconds) {
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = response.clone();
+    cachedResponse.headers.set('Cache-Control', `public, max-age=${ttlSeconds}`);
+    // Wait for the cache to update in the background
+    return cache.put(request, cachedResponse);
+}
+
 app.get('/', (c) => c.json({
-    title: "Anime API (Cloudflare Worker)",
+    title: "Anime API (Cloudflare Worker Optimized)",
     status: "running",
     source: "Allanime Direct",
+    cached: true,
     available_endpoints: [
         "/search?query=<query>",
         "/anime/<id>",
@@ -23,9 +40,17 @@ app.get('/', (c) => c.json({
 app.get('/search', async (c) => {
     const query = c.req.query('query') || '';
     if (!query) return c.json({ error: "Missing query parameter" }, 400);
+    
+    // 1. Try Cache
+    const cached = await getCachedResponse(c.req.raw);
+    if (cached) return cached;
+
     try {
         const results = await scraper.searchAnime(query);
-        return c.json(results);
+        const res = c.json(results);
+        // 2. Save to Cache (1 hour)
+        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 3600));
+        return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
     }
@@ -34,9 +59,18 @@ app.get('/search', async (c) => {
 app.get('/anime/:id', async (c) => {
     try {
         const id = c.req.param('id');
+        
+        // 1. Try Cache
+        const cached = await getCachedResponse(c.req.raw);
+        if (cached) return cached;
+
         const details = await scraper.getAnimeDetails(id);
         if (!details) return c.json({ error: "Anime not found on Allanime" }, 404);
-        return c.json(details);
+        
+        const res = c.json(details);
+        // 2. Save to Cache (12 hours)
+        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 43200));
+        return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
     }
@@ -45,9 +79,17 @@ app.get('/anime/:id', async (c) => {
 app.get('/episodes/:id', async (c) => {
     const id = c.req.param('id');
     const mode = c.req.query('mode') === 'dub' ? 'dub' : 'sub';
+
+    // 1. Try Cache
+    const cached = await getCachedResponse(c.req.raw);
+    if (cached) return cached;
+
     try {
         const episodes = await scraper.getEpisodesList(id, mode);
-        return c.json({ mode, episodes });
+        const res = c.json({ mode, episodes });
+        // 2. Save to Cache (2 hours)
+        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 7200));
+        return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
     }
@@ -61,10 +103,18 @@ app.get('/episode_url', async (c) => {
 
     if (!id || !epNo) return c.json({ error: "Missing show_id or ep_no" }, 400);
 
+    // 1. Try Cache
+    const cached = await getCachedResponse(c.req.raw);
+    if (cached) return cached;
+
     try {
         const url = await scraper.getEpisodeUrl(id, epNo, mode, quality);
         if (!url) return c.json({ error: "Episode not found or URL not available" }, 404);
-        return c.json({ episode_url: url, mode });
+        
+        const res = c.json({ episode_url: url, mode });
+        // 2. Save to Cache (1 hour)
+        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 3600));
+        return res;
     } catch (e) {
         const status = e.message && e.message.startsWith('NEED_CAPTCHA') ? 503 : 500;
         return c.json({ error: e.message }, status);
@@ -92,22 +142,12 @@ app.get('/play', async (c) => {
 
         const videoResp = await fetch(url, { headers });
 
-        const respHeaders = new Headers();
+        const respHeaders = new Headers(videoResp.headers);
         respHeaders.set('Content-Type', 'video/mp4');
         respHeaders.set('Content-Disposition', 'inline');
-        // Add caching headers to prevent re-fetching the stream if the user closes and opens the player quickly
-        respHeaders.set('Cache-Control', 'public, max-age=86400, immutable');
+        // Cache video streams for a reasonable amount of time (2 hours)
+        respHeaders.set('Cache-Control', 'public, max-age=7200');
         
-        if (videoResp.headers.get('content-length')) {
-            respHeaders.set('Content-Length', videoResp.headers.get('content-length'));
-        }
-        if (videoResp.headers.get('content-range')) {
-            respHeaders.set('Content-Range', videoResp.headers.get('content-range'));
-        }
-        if (videoResp.headers.get('accept-ranges')) {
-            respHeaders.set('Accept-Ranges', videoResp.headers.get('accept-ranges'));
-        }
-
         return new Response(videoResp.body, {
             status: videoResp.status,
             headers: respHeaders
@@ -124,10 +164,18 @@ app.get('/episode_info', async (c) => {
 
     if (!id || !epNo) return c.json({ error: "Missing show_id or ep_no" }, 400);
 
+    // 1. Try Cache
+    const cached = await getCachedResponse(c.req.raw);
+    if (cached) return cached;
+
     try {
         const info = await scraper.getEpisodeInfo(id, epNo);
         if (!info) return c.json({ error: "Episode info not found" }, 404);
-        return c.json(info);
+        
+        const res = c.json(info);
+        // 2. Save to Cache (24 hours)
+        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 86400));
+        return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
     }
