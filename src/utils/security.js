@@ -32,8 +32,8 @@ export const initSecurity = () => {
     // eslint-disable-next-line no-debugger
     (function() { return true; })["constructor"]("debugger")();
     
-    // Performance detection
-    if (performance.now() - start > 50) {
+    // Performance detection - Increased to 500ms for Brave/Firefox timer fuzzing
+    if (performance.now() - start > 500) {
       document.documentElement.innerHTML = "";
       window.location.replace("/404");
     }
@@ -42,27 +42,11 @@ export const initSecurity = () => {
     console.dir(devtools);
   };
 
-  // 4. Recursive Freezer: Freezes the Inspector if it tries to step through
-  const freezer = function() {
-    const freeze = function(i) {
-      if (("" + i / i).length !== 1 || i % 20 === 0) {
-        (function() { return true; })["constructor"]("debugger")();
-      } else {
-        (function() { return false; })["constructor"]("debugger")();
-      }
-      freeze(++i);
-    };
-    try { freeze(0); } catch { /* ignore freezer errors */ }
-  };
-
+  // Removed Recursive Freezer as it was tied to the deprecated window dimension check
   setInterval(() => {
     omegaShield();
-    // Check window dimensions
-    if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
-      freezer();
-      window.location.replace("https://www.google.com/search?q=Access+Denied");
-    }
-  }, 500);
+    // Removed window dimension checks as they falsely trigger on Brave/Edge sidebars
+  }, 1000);
 
   // 5. Hardened Keyboard & Mouse Locks
   window.addEventListener('keydown', (e) => {
