@@ -1095,14 +1095,15 @@ export default function Watch() {
         // --- SERVER 2: MEGAPLAY SMART INTEGRATION (AniList Priority) ---
         else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          // If AniList ID exists, use it as priority (better for Dub)
-          if (id && !isNaN(parseInt(id)) && parseInt(id) > 10000) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${id}/${activeEpisode}/${langParam}`;
+          // Use the real AniList ID from fetched data (safest)
+          if (anime && anime.id) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (AniList-Linked)", lang: langParam });
           } 
-          // If we ARE in fallback mode or only have MAL ID, use MAL ID
-          else if (anime?.idMal) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+          // If we only have MAL ID or are in strict fallback mode
+          else if (anime?.idMal || isMal) {
+            const malFallbackId = anime?.idMal || id;
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malFallbackId}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (MAL-Fallback)", lang: langParam });
           } else {
             setFetchError("Stream ID not found. Try Server 3.");
@@ -1112,7 +1113,12 @@ export default function Watch() {
         // --- SERVER 3: MEGAPLAY INTEGRATION (AniList) ---
         else if (activeServer === 3) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${id}/${activeEpisode}/${langParam}`;
+          if (anime && anime.id) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+          } else {
+            const malFallbackId = anime?.idMal || (isMal ? id : null);
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malFallbackId}/${activeEpisode}/${langParam}`;
+          }
           setStreamData({ server_name: "SERVER 3 (AniList)", lang: langParam });
         }
 
