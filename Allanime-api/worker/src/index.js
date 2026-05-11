@@ -14,11 +14,18 @@ async function getCachedResponse(request) {
 }
 
 async function saveToCache(request, response, ttlSeconds) {
+    // Only cache successful GET responses
+    if (request.method !== 'GET' || response.status !== 200) return;
+
     const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = response.clone();
+    const cachedResponse = new Response(response.body, response);
+    
+    // Set caching headers
     cachedResponse.headers.set('Cache-Control', `public, max-age=${ttlSeconds}`);
-    // Wait for the cache to update in the background
-    return cache.put(request, cachedResponse);
+    // Ensure CORS is preserved in cache
+    cachedResponse.headers.set('Access-Control-Allow-Origin', '*');
+    
+    await cache.put(request, cachedResponse);
 }
 
 app.get('/', (c) => c.json({
@@ -48,8 +55,12 @@ app.get('/search', async (c) => {
     try {
         const results = await scraper.searchAnime(query);
         const res = c.json(results);
-        // 2. Save to Cache (1 hour)
-        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 3600));
+        
+        // 2. Save to Cache (1 hour) - ONLY if we found results
+        if (results && results.length > 0) {
+            c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 3600));
+        }
+        
         return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
@@ -68,8 +79,10 @@ app.get('/anime/:id', async (c) => {
         if (!details) return c.json({ error: "Anime not found on Allanime" }, 404);
         
         const res = c.json(details);
-        // 2. Save to Cache (12 hours)
-        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 43200));
+        // 2. Save to Cache (12 hours) - ONLY if details found
+        if (details && details.id) {
+            c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 43200));
+        }
         return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
@@ -87,8 +100,11 @@ app.get('/episodes/:id', async (c) => {
     try {
         const episodes = await scraper.getEpisodesList(id, mode);
         const res = c.json({ mode, episodes });
-        // 2. Save to Cache (2 hours)
-        c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 7200));
+        
+        // 2. Save to Cache (2 hours) - ONLY if episodes found
+        if (episodes && episodes.length > 0) {
+            c.executionCtx.waitUntil(saveToCache(c.req.raw, res, 7200));
+        }
         return res;
     } catch (e) {
         return c.json({ error: e.message }, 500);
