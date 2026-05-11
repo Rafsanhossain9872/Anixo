@@ -414,7 +414,7 @@ export default function Watch() {
       if (titlesToTry.length === 0) return;
 
       const mainSearchTitle = titlesToTry[0];
-      const cacheKey = `allanime_search_${mainSearchTitle}`;
+      const cacheKey = `allanime_search_v2_${mainSearchTitle}`;
       const cachedId = localStorage.getItem(cacheKey);
 
       if (cachedId) {
@@ -487,6 +487,11 @@ export default function Watch() {
             // Robust Season Detection (Keep existing logic)
             const getSeason = (str) => {
               if (!str) return null;
+              // Handle Roman Numerals
+              if (/season\s+iii/i.test(str)) return "3";
+              if (/season\s+ii/i.test(str)) return "2";
+              if (/season\s+i\b/i.test(str)) return "1"; // match 'Season I' but not 'Season IV'
+              
               const s1 = str.match(/season\s+(\d+)/i);
               if (s1) return s1[1];
               const s2 = str.match(/(\d+)(st|nd|rd|th)\s+season/i);
@@ -502,8 +507,23 @@ export default function Watch() {
             const resultSeason = getSeason(resultTitle) || getSeason(resultEnglish);
 
             if (targetSeason && resultSeason) {
-              if (targetSeason === resultSeason) score += 60;
+              if (targetSeason === resultSeason) score += 100; // Big boost for exact season match
               else score -= 200; 
+            } else if (!targetSeason && resultSeason) {
+              // If we are looking for the base title (no season), and the result HAS a season:
+              if (resultSeason === "1") {
+                score += 50; // Boost Season 1 to prevent Specials from winning
+              } else {
+                score -= 100; // Penalty for other seasons (Season 2, 3) when looking for base
+              }
+            }
+
+            // Penalize "Specials", "OVA", "Movie" if not explicitly searched for
+            const isTargetSpecial = titlesToTry.some(t => /special|ova|movie/i.test(t));
+            const isResultSpecial = /special|ova|movie/i.test(resultTitle) || /special|ova|movie/i.test(resultEnglish);
+            
+            if (!isTargetSpecial && isResultSpecial) {
+              score -= 150; // Heavy penalty to prevent specials from stealing Season 1
             }
 
             // Length Penalty
@@ -1092,34 +1112,46 @@ export default function Watch() {
           }
         }
 
-        // --- SERVER 2: MEGAPLAY SMART INTEGRATION (AniList Priority) ---
+        // --- SERVER 2: MEGAPLAY SMART INTEGRATION ---
         else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          // Use the real AniList ID from fetched data (safest)
-          if (anime && anime.id) {
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (AniList-Linked)", lang: langParam });
+          
+          // If the user is on a MAL route, prioritize the MAL endpoint (fixes unmapped AniList IDs on Megaplay)
+          if (isMal) {
+            const malId = anime?.idMal || id;
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (MAL-Priority)", lang: langParam });
           } 
-          // If we only have MAL ID or are in strict fallback mode
-          else if (anime?.idMal || isMal) {
-            const malFallbackId = anime?.idMal || id;
-            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malFallbackId}/${activeEpisode}/${langParam}`;
+          // Otherwise, use real AniList ID from fetched data
+          else if (anime && anime.id) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (AniList)", lang: langParam });
+          } 
+          // Last resort fallback
+          else if (anime?.idMal) {
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (MAL-Fallback)", lang: langParam });
           } else {
             setFetchError("Stream ID not found. Try Server 3.");
           }
         }
 
-        // --- SERVER 3: MEGAPLAY INTEGRATION (AniList) ---
+        // --- SERVER 3: MEGAPLAY INTEGRATION ---
         else if (activeServer === 3) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          if (anime && anime.id) {
+          
+          if (isMal) {
+            const malId = anime?.idMal || id;
+            url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (MAL-Priority)", lang: langParam });
+          } else if (anime && anime.id) {
             url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (AniList)", lang: langParam });
           } else {
             const malFallbackId = anime?.idMal || (isMal ? id : null);
             url = `${import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz'}/stream/mal/${malFallbackId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 3 (Fallback)", lang: langParam });
           }
-          setStreamData({ server_name: "SERVER 3 (AniList)", lang: langParam });
         }
 
         // --- SERVER 4: MIRURO INTEGRATION ---
