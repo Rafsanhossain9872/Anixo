@@ -112,7 +112,7 @@ export default function Settings() {
                   </div>
                   <div className="text-left">
                     <h4 className="text-[14px] md:text-[15px] font-bold text-white leading-tight">
-                      {user?.anilist?.username ? `Connected as ${user.anilist.username}` : 'AniList Sync'}
+                      {user?.anilist?.username ? <>Connected as <span className="text-[#02A9FF]">{user.anilist.username}</span></> : 'AniList Sync'}
                     </h4>
                     <p className="text-[10px] md:text-[11px] font-medium text-white/30">
                       Mirror your progress automatically.
