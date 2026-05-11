@@ -160,6 +160,8 @@ const ArtPlayer = ({ src, type, poster, subtitles = [], onEnded, onTimeUpdate, o
             backdrop: true,
             playsInline: true,
             airplay: false,
+            lock: true,
+            fastForward: false,
             theme: '#ff0000',
             layers: [
                 {
@@ -218,6 +220,32 @@ const ArtPlayer = ({ src, type, poster, subtitles = [], onEnded, onTimeUpdate, o
                             }
                         }
                     }
+                },
+                {
+                    name: 'doubleTapBackward',
+                    html: `
+                        <div style="position:absolute;left:0;top:0;width:50%;height:100%;z-index:50;pointer-events:auto;display:flex;align-items:center;justify-content:center;">
+                            <div class="skip-feedback-back" style="display:none;background:rgba(255,255,255,0.15);border-radius:50%;width:80px;height:80px;align-items:center;justify-content:center;backdrop-filter:blur(4px);flex-direction:column;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                                <span style="color:white;font-size:12px;font-weight:bold;margin-top:2px;">10s</span>
+                            </div>
+                        </div>
+                    `,
+                    style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 48, display: 'block' },
+                    click: function () { /* handled by custom logic below */ }
+                },
+                {
+                    name: 'doubleTapForward',
+                    html: `
+                        <div style="position:absolute;right:0;top:0;width:50%;height:100%;z-index:50;pointer-events:auto;display:flex;align-items:center;justify-content:center;">
+                            <div class="skip-feedback-fwd" style="display:none;background:rgba(255,255,255,0.15);border-radius:50%;width:80px;height:80px;align-items:center;justify-content:center;backdrop-filter:blur(4px);flex-direction:column;">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
+                                <span style="color:white;font-size:12px;font-weight:bold;margin-top:2px;">10s</span>
+                            </div>
+                        </div>
+                    `,
+                    style: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 48, display: 'block' },
+                    click: function () { /* handled by custom logic below */ }
                 },
             ],
             controls: [
@@ -392,6 +420,50 @@ const ArtPlayer = ({ src, type, poster, subtitles = [], onEnded, onTimeUpdate, o
             });
         });
 
+        // --- Mobile Double-Tap to Skip 10s ---
+        let lastTapTime = 0;
+        const DOUBLE_TAP_DELAY = 300;
+
+        const handleDoubleTap = (e) => {
+            // Only on touch devices
+            if (!('ontouchstart' in window)) return;
+
+            const now = Date.now();
+            const rect = art.template.$player.getBoundingClientRect();
+            const tapX = (e.touches ? e.changedTouches[0].clientX : e.clientX) - rect.left;
+            const playerWidth = rect.width;
+
+            if (now - lastTapTime < DOUBLE_TAP_DELAY) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (tapX < playerWidth * 0.4) {
+                    // Double-tap LEFT → Skip Back 10s
+                    art.currentTime = Math.max(0, art.currentTime - 10);
+                    const fb = art.template.$player.querySelector('.skip-feedback-back');
+                    if (fb) {
+                        fb.style.display = 'flex';
+                        setTimeout(() => { fb.style.display = 'none'; }, 600);
+                    }
+                } else if (tapX > playerWidth * 0.6) {
+                    // Double-tap RIGHT → Skip Forward 10s
+                    art.currentTime = Math.min(art.video.duration || Infinity, art.currentTime + 10);
+                    const fb = art.template.$player.querySelector('.skip-feedback-fwd');
+                    if (fb) {
+                        fb.style.display = 'flex';
+                        setTimeout(() => { fb.style.display = 'none'; }, 600);
+                    }
+                }
+            }
+
+            lastTapTime = now;
+        };
+
+        // Attach to the player container
+        if (art.template.$player) {
+            art.template.$player.addEventListener('touchend', handleDoubleTap, { passive: false });
+        }
+
         const handleMessage = (e) => {
             if (e.data?.event === "skip") {
                 const amount = e.data.amount || 0;
@@ -402,6 +474,9 @@ const ArtPlayer = ({ src, type, poster, subtitles = [], onEnded, onTimeUpdate, o
 
         return () => {
             window.removeEventListener("message", handleMessage);
+            if (art.template?.$player) {
+                art.template.$player.removeEventListener('touchend', handleDoubleTap);
+            }
             if (art) {
                 try {
                     // Clean up HLS instance if it exists
