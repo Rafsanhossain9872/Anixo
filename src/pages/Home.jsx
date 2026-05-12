@@ -178,6 +178,7 @@ export default function Home() {
             isLoading={false}
             isScrollable={true}
             onRemove={handleRemoveProgress}
+            viewAllLink="/watching"
           />
         </div>
       )}
