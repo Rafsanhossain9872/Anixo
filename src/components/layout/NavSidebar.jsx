@@ -2,12 +2,19 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { getSchedule } from "../../services/api";
-import { X, ChevronRight, LayoutGrid, Calendar, List } from "lucide-react";
+import { X, ChevronRight, LayoutGrid, Calendar, List, Download } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { ALL_GENRES } from "../../constants/genres";
 
 export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [canInstall, setCanInstall] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !window.matchMedia('(display-mode: standalone)').matches;
+    }
+    return false;
+  });
   const [prevOpen, setPrevOpen] = useState(open);
   const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
   const panelRef = useRef(null);
@@ -58,14 +65,28 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, onClose]);
 
-  // Close on ESC
+  // PWA Install Logic
   useEffect(() => {
-    function handleKey(e) {
-      if (e.key === "Escape") onClose();
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setCanInstall(false);
     }
-    if (open) document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [open, onClose]);
+    setDeferredPrompt(null);
+  };
 
   // Schedule Logic
   const days = [];
@@ -185,6 +206,27 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
                   ))}
                 </div>
               </section>
+
+              {canInstall && (
+                <section className="pt-5 border-t border-white/5 space-y-4">
+                  <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/20 ml-0.5">App</h3>
+                  <button
+                    onClick={handleInstallClick}
+                    className="w-full group relative overflow-hidden rounded-xl bg-gradient-to-br from-red-600/20 to-red-900/40 border border-red-500/30 p-4 transition-all hover:border-red-500/60 active:scale-95"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                        <Download size={20} className="animate-bounce" />
+                      </div>
+                      <div className="text-left">
+                        <div className="text-[14px] font-bold text-white group-hover:text-red-400">Install Anixo</div>
+                        <div className="text-[10px] text-white/50">Fast, secure & offline ready</div>
+                      </div>
+                      <ChevronRight size={16} className="ml-auto text-white/20 group-hover:text-white transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </button>
+                </section>
+              )}
 
               <section className="pt-5 border-t border-white/5 space-y-4">
                 <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/20 ml-0.5">Quick Navigation</h3>
