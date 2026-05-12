@@ -20,11 +20,11 @@ export const initSecurity = () => {
     });
 
     // 2. The "Honey Pot" - Triggers only when inspected
-    const devtools = /./;
-    devtools.toString = function () {
-        window.location.replace("https://www.google.com/search?q=Stop+Attempting+To+Bypass+Anixo+Security");
-        return "Anixo_Protected";
-    };
+    // const devtools = /./;
+    // devtools.toString = function () {
+    //     window.location.replace("https://www.google.com/search?q=Stop+Attempting+To+Bypass+Anixo+Security");
+    //     return "Anixo_Protected";
+    // };
 
     // 3. Omega Heartbeat: Performance & Recursion Check
     const omegaShield = () => {
@@ -49,9 +49,9 @@ export const initSecurity = () => {
 
         // Heuristic: Log the Honey Pot (if console is open, toString() triggers)
         // Only if console methods aren't fully ghosted
-        try { console.dir(devtools); } catch {
-            // Ignore errors if the devtools detector fails
-        }
+        // try { console.dir(devtools); } catch {
+        //     // Ignore errors if the devtools detector fails
+        // }
     };
 
     // Removed Recursive Freezer as it was tied to the deprecated window dimension check
