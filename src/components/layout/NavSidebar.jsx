@@ -21,7 +21,8 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
   const [canInstall, setCanInstall] = useState(() => {
     if (typeof window !== "undefined") {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      return !isStandalone && (!!globalDeferredPrompt || true); 
+      // Show button only if NOT standalone AND we have the prompt event
+      return !isStandalone && !!globalDeferredPrompt; 
     }
     return false;
   });
