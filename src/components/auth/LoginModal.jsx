@@ -24,31 +24,23 @@ export default function LoginModal({ isOpen, onClose }) {
   const [cfToken, setCfToken] = useState(isLocal ? "local-dev-token" : "");
 
   useEffect(() => {
-    if (isOpen && window.turnstile) {
+    // On localhost, skip Turnstile entirely — useState initializers already set the bypass values
+    if (isLocal) return;
+
+    if (isOpen && window.turnstile && turnstileRef.current) {
       window.turnstile.render(turnstileRef.current, {
-        sitekey: isLocal ? "1x00000000000000000000AA" : (import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAADGQxfMRQroxFG6O"),
+        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAADGQxfMRQroxFG6O",
         callback: (token) => {
           setCfToken(token);
           setCfSuccess(true);
         },
         "error-callback": () => {
-          if (isLocal) {
-            console.warn("Cloudflare Turnstile failed on localhost. Bypassing for development.");
-            setCfToken("local-dev-token");
-            setCfSuccess(true);
-          } else {
-            setError("Cloudflare verification failed. Please try again.");
-            setCfSuccess(false);
-          }
+          setError("Cloudflare verification failed. Please try again.");
+          setCfSuccess(false);
         },
         "expired-callback": () => {
-          if (isLocal) {
-            setCfToken("local-dev-token");
-            setCfSuccess(true);
-          } else {
-            setCfToken("");
-            setCfSuccess(false);
-          }
+          setCfToken("");
+          setCfSuccess(false);
         }
       });
     }
@@ -58,7 +50,7 @@ export default function LoginModal({ isOpen, onClose }) {
         // window.turnstile.remove(); // Optional: cleanup
       }
     };
-  }, [isOpen]);
+  }, [isOpen, isLocal]);
 
   if (!isOpen) return null;
 
@@ -220,10 +212,12 @@ export default function LoginModal({ isOpen, onClose }) {
               </div>
             )}
 
-            {/* Real Cloudflare Turnstile */}
-            <div className="flex justify-center mt-2">
-              <div ref={turnstileRef} className="cf-turnstile"></div>
-            </div>
+            {/* Real Cloudflare Turnstile (hidden on localhost) */}
+            {!isLocal && (
+              <div className="flex justify-center mt-2">
+                <div ref={turnstileRef} className="cf-turnstile"></div>
+              </div>
+            )}
 
             {/* Forgot Password */}
             {isLogin && (
