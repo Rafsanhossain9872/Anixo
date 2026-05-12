@@ -6,12 +6,22 @@ import { X, ChevronRight, LayoutGrid, Calendar, List, Download } from "lucide-re
 import { useLanguage } from "../../context/LanguageContext";
 import { ALL_GENRES } from "../../constants/genres";
 
+// Global variable to capture the install prompt even before the component mounts
+let globalDeferredPrompt = null;
+if (typeof window !== "undefined") {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    globalDeferredPrompt = e;
+  });
+}
+
 export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [deferredPrompt, setDeferredPrompt] = useState(globalDeferredPrompt);
   const [canInstall, setCanInstall] = useState(() => {
     if (typeof window !== "undefined") {
-      return !window.matchMedia('(display-mode: standalone)').matches;
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      return !isStandalone && (!!globalDeferredPrompt || true); 
     }
     return false;
   });
@@ -70,20 +80,28 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      globalDeferredPrompt = e;
       setCanInstall(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
+  }, [open]); // Re-check whenever sidebar opens
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    const promptToUse = deferredPrompt || globalDeferredPrompt;
+    if (!promptToUse) {
+      console.warn("Install prompt not available yet. Try interacting with the page first.");
+      return;
+    }
+    
+    promptToUse.prompt();
+    const { outcome } = await promptToUse.userChoice;
+    
     if (outcome === 'accepted') {
       setCanInstall(false);
+      globalDeferredPrompt = null;
     }
     setDeferredPrompt(null);
   };
