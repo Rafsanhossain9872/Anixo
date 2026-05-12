@@ -58,9 +58,15 @@ function ListItem({ anime }) {
               <Star size={9} fill="currentColor" /> {anime.averageScore}%
             </span>
           )}
-          <span className="text-[9px] text-[#666] flex items-center gap-[2px]">
-            <Tv size={10} /> {anime.episodes || "?"}
-          </span>
+          {anime.status === "NOT_YET_RELEASED" ? (
+            <span className="text-[9px] font-black bg-[#222] text-white/40 px-[6px] py-px rounded-[2px] uppercase tracking-tighter">
+              Upcoming
+            </span>
+          ) : (
+            <span className="text-[9px] text-[#666] flex items-center gap-[2px]">
+              <Tv size={10} /> {anime.episodes || "?"}
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -97,7 +103,11 @@ function RankedItem({ anime, rank, featured }) {
             {getTitle(anime.title)}
           </p>
           <div className="flex items-center gap-[10px] mt-2 text-[10px] font-bold uppercase tracking-wider text-white/20">
-            <span className="flex items-center gap-1.5"><Tv size={11} className="text-red-600/50" /> {anime.episodes || "?"}</span>
+            {anime.status === "NOT_YET_RELEASED" ? (
+              <span className="bg-white/5 px-2 py-0.5 rounded-[1px] text-red-500/60">Upcoming</span>
+            ) : (
+              <span className="flex items-center gap-1.5"><Tv size={11} className="text-red-600/50" /> {anime.episodes || "?"}</span>
+            )}
             <span className="flex items-center gap-1.5"><Heart size={11} fill="currentColor" className="text-red-600/50" /> {anime.favourites || "?"}</span>
             <span className="bg-white/5 px-1.5 py-0.5 rounded-[1px]">{anime.format}</span>
           </div>
@@ -129,7 +139,11 @@ function RankedItem({ anime, rank, featured }) {
           {getTitle(anime.title)}
         </p>
         <div className="flex items-center gap-3 mt-1.5 text-[10px] font-bold uppercase tracking-wider text-white/20">
-          <span className="flex items-center gap-1"><Tv size={10} /> {anime.episodes || "?"}</span>
+          {anime.status === "NOT_YET_RELEASED" ? (
+             <span className="bg-white/5 px-1.5 py-0.5 rounded-[1px] text-white/40">Upcoming</span>
+          ) : (
+            <span className="flex items-center gap-1"><Tv size={10} /> {anime.episodes || "?"}</span>
+          )}
           <span className="flex items-center gap-1"><Heart size={10} fill="currentColor" /> {anime.favourites || "?"}</span>
           <span className="bg-white/5 px-1.5 py-0.5 rounded-[1px]">{anime.format}</span>
         </div>

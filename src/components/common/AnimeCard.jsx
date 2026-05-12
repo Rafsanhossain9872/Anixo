@@ -150,15 +150,23 @@ export default function AnimeCard({ anime }) {
         {/* EP Badge (Universal style for both types) */}
         <div className="flex justify-center -mt-[14px] relative z-40">
           <div className="flex items-stretch bg-[#0a0a0a] rounded-[4px] border border-white/10 overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
-            <span className="text-[9px] font-black bg-red-600 text-white px-2 uppercase tracking-tighter flex items-center justify-center">EP</span>
-            <div className="px-2 py-1 flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-white">
-                {anime.isProgress ? anime.episode : (releasedEpisodes || "0")}
+            {anime.status === "NOT_YET_RELEASED" ? (
+              <span className="text-[9px] font-black bg-[#222] text-white/50 px-3 py-1 uppercase tracking-tighter flex items-center justify-center">
+                Not Yet Released
               </span>
-              {!anime.isProgress && showTotal && (
-                <span className="text-[10px] font-bold text-white/30">/ {totalEpisodes}</span>
-              )}
-            </div>
+            ) : (
+              <>
+                <span className="text-[9px] font-black bg-red-600 text-white px-2 uppercase tracking-tighter flex items-center justify-center">EP</span>
+                <div className="px-2 py-1 flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-white">
+                    {anime.isProgress ? anime.episode : (releasedEpisodes || "0")}
+                  </span>
+                  {!anime.isProgress && showTotal && (
+                    <span className="text-[10px] font-bold text-white/30">/ {totalEpisodes}</span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

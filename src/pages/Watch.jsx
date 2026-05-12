@@ -435,7 +435,7 @@ export default function Watch() {
         const searchPromises = [
           axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[0] } }).catch(() => ({ data: [] }))
         ];
-        
+
         if (titlesToTry[1]) {
           searchPromises.push(
             axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[1] } }).catch(() => ({ data: [] }))
@@ -443,7 +443,7 @@ export default function Watch() {
         }
 
         const responses = await Promise.all(searchPromises);
-        
+
         // Combine and deduplicate results by ID
         const uniqueResultsMap = new Map();
         responses.forEach(res => {
@@ -468,11 +468,11 @@ export default function Watch() {
             const resultEnglish = (result.title_english || "").toLowerCase();
 
             let score = 0;
-            
+
             // Score against all possible titles we have
             targetTitles.forEach((target, index) => {
               const weight = index === 0 ? 1 : 0.8; // Priority to English, then Romaji
-              
+
               if (resultTitle === target || resultEnglish === target) {
                 score += (100 * weight);
               } else if (resultTitle.includes(target) || target.includes(resultTitle)) {
@@ -489,7 +489,7 @@ export default function Watch() {
               if (/season\s+iii/i.test(str)) return "3";
               if (/season\s+ii/i.test(str)) return "2";
               if (/season\s+i\b/i.test(str)) return "1"; // match 'Season I' but not 'Season IV'
-              
+
               const s1 = str.match(/season\s+(\d+)/i);
               if (s1) return s1[1];
               const s2 = str.match(/(\d+)(st|nd|rd|th)\s+season/i);
@@ -506,7 +506,7 @@ export default function Watch() {
 
             if (targetSeason && resultSeason) {
               if (targetSeason === resultSeason) score += 100; // Big boost for exact season match
-              else score -= 200; 
+              else score -= 200;
             } else if (!targetSeason && resultSeason) {
               // If we are looking for the base title (no season), and the result HAS a season:
               if (resultSeason === "1") {
@@ -519,7 +519,7 @@ export default function Watch() {
             // Penalize "Specials", "OVA", "Movie" if not explicitly searched for
             const isTargetSpecial = titlesToTry.some(t => /special|ova|movie/i.test(t));
             const isResultSpecial = /special|ova|movie/i.test(resultTitle) || /special|ova|movie/i.test(resultEnglish);
-            
+
             if (!isTargetSpecial && isResultSpecial) {
               score -= 150; // Heavy penalty to prevent specials from stealing Season 1
             }
@@ -633,7 +633,7 @@ export default function Watch() {
 
       const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
       const title = anime?.title?.english || anime?.title?.romaji || anime?.title?.native || 'Unknown';
-      
+
       const progressData = {
         animeId: String(id),
         anilistId: anime?.id,
@@ -1113,7 +1113,7 @@ export default function Watch() {
         else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
           const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
-          
+
           // Always prioritize MAL ID — Megaplay maps most anime under MAL IDs
           if (anime?.idMal) {
             url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
@@ -1134,7 +1134,7 @@ export default function Watch() {
         else if (activeServer === 3) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
           const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
-          
+
           if (anime?.idMal) {
             url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 3 (MAL)", lang: langParam });
@@ -1161,12 +1161,12 @@ export default function Watch() {
           if (streams && streams.length > 0) {
             // Priority: Embed URL is more reliable for Miruro (handles referers/IP locks)
             const embedStream = streams.find(s => s.type === 'embed');
-            
+
             if (embedStream) {
               // Use Embed as Iframe
               url = embedStream.url;
-              setStreamData({ 
-                server_name: "SERVER 4 (Miruro-Embed)", 
+              setStreamData({
+                server_name: "SERVER 4 (Miruro-Embed)",
                 lang: miruroData?.category || playerLang,
                 iframe_url: embedStream.url // Mark as iframe URL
               });
@@ -1312,84 +1312,132 @@ export default function Watch() {
 
             {/* Video Player Container */}
             <section className={`relative w-full aspect-video bg-[#000] overflow-hidden border-x border-white/5 shadow-2xl transition-all duration-500 ${isFocusMode ? 'max-w-[90vw] max-h-[85vh] pointer-events-auto ring-1 ring-white/10 rounded-sm' : ''}`}>
-              {/* Loader & Error Overlay */}
-              {((streamLoading || (streamUrl && !iframeLoaded)) || (!streamLoading && (!streamUrl || fetchError))) && (
-                <div className="absolute inset-0 z-20 group">
+              {/* Upcoming / Not Yet Released State */}
+              {anime.status === "NOT_YET_RELEASED" ? (
+                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center">
                   <img
-                    src={currentEpisodeImage}
-                    alt="Poster"
-                    key={activeEpisode}
-                    className={`absolute inset-0 w-full h-full object-cover z-0 transition-all duration-700 animate-in fade-in fill-mode-both ${fetchError || (!streamLoading && !streamUrl) ? 'brightness-[0.7]' : 'brightness-[0.4]'}`}
+                    src={anime.bannerImage || anime.coverImage?.extraLarge}
+                    alt="Banner"
+                    className="absolute inset-0 w-full h-full object-cover opacity-20 blur-sm brightness-[0.3]"
                   />
-                  <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 text-center">
-                    {(streamLoading || (streamUrl && !iframeLoaded)) && activeServer !== 2 ? (
-                      <div className="flex flex-col items-center gap-4 transition-all duration-300">
-                        <div className="w-10 h-10 border-[3px] border-red-600 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(220,38,38,0.3)]"></div>
-                        <p className="text-white/20 text-[8px] font-bold uppercase tracking-[0.3em] animate-pulse">Loading...</p>
+                  <div className="relative z-10 flex flex-col items-center gap-6 max-w-md animate-in fade-in zoom-in duration-700">
+                    <div className="w-20 h-20 bg-red-600/10 rounded-3xl flex items-center justify-center border border-red-600/20 shadow-[0_0_40px_rgba(220,38,38,0.15)]">
+                      <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Not Yet Released</h2>
+                      <p className="text-white/40 text-sm font-medium leading-relaxed">
+                        This anime is scheduled to premiere soon. Bookmark it to get notified when the first episode arrives!
+                      </p>
+                    </div>
+                    {anime.nextAiringEpisode && (
+                      <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 mb-1">Estimated Arrival</p>
+                        <p className="text-lg font-bold text-white">
+                          Episode 1: {new Date(anime.nextAiringEpisode.airingAt * 1000).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
                       </div>
-                    ) : (
-                      <div className="animate-in fade-in zoom-in-95 duration-300"><div /></div>
                     )}
                   </div>
                 </div>
-              )}
-
-              {/* Server Rendering Logic */}
-              <div className="w-full h-full">
-                {(activeServer === 1 || (activeServer === 4 && streamData?.sources && streamData.sources.length > 0)) ? (
-                  streamUrl ? (
-                    <ArtPlayer
-                      skipTimes={skipTimes[activeEpisode]}
-                      key={`${id}-${activeEpisode}-${activeServer}-${videoQuality}`}
-                      src={streamUrl}
-                      poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
-                      subtitles={streamData?.subtitles || []}
-                      initialTime={initialTime}
-                      videoQuality={videoQuality}
-                      availableQualities={availableQualities}
-                      onQualityChange={(q) => { setVideoQuality(q); localStorage.setItem("videoQuality", q); }}
-                      onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                      onEnded={() => {
-                        if (autoNext && activeEpisode < episodesList.length) {
-                          const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
-                          if (nextEp) setActiveEpisode(nextEp.number);
-                        }
-                      }}
-                    />
-                  ) : null
-                ) : (streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url) || (activeServer === 2 && streamData?.sources) ? (
-                  <VideoPlayer
-                    skipTimes={skipTimes[activeEpisode]}
-                    src={streamData.sources[0].url}
-                    type={streamData.sources[0].type}
-                    poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
-                    subtitles={streamData.subtitles || []}
-                    initialTime={initialTime}
-                    onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                    onEnded={() => {
-                      if (autoNext && activeEpisode < episodesList.length) {
-                        const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
-                        if (nextEp) setActiveEpisode(nextEp.number);
-                      }
-                    }}
-                  />
-                ) : (
-                  <iframe
-                      ref={iframeRef}
-                      key={`${activeServer}-${activeEpisode}-${playerLang}`}
-                      src={streamUrl || "about:blank"}
-                      onLoad={() => { if (streamUrl) setTimeout(() => setIframeLoaded(true), 0); }}
-                      className={`w-full h-full border-0 transition-opacity duration-500 ${!iframeLoaded ? 'opacity-0' : 'opacity-100'}`}
-                      allowFullScreen
-                      allowfullscreen="true"
-                      webkitallowfullscreen="true"
-                      mozallowfullscreen="true"
-                      scrolling="no"
-                      allow="autoplay; fullscreen *; encrypted-media; picture-in-picture; xr-spatial-tracking; clipboard-write"
-                    />
+              ) : (
+                <>
+                  {/* Loader & Error Overlay */}
+                  {((streamLoading || (streamUrl && !iframeLoaded)) || (!streamLoading && (!streamUrl || fetchError))) && (
+                    <div className="absolute inset-0 z-20 group">
+                      <img
+                        src={currentEpisodeImage}
+                        alt="Poster"
+                        key={activeEpisode}
+                        className={`absolute inset-0 w-full h-full object-cover z-0 transition-all duration-700 animate-in fade-in fill-mode-both ${fetchError || (!streamLoading && !streamUrl) ? 'brightness-[0.7]' : 'brightness-[0.4]'}`}
+                      />
+                      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 text-center">
+                        {(streamLoading || (streamUrl && !iframeLoaded)) && activeServer !== 2 ? (
+                          <div className="flex flex-col items-center gap-4 transition-all duration-300">
+                            <div className="w-10 h-10 border-[3px] border-red-600 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_rgba(220,38,38,0.3)]"></div>
+                            <p className="text-white/20 text-[8px] font-bold uppercase tracking-[0.3em] animate-pulse">Loading...</p>
+                          </div>
+                        ) : fetchError ? (
+                          <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="w-16 h-16 bg-red-600/10 rounded-full flex items-center justify-center border border-red-600/20">
+                              <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                            </div>
+                            <div className="space-y-2">
+                              <p className="text-white font-bold text-lg uppercase tracking-tight">Stream Unavailable</p>
+                              <p className="text-white/40 text-xs max-w-[280px] mx-auto leading-relaxed">{fetchError}</p>
+                            </div>
+                            <div className="flex gap-3">
+                              <button onClick={() => window.location.reload()} className="px-5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all">Retry</button>
+                              <button onClick={() => setActiveServer(prev => prev === 2 ? 1 : 2)} className="px-5 py-2 bg-red-600 hover:bg-red-700 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg shadow-red-600/20">Switch Server</button>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   )}
-                </div>
-              </section>
+
+                  {/* Server Rendering Logic */}
+                  <div className="w-full h-full">
+                    {(activeServer === 1 || (activeServer === 4 && streamData?.sources && streamData.sources.length > 0)) ? (
+                      streamUrl ? (
+                        <ArtPlayer
+                          skipTimes={skipTimes[activeEpisode]}
+                          key={`${id}-${activeEpisode}-${activeServer}-${videoQuality}`}
+                          src={streamUrl}
+                          poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
+                          subtitles={streamData?.subtitles || []}
+                          initialTime={initialTime}
+                          videoQuality={videoQuality}
+                          availableQualities={availableQualities}
+                          onQualityChange={(q) => { setVideoQuality(q); localStorage.setItem("videoQuality", q); }}
+                          onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                          onEnded={() => {
+                            if (autoNext && activeEpisode < episodesList.length) {
+                              const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
+                              if (nextEp) setActiveEpisode(nextEp.number);
+                            }
+                          }}
+                        />
+                      ) : null
+                    ) : (streamData?.sources && Array.isArray(streamData.sources) && streamData.sources.length > 0 && !streamData?.iframe_url) || (activeServer === 2 && streamData?.sources) ? (
+                      <VideoPlayer
+                        skipTimes={skipTimes[activeEpisode]}
+                        src={streamData.sources[0].url}
+                        type={streamData.sources[0].type}
+                        poster={anime?.coverImage?.extraLarge || anime?.coverImage?.large}
+                        subtitles={streamData.subtitles || []}
+                        initialTime={initialTime}
+                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                        onEnded={() => {
+                          if (autoNext && activeEpisode < episodesList.length) {
+                            const nextEp = episodesList.find(e => e.number === activeEpisode + 1);
+                            if (nextEp) setActiveEpisode(nextEp.number);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <iframe
+                        ref={iframeRef}
+                        key={`${activeServer}-${activeEpisode}-${playerLang}`}
+                        src={streamUrl || "about:blank"}
+                        onLoad={() => { if (streamUrl) setTimeout(() => setIframeLoaded(true), 0); }}
+                        className={`w-full h-full border-0 transition-opacity duration-500 ${!iframeLoaded ? 'opacity-0' : 'opacity-100'}`}
+                        allowFullScreen
+                        allowfullscreen="true"
+                        webkitallowfullscreen="true"
+                        mozallowfullscreen="true"
+                        scrolling="no"
+                        allow="autoplay; fullscreen *; encrypted-media; picture-in-picture; xr-spatial-tracking; clipboard-write"
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+            </section>
 
             {/* Player Toolbar + Server Selector */}
             <PlayerToolbar

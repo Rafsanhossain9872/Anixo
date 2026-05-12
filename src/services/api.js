@@ -455,10 +455,10 @@ export async function getBrowseAnime(variables) {
 }
 
 export const ANIME_QUERY = `
-  query ($page: Int, $sort: [MediaSort]) {
+  query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus]) {
     Page(page: $page, perPage: 50) {
       pageInfo { total hasNextPage }
-      media(type: ANIME, sort: $sort) {
+      media(type: ANIME, sort: $sort, status_in: $status_in) {
         id
         title { romaji english native }
         coverImage { extraLarge large medium }
@@ -485,7 +485,11 @@ export async function getTrendingAnime(page = 1) {
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { page, sort: ["TRENDING_DESC"] });
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
+    page, 
+    sort: ["TRENDING_DESC"],
+    status_in: ["RELEASING", "FINISHED"] 
+  });
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING);
     return anilistRes;
@@ -501,7 +505,11 @@ export async function getPopularAnime(page = 1) {
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { page, sort: ["POPULARITY_DESC"] });
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
+    page, 
+    sort: ["POPULARITY_DESC"],
+    status_in: ["RELEASING", "FINISHED"]
+  });
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.POPULAR);
     return anilistRes;
@@ -513,18 +521,23 @@ export async function getPopularAnime(page = 1) {
 }
 
 export async function getNewReleases(page = 1) {
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { page, sort: ["START_DATE_DESC", "TRENDING_DESC"] });
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
+    page, 
+    sort: ["START_DATE_DESC", "TRENDING_DESC"],
+    status_in: ["RELEASING", "FINISHED"]
+  });
   if (anilistRes?.media?.length > 0) return anilistRes;
 
   console.warn("[Failover] AniList New Releases failed, switching to Jikan...");
-  return fetchFromJikan("/seasons/upcoming", { page, limit: 20 });
+  // Use 'airing' or 'upcoming' depending on context, but here we want things with episodes
+  return fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 });
 }
 
 const SEASONAL_QUERY = `
-  query ($season: MediaSeason, $seasonYear: Int, $sort: [MediaSort], $page: Int) {
+  query ($season: MediaSeason, $seasonYear: Int, $sort: [MediaSort], $page: Int, $status_in: [MediaStatus]) {
     Page(page: $page, perPage: 30) {
       pageInfo { total currentPage lastPage hasNextPage perPage }
-      media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: $sort) {
+      media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: $sort, status_in: $status_in) {
         id
         title { romaji english native }
         coverImage { extraLarge large medium }
@@ -556,7 +569,8 @@ export async function getPopularThisSeason(page = 1) {
     season,
     seasonYear: year,
     sort: ["POPULARITY_DESC"],
-    page
+    page,
+    status_in: ["RELEASING", "FINISHED"]
   });
 }
 
