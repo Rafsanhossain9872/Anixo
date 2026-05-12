@@ -1,5 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
-import Lenis from 'lenis';
+import { lazy, Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/common/ScrollToTop";
 import PageLoader from "./components/common/PageLoader";
@@ -25,26 +24,6 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 export default function App() {
-  useEffect(() => {
-    const lenis = new Lenis({
-      lerp: 0.1, // Feels more precise and stops faster
-      wheelMultiplier: 1, // Normal, natural scroll speed
-      smoothWheel: true,
-      smoothTouch: false,
-    });
-
-    let rafId;
-    function raf(time) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
-  }, []);
 
   return (
     <Router>
