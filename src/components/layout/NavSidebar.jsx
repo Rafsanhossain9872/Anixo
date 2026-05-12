@@ -20,9 +20,8 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
   const [deferredPrompt, setDeferredPrompt] = useState(globalDeferredPrompt);
   const [canInstall, setCanInstall] = useState(() => {
     if (typeof window !== "undefined") {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      // Show button only if NOT standalone AND we have the prompt event
-      return !isStandalone && !!globalDeferredPrompt; 
+      // Show button permanently if NOT already running as an app
+      return !window.matchMedia('(display-mode: standalone)').matches;
     }
     return false;
   });
@@ -93,7 +92,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
   const handleInstallClick = async () => {
     const promptToUse = deferredPrompt || globalDeferredPrompt;
     if (!promptToUse) {
-      console.warn("Install prompt not available yet. Try interacting with the page first.");
+      alert("To install: Tap the browser menu (⋮ or 📤) and select 'Add to Home Screen'");
       return;
     }
     
