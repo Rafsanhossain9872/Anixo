@@ -32,12 +32,24 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - Stale-while-revalidate strategy
 self.addEventListener('fetch', (event) => {
+  // Only handle GET requests and avoid caching external APIs that might fail
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
   event.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(event.request).then((cachedResponse) => {
         const fetchedResponse = fetch(event.request).then((networkResponse) => {
-          cache.put(event.request, networkResponse.clone());
+          // Only cache successful same-origin responses
+          if (isSameOrigin && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
           return networkResponse;
+        }).catch(() => {
+          // Fallback logic could go here if needed
+          return cachedResponse; 
         });
 
         return cachedResponse || fetchedResponse;
