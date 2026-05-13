@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getMalSyncMapping, getMiruroStream, PYTHON_API, ALLANIME_API } from "../services/api";
+
+import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getMiruroStream, PYTHON_API } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useLoading } from "../context/LoadingContext";
 import Navbar from "../components/layout/Navbar";
@@ -66,20 +66,16 @@ export default function Watch() {
 
   const [episodeLayout, setEpisodeLayout] = useState("list"); // "grid" | "list"
   const [playerLang, setPlayerLang] = useState("sub");
-  const [activeServer, setActiveServer] = useState(2);
+  const [activeServer, setActiveServer] = useState(1);
 
-  const [allanimeId, setAllanimeId] = useState(null);
   const [videoQuality, setVideoQuality] = useState(() => {
     try { return localStorage.getItem("videoQuality") || "best"; } catch { return "best"; }
   });
-  const [availableQualities, setAvailableQualities] = useState([]);
+  const availableQualities = [];
 
   const { user, setGlobalProgress, globalSettings, globalProgress } = useAuth();
 
-  // Reset Allanime ID on navigation
-  useEffect(() => {
-    setTimeout(() => setAllanimeId(null), 0);
-  }, [id]);
+
 
   // Safe localStorage helper
   const getSafeStorage = (key, defaultVal) => {
@@ -374,212 +370,9 @@ export default function Watch() {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
-  // MALSync Mapping for precise external IDs (Kitsu, etc)
-  const { data: malsyncMapping } = useQuery({
-    queryKey: ["malsyncMapping", anime?.idMal],
-    queryFn: () => getMalSyncMapping(anime?.idMal),
-    enabled: !!anime?.idMal,
-    staleTime: 1000 * 60 * 60 * 24,
-  });
 
-  // Search for Allanime ID + Instant SUB/DUB Detection
-  const [allanimeSubCount, setAllanimeSubCount] = useState(0);
-  const [allanimeDubCount, setAllanimeDubCount] = useState(0);
 
-  useEffect(() => {
-    if (!anime || !malsyncMapping) return;
 
-    const fetchAllanimeId = async () => {
-      // --- STEP 1: Try Exact Mapping via MalSync (reuse React Query data, no extra API call) ---
-      if (malsyncMapping && malsyncMapping.Sites && malsyncMapping.Sites.AllAnime) {
-        const allAnimeKey = Object.keys(malsyncMapping.Sites.AllAnime)[0];
-        const allAnimeData = malsyncMapping.Sites.AllAnime[allAnimeKey];
-        if (allAnimeData && allAnimeData.identifier) {
-          console.log(`[Allanime] Found exact MalSync mapping: ${allAnimeData.identifier}`);
-          setAllanimeId(allAnimeData.identifier);
-          setAllanimeSubCount(anime.episodes || 0);
-          return; // Success!
-        }
-      }
-
-      // --- STEP 2: Fallback to Keyword Search (with improved scoring) ---
-      const titlesToTry = [
-        anime.title?.english,
-        anime.title?.romaji,
-        ...(anime.synonyms || [])
-      ].filter(Boolean).slice(0, 3); // Try top 3 most likely titles
-
-      if (titlesToTry.length === 0) return;
-
-      const mainSearchTitle = titlesToTry[0];
-      const cacheKey = `allanime_search_v2_${mainSearchTitle}`;
-      const cachedId = localStorage.getItem(cacheKey);
-
-      if (cachedId) {
-        try {
-          const parsedCache = JSON.parse(cachedId);
-          if (new Date().getTime() < parsedCache.expiry) {
-            console.log(`[Allanime] Using cached ID: ${parsedCache.id}`);
-            setAllanimeId(parsedCache.id);
-            setAllanimeSubCount(parsedCache.sub || 0);
-            setAllanimeDubCount(parsedCache.dub || 0);
-            return;
-          }
-        } catch {
-          localStorage.removeItem(cacheKey);
-        }
-      }
-
-      try {
-        // Search using top 2 titles (English and Romaji) concurrently for best results
-        const searchPromises = [
-          axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[0] } }).catch(() => ({ data: [] }))
-        ];
-
-        if (titlesToTry[1]) {
-          searchPromises.push(
-            axios.get(`${ALLANIME_API}/search`, { params: { query: titlesToTry[1] } }).catch(() => ({ data: [] }))
-          );
-        }
-
-        const responses = await Promise.all(searchPromises);
-
-        // Combine and deduplicate results by ID
-        const uniqueResultsMap = new Map();
-        responses.forEach(res => {
-          if (Array.isArray(res.data)) {
-            res.data.forEach(item => {
-              if (item && item.id && !uniqueResultsMap.has(item.id)) {
-                uniqueResultsMap.set(item.id, item);
-              }
-            });
-          }
-        });
-
-        const searchData = Array.from(uniqueResultsMap.values());
-
-        if (searchData.length > 0) {
-          const targetTitles = titlesToTry.map(t => t.toLowerCase());
-          let bestMatch = searchData[0];
-          let highestScore = -500;
-
-          searchData.forEach(result => {
-            const resultTitle = (result.title || "").toLowerCase();
-            const resultEnglish = (result.title_english || "").toLowerCase();
-
-            let score = 0;
-
-            // Score against all possible titles we have
-            targetTitles.forEach((target, index) => {
-              const weight = index === 0 ? 1 : 0.8; // Priority to English, then Romaji
-
-              if (resultTitle === target || resultEnglish === target) {
-                score += (100 * weight);
-              } else if (resultTitle.includes(target) || target.includes(resultTitle)) {
-                score += (50 * weight);
-              } else if (resultEnglish.includes(target) || target.includes(resultEnglish)) {
-                score += (50 * weight);
-              }
-            });
-
-            // Robust Season Detection (Keep existing logic)
-            const getSeason = (str) => {
-              if (!str) return null;
-              // Handle Roman Numerals
-              if (/season\s+iii/i.test(str)) return "3";
-              if (/season\s+ii/i.test(str)) return "2";
-              if (/season\s+i\b/i.test(str)) return "1"; // match 'Season I' but not 'Season IV'
-
-              const s1 = str.match(/season\s+(\d+)/i);
-              if (s1) return s1[1];
-              const s2 = str.match(/(\d+)(st|nd|rd|th)\s+season/i);
-              if (s2) return s2[1];
-              const s3 = str.match(/\s+(\d+)$/);
-              if (s3) return s3[1];
-              const s4 = str.match(/(?:part|cour|vol|s)(\d+)/i);
-              if (s4) return s4[1];
-              return null;
-            };
-
-            const targetSeason = getSeason(titlesToTry[0]) || getSeason(titlesToTry[1]);
-            const resultSeason = getSeason(resultTitle) || getSeason(resultEnglish);
-
-            if (targetSeason && resultSeason) {
-              if (targetSeason === resultSeason) score += 100; // Big boost for exact season match
-              else score -= 200;
-            } else if (!targetSeason && resultSeason) {
-              // If we are looking for the base title (no season), and the result HAS a season:
-              if (resultSeason === "1") {
-                score += 50; // Boost Season 1 to prevent Specials from winning
-              } else {
-                score -= 100; // Penalty for other seasons (Season 2, 3) when looking for base
-              }
-            }
-
-            // Penalize "Specials", "OVA", "Movie" if not explicitly searched for
-            const isTargetSpecial = titlesToTry.some(t => /special|ova|movie/i.test(t));
-            const isResultSpecial = /special|ova|movie/i.test(resultTitle) || /special|ova|movie/i.test(resultEnglish);
-
-            if (!isTargetSpecial && isResultSpecial) {
-              score -= 150; // Heavy penalty to prevent specials from stealing Season 1
-            }
-
-            // Length Penalty
-            const lengthDiff = Math.abs(resultTitle.length - titlesToTry[0].length);
-            score -= (lengthDiff * 1.5);
-
-            if (score > highestScore) {
-              highestScore = score;
-              bestMatch = result;
-            }
-          });
-
-          if (highestScore > -100) { // Only set if we have a somewhat decent match
-            setAllanimeId(bestMatch.id);
-            setAllanimeSubCount(parseInt(bestMatch.episodes_sub) || 0);
-            setAllanimeDubCount(parseInt(bestMatch.episodes_dub) || 0);
-            console.log(`[Allanime] Best Match: ${bestMatch.title} | Score: ${highestScore}`);
-
-            localStorage.setItem(cacheKey, JSON.stringify({
-              id: bestMatch.id,
-              sub: parseInt(bestMatch.episodes_sub) || 0,
-              dub: parseInt(bestMatch.episodes_dub) || 0,
-              expiry: new Date().getTime() + (24 * 60 * 60 * 1000)
-            }));
-          }
-        }
-      } catch (err) {
-        console.warn("Allanime search failed:", err);
-      }
-    };
-
-    fetchAllanimeId();
-  }, [anime, malsyncMapping, ALLANIME_API, id, isMal]);
-
-  // Fetch available qualities for Server 2 (AllAnime)
-  const qualitiesCache = useRef({});
-  useEffect(() => {
-    if (activeServer !== 2 || !allanimeId || !activeEpisode) {
-      setTimeout(() => setAvailableQualities([]), 0);
-      return;
-    }
-    const cacheKey = `${allanimeId}-${activeEpisode}-${playerLang}`;
-    if (qualitiesCache.current[cacheKey]) {
-      setTimeout(() => setAvailableQualities(qualitiesCache.current[cacheKey]), 0);
-      return;
-    }
-    const mode = playerLang === 'dub' ? 'dub' : 'sub';
-    axios.get(`${ALLANIME_API}/qualities`, {
-      params: { show_id: allanimeId, ep_no: activeEpisode, mode }
-    })
-      .then(res => {
-        const q = res.data?.qualities || [];
-        qualitiesCache.current[cacheKey] = q;
-        setAvailableQualities(q);
-        console.log(`[Qualities] Episode ${activeEpisode}: ${q.join(', ') || 'single quality only'}`);
-      })
-      .catch(() => setAvailableQualities([]));
-  }, [activeServer, allanimeId, activeEpisode, playerLang, ALLANIME_API]);
 
   // ── PROGRESS: Save to backend handled by player time-tracking ──
   useEffect(() => {
@@ -744,25 +537,13 @@ export default function Watch() {
       .slice(0, 24);
   }, [anime, id]);
 
-  // SUB/DUB availability — instant detection via AllAnime episode counts
+  // SUB/DUB availability defaults
   useEffect(() => {
-    if (!allanimeSubCount && !allanimeDubCount) {
-      // AllAnime data not loaded yet, keep defaults
-      return;
-    }
-
-    const subAvailable = allanimeSubCount >= activeEpisode;
-    const dubAvailable = allanimeDubCount >= activeEpisode;
-
     setTimeout(() => {
-      setHasSub(subAvailable);
-      setHasDub(dubAvailable);
-
-      // Auto-switch language if current selection is unavailable
-      if (playerLang === "dub" && !dubAvailable && subAvailable) setPlayerLang("sub");
-      else if (playerLang === "sub" && !subAvailable && dubAvailable) setPlayerLang("dub");
+      setHasSub(true);
+      setHasDub(true);
     }, 0);
-  }, [activeEpisode, allanimeSubCount, allanimeDubCount, playerLang]);
+  }, [activeEpisode]);
 
 
 
@@ -857,17 +638,7 @@ export default function Watch() {
       count = Math.max(count, malEpisodes.length);
     }
 
-    // 3. Check AllAnime Count (Fastest for new releases)
-    if (allanimeSubCount > 0) {
-      // Small safety check: don't exceed total if total is known
-      const safeCount = (anime.status === 'FINISHED' && anime.episodes)
-        ? Math.min(allanimeSubCount, anime.episodes)
-        : allanimeSubCount;
-      count = Math.max(count, safeCount);
-    }
-
-
-    // 5. Final fallback for airing shows if AniList has no airing info but has streaming metadata
+    // 3. Final fallback for airing shows if AniList has no airing info but has streaming metadata
     if (!count && anime.status === 'RELEASING' && anime.streamingEpisodes && anime.streamingEpisodes.length > 0) {
       count = anime.streamingEpisodes.length;
     }
@@ -877,7 +648,7 @@ export default function Watch() {
     if (!count) count = 1;
 
     return Array.from({ length: count }, (_, i) => i + 1);
-  }, [anime, malEpisodes, allanimeSubCount]);
+  }, [anime, malEpisodes]);
 
   const filteredEpisodes = useMemo(() => {
     if (!episodeSearchQuery) return episodesList;
@@ -1098,23 +869,32 @@ export default function Watch() {
       try {
         let url = "";
 
-        // --- SERVER 1: ALLANIME INTEGRATION (ArtPlayer) ---
+        // --- SERVER 1: MEGAPLAY SMART INTEGRATION ---
         if (activeServer === 1) {
-          if (allanimeId) {
-            const mode = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-            url = `${ALLANIME_API}/play?show_id=${allanimeId}&ep_no=${activeEpisode}&mode=${mode}&quality=${videoQuality}`;
-            setStreamData({ server_name: "SERVER 1 (Allanime)", lang: mode, quality: videoQuality });
-          } else {
-            setFetchError("Allanime ID not resolved yet. Please wait or try another server.");
-          }
-        }
-
-        // --- SERVER 2: MEGAPLAY SMART INTEGRATION ---
-        else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
           const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
 
           // Always prioritize MAL ID — Megaplay maps most anime under MAL IDs
+          if (anime?.idMal) {
+            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 1 (MAL)", lang: langParam });
+          } else if (isMal) {
+            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 1 (MAL-Route)", lang: langParam });
+          } else if (anime?.id) {
+            // Only use AniList ID if no MAL ID is available at all
+            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 1 (AniList-Only)", lang: langParam });
+          } else {
+            setFetchError("Stream ID not found. Try another server.");
+          }
+        }
+
+        // --- SERVER 2: MEGAPLAY INTEGRATION ---
+        else if (activeServer === 2) {
+          const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+          const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
+
           if (anime?.idMal) {
             url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (MAL)", lang: langParam });
@@ -1122,35 +902,15 @@ export default function Watch() {
             url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (MAL-Route)", lang: langParam });
           } else if (anime?.id) {
-            // Only use AniList ID if no MAL ID is available at all
             url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (AniList-Only)", lang: langParam });
           } else {
-            setFetchError("Stream ID not found. Try Server 1.");
+            setFetchError("Stream ID not found. Try another server.");
           }
         }
 
-        // --- SERVER 3: MEGAPLAY INTEGRATION ---
+        // --- SERVER 3: MIRURO INTEGRATION ---
         else if (activeServer === 3) {
-          const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
-          const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
-
-          if (anime?.idMal) {
-            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (MAL)", lang: langParam });
-          } else if (isMal) {
-            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (MAL-Route)", lang: langParam });
-          } else if (anime?.id) {
-            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 3 (AniList-Only)", lang: langParam });
-          } else {
-            setFetchError("Stream ID not found. Try Server 1.");
-          }
-        }
-
-        // --- SERVER 4: MIRURO INTEGRATION ---
-        else if (activeServer === 4) {
           const anilistId = anime?.id || id;
           const miruroData = await getMiruroStream(anilistId, activeEpisode);
 
@@ -1217,7 +977,7 @@ export default function Watch() {
     fetchStream();
 
     return () => { cancelled = true; };
-  }, [id, anime?.id, anime?.idMal, activeEpisode, playerLang, activeServer, allanimeId, autoPlay, videoQuality, episodesList.length, setPageLoading]);
+  }, [id, anime?.id, anime?.idMal, activeEpisode, playerLang, activeServer, autoPlay, videoQuality, episodesList.length, setPageLoading, isMal]);
 
   const handleReport = () => {
     setShowReportModal(true);
@@ -1382,7 +1142,7 @@ export default function Watch() {
 
                   {/* Server Rendering Logic */}
                   <div className="w-full h-full">
-                    {(activeServer === 1 || (activeServer === 4 && streamData?.sources && streamData.sources.length > 0)) ? (
+                    {(activeServer === 3 && streamData?.sources && streamData.sources.length > 0) ? (
                       streamUrl ? (
                         <ArtPlayer
                           skipTimes={skipTimes[activeEpisode]}

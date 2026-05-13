@@ -37,9 +37,9 @@ async function generateRoutes() {
     const routes = ['/']; // Always prerender the home page
 
     if (data?.data) {
-      const allAnime = [...(data.data.trending?.media || []), ...(data.data.popular?.media || [])];
+      const animeList = [...(data.data.trending?.media || []), ...(data.data.popular?.media || [])];
       
-      allAnime.forEach(anime => {
+      animeList.forEach(anime => {
         if (!seen.has(anime.id)) {
           seen.add(anime.id);
           // Note: we don't need ?ep=1 because the SPA will automatically default to episode 1 

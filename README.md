@@ -97,7 +97,7 @@ anixo/
 - **Broadcast Timing:** Live-synced broadcast schedules displayed directly in the Watch page.
 
 ### 🎬 Elite Streaming Experience
-- **Multi-Server Resolution:** Seamlessly switches between high-quality streaming providers like AllAnime.
+- **Multi-Server Resolution:** Seamlessly switches between high-quality streaming providers like Megaplay and Miruro.
 - **Smart Metadata:** Episode thumbnails and descriptions are intelligently pulled from Kitsu/MAL for a "Netflix-style" browse experience.
 - **Native HLS Player:** High-performance playback with Auto-Skip (Intro/Outro) support.
 

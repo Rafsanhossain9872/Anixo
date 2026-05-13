@@ -160,9 +160,6 @@ export default function PlayerToolbar({
               <p className="text-[9px] lg:text-[10px] text-yellow-500/90 font-medium max-w-[280px] sm:max-w-[300px] leading-relaxed italic text-center md:text-left">
                 Note: If a wrong episode is playing, switch to another server. 100% Fix guaranteed.
               </p>
-              <p className="text-[9px] lg:text-[10px] text-red-500/80 font-bold uppercase tracking-wider text-center md:text-left">
-                Server 1: 1080p only (Lower qualities not available).
-              </p>
             </div>
           </div>
 
@@ -189,7 +186,7 @@ export default function PlayerToolbar({
             </div>
 
             <div className="flex flex-nowrap items-center justify-center gap-1 sm:gap-1.5 sm:mr-auto sm:mr-20">
-              {[1, 2, 3, 4].map((s) => (
+              {[1, 2, 3].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}
