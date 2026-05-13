@@ -5,6 +5,7 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { useAuth } from "../hooks/useAuth";
 import { getWatchlist, removeFromWatchlist, addToWatchlist } from "../services/watchlistService";
+import { syncAnilist } from "../services/authService";
 import { User, Clock, Heart, Bell, Download, Settings, ChevronDown, Check, Play, Tv, Search, X, RefreshCw, ArrowRight, Trash2 } from "lucide-react";
 import { ALL_GENRES } from "../constants/genres";
 
@@ -18,6 +19,30 @@ export default function Watchlist() {
   const [activeTab, setActiveTab] = useState("All");
   const [openStatusPicker, setOpenStatusPicker] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState(null);
+
+  const handleSync = async () => {
+    if (!user?.anilist?.username) {
+      setSyncError({ type: 'auth', message: 'Please connect your AniList account in Settings first to import your bookmarks.' });
+      return;
+    }
+    
+    setIsSyncing(true);
+    try {
+      const res = await syncAnilist();
+      if (res.success) {
+        window.location.reload(); 
+      } else {
+        setSyncError({ type: 'error', message: res.message || "Failed to sync with AniList. Please try again later." });
+      }
+    } catch (e) {
+      console.error(e);
+      setSyncError({ type: 'error', message: "An unexpected error occurred during sync." });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // --- Browse Filters State Copy ---
   const [searchInput, setSearchInput] = useState("");
@@ -431,12 +456,13 @@ export default function Watchlist() {
 
 
               <button
-                onClick={() => {}}
-                className="px-10 bg-red-600 text-white flex items-center gap-4 rounded-r-xl group active:scale-95 transition-all overflow-hidden relative"
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="px-10 bg-red-600 text-white flex items-center gap-4 rounded-r-xl group active:scale-95 transition-all overflow-hidden relative disabled:opacity-50"
               >
                 <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-                <span className="text-[13px] font-normal uppercase tracking-[0.2em] relative z-10">Sync</span>
-                <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
+                <span className="text-[13px] font-normal uppercase tracking-[0.2em] relative z-10">{isSyncing ? "Syncing..." : "Sync"}</span>
+                <RefreshCw size={14} className={`relative z-10 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
               </button>
             </div>
           </div>
@@ -669,12 +695,13 @@ export default function Watchlist() {
               <div className="flex gap-2">
 
                 <button
-                  onClick={() => {}}
-                  className="flex-2 h-10 bg-red-600 text-white flex items-center justify-center gap-3 rounded-lg active:scale-95 transition-all overflow-hidden relative"
+                  onClick={handleSync}
+                  disabled={isSyncing}
+                  className="flex-2 h-10 bg-red-600 text-white flex items-center justify-center gap-3 rounded-lg active:scale-95 transition-all overflow-hidden relative disabled:opacity-50"
                 >
                   <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-                  <span className="text-[11px] font-normal uppercase tracking-[0.2em] relative z-10">Sync</span>
-                  <ArrowRight size={14} className="relative z-10" />
+                  <span className="text-[11px] font-normal uppercase tracking-[0.2em] relative z-10">{isSyncing ? "Syncing" : "Sync"}</span>
+                  <RefreshCw size={14} className={`relative z-10 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                 </button>
               </div>
             </div>
@@ -824,6 +851,42 @@ export default function Watchlist() {
           </div>
         )}
       </div>
+
+      {syncError && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity"
+            onClick={() => setSyncError(null)}
+          />
+          <div className="relative bg-[#111] border border-white/5 rounded-2xl p-6 max-w-[320px] w-full shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-[16px] font-bold text-white mb-2">
+              {syncError.type === 'auth' ? 'Connect AniList' : 'Sync Failed'}
+            </h3>
+            <p className="text-white/40 text-[12px] mb-6 leading-relaxed">
+              {syncError.message}
+            </p>
+            <div className="flex gap-3">
+              <button 
+                type="button"
+                onClick={() => setSyncError(null)}
+                className="flex-1 py-2.5 rounded-lg bg-white/5 text-white/50 text-[11px] font-bold hover:bg-white/10 transition-all"
+              >
+                Close
+              </button>
+              {syncError.type === 'auth' && (
+                <button 
+                  type="button"
+                  onClick={() => navigate('/settings')}
+                  className="flex-1 py-2.5 rounded-lg bg-[#02A9FF] text-white text-[11px] font-bold hover:bg-[#02A9FF]/90 transition-all"
+                >
+                  Go to Settings
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

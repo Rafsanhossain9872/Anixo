@@ -73,7 +73,14 @@ export default function AvatarDropdown() {
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all text-[13px] font-medium"
             >
               <SettingsIcon size={16} />
-              <span>Settings</span>
+              <div className="flex items-center gap-2">
+                <span>Settings</span>
+                <img
+                  src="https://anilist.co/img/icons/icon.svg"
+                  alt="AL"
+                  className="w-3.5 h-3.5 opacity-90"
+                />
+              </div>
             </Link>
           </div>
 
