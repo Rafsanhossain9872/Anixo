@@ -48,7 +48,7 @@ export const updateMetaTags = ({
 
   // Update URL
   if (url) {
-    const siteUrl = import.meta.env.VITE_SITE_URL || "https://anixo.online";
+    const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL || "https://anixo.online";
     const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url}`;
     document.querySelector('meta[property="og:url"]')?.setAttribute("content", fullUrl);
     document.querySelector('meta[property="twitter:url"]')?.setAttribute("content", fullUrl);

@@ -229,7 +229,9 @@ export const forgotPassword = async (req, res) => {
     await user.save();
 
     // Create reset URL
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    // Use origin from request if available, otherwise fallback to env
+    const origin = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/');
+    const frontendUrl = origin || process.env.FRONTEND_URL || 'https://anixo.online';
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a put request to: \n\n ${resetUrl}`;
@@ -455,7 +457,10 @@ export const anilistCallback = async (req, res) => {
   const clientId = process.env.ANILIST_CLIENT_ID;
   const clientSecret = process.env.ANILIST_CLIENT_SECRET;
   const redirectUri = process.env.ANILIST_REDIRECT_URI;
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  
+  // Dynamic frontend URL based on where the request came from
+  const origin = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/');
+  const frontendUrl = origin || process.env.FRONTEND_URL || 'https://anixo.online';
 
   if (!code || !userId) {
     return res.redirect(`${frontendUrl}/settings?error=anilist_auth_failed`);
