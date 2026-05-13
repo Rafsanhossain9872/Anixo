@@ -7,11 +7,11 @@ export const PYTHON_API_BACKUP = import.meta.env.VITE_PYTHON_API_BACKUP || "";
 
 export const MIRURO_API = import.meta.env.VITE_MIRURO_API || "https://miruro-hono-worker.miruro-api.workers.dev";
 // --- MIRURO (Server 6) --- Fetches stream iframe from Miruro Cloudflare Worker
-export async function getMiruroStream(anilistId, episodeNumber = 1) {
+export async function getMiruroStream(anilistId, episodeNumber = 1, category = "sub") {
   if (!anilistId) return null;
   try {
     const { data } = await axios.get(`${MIRURO_API}/watch`, {
-      params: { id: anilistId, ep: episodeNumber },
+      params: { id: anilistId, ep: episodeNumber, category },
       timeout: 15000,
     });
     return data;
@@ -43,7 +43,7 @@ const cache = {
   get: (key) => {
     try {
       const cacheKey = `anixo_cache_${key}`;
-      
+
       // 1. Check In-Memory Cache (Fastest)
       if (MemoryCache.has(cacheKey)) {
         const { value, expiry } = MemoryCache.get(cacheKey);
@@ -54,7 +54,7 @@ const cache = {
       // 2. Check LocalStorage (Persistent)
       const item = localStorage.getItem(cacheKey);
       if (!item) return null;
-      
+
       const { value, expiry } = JSON.parse(item);
       if (new Date().getTime() > expiry) {
         localStorage.removeItem(cacheKey);
@@ -66,7 +66,7 @@ const cache = {
       return value;
     } catch { return null; }
   },
-  
+
   set: (key, value, ttl) => {
     try {
       const cacheKey = `anixo_cache_${key}`;
@@ -76,7 +76,7 @@ const cache = {
       // Update both layers
       MemoryCache.set(cacheKey, cacheData);
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-      
+
       // Cleanup older entries if localStorage gets full (simple pruning)
       if (localStorage.length > 50) {
         cache.prune();
@@ -172,7 +172,7 @@ async function smartRequest(method, path, options = {}) {
 export const backendApi = axios.create({
   baseURL: (typeof window !== "undefined" && window.location.hostname === "localhost")
     ? (import.meta.env.VITE_BACKEND_API?.replace(/\/$/, "") || "http://localhost:5001")
-    : (import.meta.env.VITE_BACKEND_API?.replace(/\/$/, "") || ""), 
+    : (import.meta.env.VITE_BACKEND_API?.replace(/\/$/, "") || ""),
 });
 
 backendApi.interceptors.request.use((config) => {
@@ -484,10 +484,10 @@ export async function getTrendingAnime(page = 1) {
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
-    page, 
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, {
+    page,
     sort: ["TRENDING_DESC"],
-    status_in: ["RELEASING", "FINISHED"] 
+    status_in: ["RELEASING", "FINISHED"]
   });
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING);
@@ -504,8 +504,8 @@ export async function getPopularAnime(page = 1) {
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
-    page, 
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, {
+    page,
     sort: ["POPULARITY_DESC"],
     status_in: ["RELEASING", "FINISHED"]
   });
@@ -520,8 +520,8 @@ export async function getPopularAnime(page = 1) {
 }
 
 export async function getNewReleases(page = 1) {
-  const anilistRes = await fetchFromAniList(ANIME_QUERY, { 
-    page, 
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, {
+    page,
     sort: ["START_DATE_DESC", "TRENDING_DESC"],
     status_in: ["RELEASING", "FINISHED"]
   });
@@ -895,16 +895,16 @@ function buildJikanParams(variables) {
   // Handle AniList sort formats like ["POPULARITY_DESC"] or simple string "popularity"
   const sortStr = Array.isArray(sort) ? sort[0]?.toUpperCase() : sort?.toUpperCase();
 
-  if (sortStr?.includes("SCORE")) { 
-    params.set("order_by", "score"); 
-    params.set("sort", "desc"); 
+  if (sortStr?.includes("SCORE")) {
+    params.set("order_by", "score");
+    params.set("sort", "desc");
   }
-  else { 
+  else {
     // Default to 'members' descending for popularity.
     // WARNING: In Jikan v4, 'order_by=popularity&sort=desc' returns the LEAST popular anime 
     // because MAL popularity is a rank (1 = most popular). We want 'members' desc.
-    params.set("order_by", "members"); 
-    params.set("sort", "desc"); 
+    params.set("order_by", "members");
+    params.set("sort", "desc");
   }
 
   return params;
@@ -922,7 +922,7 @@ function parseJikanResponse(data) {
       uniqueItemsMap.set(item.mal_id, item);
     }
   });
-  
+
   const uniqueItems = Array.from(uniqueItemsMap.values());
 
   const pagination = data?.pagination || {};

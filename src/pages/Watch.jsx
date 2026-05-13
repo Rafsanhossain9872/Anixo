@@ -869,72 +869,104 @@ export default function Watch() {
       try {
         let url = "";
 
-        // --- SERVER 1: MEGAPLAY SMART INTEGRATION ---
+        // --- SERVER 1: MEGAPLAY (AniList ID) ---
         if (activeServer === 1) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
           const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
 
-          // Always prioritize MAL ID — Megaplay maps most anime under MAL IDs
-          if (anime?.idMal) {
-            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 1 (MAL)", lang: langParam });
-          } else if (isMal) {
-            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 1 (MAL-Route)", lang: langParam });
-          } else if (anime?.id) {
-            // Only use AniList ID if no MAL ID is available at all
-            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 1 (AniList-Only)", lang: langParam });
+          const anilistId = anime?.id || (!isMal ? id : null);
+          
+          if (anilistId) {
+            url = `${megaBase}/stream/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 1 (AniList)", lang: langParam });
+          } else if (anime?.idMal || isMal) {
+            const malId = anime?.idMal || id;
+            url = `${megaBase}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 1 (MAL-Fallback)", lang: langParam });
           } else {
             setFetchError("Stream ID not found. Try another server.");
           }
         }
 
-        // --- SERVER 2: MEGAPLAY INTEGRATION ---
+        // --- SERVER 2: MEGAPLAY (MAL ID) ---
         else if (activeServer === 2) {
           const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
           const megaBase = import.meta.env.VITE_MEGAPLAY_URL || 'https://megaplay.buzz';
 
-          if (anime?.idMal) {
-            url = `${megaBase}/stream/mal/${anime.idMal}/${activeEpisode}/${langParam}`;
+          if (anime?.idMal || isMal) {
+            const malId = anime?.idMal || id;
+            url = `${megaBase}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
             setStreamData({ server_name: "SERVER 2 (MAL)", lang: langParam });
-          } else if (isMal) {
-            url = `${megaBase}/stream/mal/${id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (MAL-Route)", lang: langParam });
-          } else if (anime?.id) {
-            url = `${megaBase}/stream/ani/${anime.id}/${activeEpisode}/${langParam}`;
-            setStreamData({ server_name: "SERVER 2 (AniList-Only)", lang: langParam });
+          } else if (anime?.id || !isMal) {
+            const anilistId = anime?.id || id;
+            url = `${megaBase}/stream/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            setStreamData({ server_name: "SERVER 2 (AniList-Fallback)", lang: langParam });
           } else {
             setFetchError("Stream ID not found. Try another server.");
           }
         }
 
-        // --- SERVER 3: MIRURO INTEGRATION ---
+        // --- SERVER 3: MIRURO ---
         else if (activeServer === 3) {
           const anilistId = anime?.id || id;
-          const miruroData = await getMiruroStream(anilistId, activeEpisode);
+          const langParam = playerLang.toLowerCase() === 'dub' ? 'dub' : 'sub';
+          
+          // First attempt: use the category filter
+          let miruroData = await getMiruroStream(anilistId, activeEpisode, langParam);
 
           if (cancelled) return;
 
-          const streams = miruroData?.sources?.streams;
+          let streams = miruroData?.sources?.streams || [];
 
-          if (streams && streams.length > 0) {
-            // Priority: Embed URL is more reliable for Miruro (handles referers/IP locks)
+          // Second attempt: If no streams found for Dub, try fetching "sub" and searching for dub tracks manually
+          // (Sometimes APIs return all tracks under one category or have mapping issues)
+          if (streams.length === 0 && langParam === 'dub') {
+            console.info("[Miruro] No dub category found, searching in sub category for dub tracks...");
+            miruroData = await getMiruroStream(anilistId, activeEpisode, "sub");
+            if (cancelled) return;
+            const allStreams = miruroData?.sources?.streams || [];
+            // Look for streams that have 'dub' in their title or category
+            streams = allStreams.filter(s => 
+              s.title?.toLowerCase().includes('dub') || 
+              s.category?.toLowerCase() === 'dub'
+            );
+            // If still no dub found, we might have to stay on sub or show error
+            if (streams.length === 0) {
+               console.warn("[Miruro] No dub tracks found even in sub category.");
+            }
+          }
+
+          if (streams.length > 0) {
+            // Priority: Embed URL is often most stable
             const embedStream = streams.find(s => s.type === 'embed');
+            const hlsStream = streams.find(s => s.type === 'hls' || s.url?.includes('.m3u8'));
 
             if (embedStream) {
-              // Use Embed as Iframe
               url = embedStream.url;
               setStreamData({
-                server_name: "SERVER 4 (Miruro-Embed)",
-                lang: miruroData?.category || playerLang,
-                iframe_url: embedStream.url // Mark as iframe URL
+                server_name: `SERVER 3 (Miruro-${langParam.toUpperCase()})`,
+                lang: langParam,
+                iframe_url: embedStream.url
+              });
+            } else if (hlsStream) {
+              url = hlsStream.url;
+              setStreamData({
+                server_name: `SERVER 3 (Miruro-HLS-${langParam.toUpperCase()})`,
+                lang: langParam,
+                sources: [{ url: hlsStream.url, type: 'hls' }],
+                subtitles: miruroData?.sources?.subtitles || []
               });
             } else {
-              setFetchError("Miruro: No compatible stream found.");
+              url = streams[0].url;
+              setStreamData({
+                server_name: `SERVER 3 (Miruro-Direct-${langParam.toUpperCase()})`,
+                lang: langParam,
+                sources: [{ url: streams[0].url, type: streams[0].type || 'mp4' }],
+                subtitles: miruroData?.sources?.subtitles || []
+              });
             }
           } else {
-            setFetchError("Miruro: No stream found for this episode.");
+            setFetchError(`Miruro: No ${langParam.toUpperCase()} stream found for this episode.`);
           }
         }
 
