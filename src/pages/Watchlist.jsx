@@ -810,6 +810,11 @@ export default function Watchlist() {
                         <Tv size={12} className="opacity-70" />
                         <span>EP {item.progress || 1}</span>
                       </div>
+                      {item.format && (
+                        <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded text-white/60 uppercase">
+                          <span>{item.format}</span>
+                        </div>
+                      )}
                     </div>
 
                   </div>
