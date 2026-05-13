@@ -40,7 +40,7 @@ export default function AnimeRow({ title, data, isLoading, limit = 6, tabs = [],
     <section className="mt-8 max-w-[1720px] mx-auto px-2 md:px-4 overflow-hidden">
       {/* Responsive Header (Centered on Mobile, Left on Desktop) */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex flex-col items-center md:items-start gap-4">
+        <div className="flex flex-col items-center md:items-start gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
             {/* Vertical Accent Bar */}
             <div className="w-[3.5px] h-6 bg-red-600 rounded-full" />
