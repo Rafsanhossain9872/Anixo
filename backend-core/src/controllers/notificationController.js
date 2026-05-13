@@ -74,7 +74,7 @@ const syncAiringNotifications = async (userId) => {
           await Notification.create({
             user: userId,
             animeId: String(media.id),
-            title: 'New Episode Aired 🚀',
+            title: 'New Episode Aired',
             message: msg,
             type: 'NEW_EPISODE'
           });

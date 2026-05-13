@@ -139,7 +139,7 @@ export default function Notifications() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 md:gap-4">
                     <div>
-                      <h4 className={`text-[12px] md:text-[14px] font-bold leading-tight mb-1 ${!notif.isRead ? 'text-white' : 'text-white/60'}`}>{notif.title}</h4>
+                      <h4 className={`text-[12px] md:text-[14px] font-bold leading-tight mb-1 ${!notif.isRead ? 'text-white' : 'text-white/60'}`}>{notif.title.replace('🚀', '').trim()}</h4>
                       <p className="text-[10px] md:text-[12px] text-white/30 leading-relaxed max-w-2xl line-clamp-2 md:line-clamp-none">{notif.message}</p>
                     </div>
                     {!notif.isRead && (
