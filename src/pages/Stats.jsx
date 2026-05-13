@@ -146,16 +146,16 @@ export default function Stats() {
           `;
           const res = await fetch(ANILIST_API, {
             method: "POST",
-            cache: "no-store", // Force browser to bypass cache
             headers: {
               "Content-Type": "application/json",
-              "Cache-Control": "no-cache",
-              "Pragma": "no-cache",
               Authorization: `Bearer ${user.anilist.accessToken}`
             },
             body: JSON.stringify({ query, variables: { userName: user.anilist.username } })
           });
           const json = await res.json();
+          if (json.errors) {
+            console.error("AniList API Error:", json.errors);
+          }
           const lists = json.data?.MediaListCollection?.lists || [];
           const allEntries = lists.flatMap(l => l.entries || []);
           setAnilistStats(allEntries);
@@ -184,14 +184,13 @@ export default function Stats() {
           `;
           const res = await fetch(ANILIST_API, {
             method: "POST",
-            cache: "no-store",
             headers: { 
-              "Content-Type": "application/json",
-              "Cache-Control": "no-cache"
+              "Content-Type": "application/json"
             },
             body: JSON.stringify({ query, variables: { idIn: ids } })
           });
           const json = await res.json();
+          if (json.errors) console.error("AniList Fetch Error:", json.errors);
           return json.data?.Page?.media || [];
         };
 
