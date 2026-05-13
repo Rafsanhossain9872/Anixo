@@ -24,13 +24,21 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+import { Loader } from "lucide-react";
+
+const SuspenseLoader = () => (
+  <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+    <Loader className="w-8 h-8 text-red-600 animate-spin" />
+  </div>
+);
+
 export default function App() {
 
   return (
     <Router>
       <ScrollToTop />
       <PageLoader />
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense fallback={<SuspenseLoader />}>
         <Routes>
           <Route path="/" element={<Portal />} />
           <Route path="/home" element={<Home />} />
