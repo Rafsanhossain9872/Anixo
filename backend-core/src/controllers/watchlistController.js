@@ -183,8 +183,26 @@ export const bulkImport = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No items to import' });
     }
 
+    // Deduplicate incoming items based on animeId to prevent copied/duplicate bookmarks
+    const uniqueItemsMap = new Map();
+    items.forEach(item => {
+      const sAnimeId = String(item.animeId);
+      if (sAnimeId && sAnimeId !== 'undefined' && sAnimeId !== 'null') {
+        // If duplicate exists, keep the one with higher progress
+        if (uniqueItemsMap.has(sAnimeId)) {
+          const existing = uniqueItemsMap.get(sAnimeId);
+          if ((item.progress || 0) > (existing.progress || 0)) {
+            uniqueItemsMap.set(sAnimeId, item);
+          }
+        } else {
+          uniqueItemsMap.set(sAnimeId, item);
+        }
+      }
+    });
+    const uniqueItems = Array.from(uniqueItemsMap.values());
+
     if (mode === "Replace") {
-        const formattedItems = items.map(item => ({
+        const formattedItems = uniqueItems.map(item => ({
             animeId: String(item.animeId),
             title: item.title || `Anime ${item.animeId}`,
             coverImage: item.coverImage || '',
@@ -211,7 +229,7 @@ export const bulkImport = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    for (const item of items) {
+    for (const item of uniqueItems) {
         const sAnimeId = String(item.animeId);
         const existingIndex = user.watchlist.findIndex(w => w.animeId === sAnimeId);
 

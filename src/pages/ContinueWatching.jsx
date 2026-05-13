@@ -7,7 +7,7 @@ import Pagination from "../components/common/Pagination";
 import { useAuth } from "../hooks/useAuth";
 import { removeProgress, getProgress } from "../services/progressService";
 import { syncAnilist } from "../services/authService";
-import { User, Clock, Heart, Bell, Download, Settings as SettingsIcon, Trash2, RefreshCw } from "lucide-react";
+import { User, Clock, Heart, Bell, Download, Settings as SettingsIcon, Trash2, RefreshCw, BarChart2 } from "lucide-react";
 
 export default function ContinueWatching() {
   const { user, globalProgress, setGlobalProgress } = useAuth();
@@ -17,6 +17,26 @@ export default function ContinueWatching() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
   const itemsPerPage = 24;
+  const [syncCooldown, setSyncCooldown] = useState(() => {
+    const lastSync = localStorage.getItem('lastAnilistSync');
+    if (lastSync) {
+      const diff = Math.floor((Date.now() - parseInt(lastSync)) / 1000);
+      if (diff < 30) {
+        return 30 - diff;
+      }
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    let timer;
+    if (syncCooldown > 0) {
+      timer = setInterval(() => {
+        setSyncCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [syncCooldown]);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -44,11 +64,12 @@ export default function ContinueWatching() {
   };
 
   const handleSync = async () => {
-    if (isSyncing) return;
+    if (isSyncing || syncCooldown > 0) return;
     setIsSyncing(true);
     try {
       const res = await syncAnilist();
       if (res.success) {
+        localStorage.setItem('lastAnilistSync', Date.now().toString());
         // Refresh local progress from backend after sync
         const progressRes = await getProgress();
         if (progressRes.success) {
@@ -67,6 +88,7 @@ export default function ContinueWatching() {
     { id: "watching", label: "Continue Watching", icon: Clock, path: "/watching" },
     { id: "bookmarks", label: "Bookmarks", icon: Heart, path: "/watchlist" },
     { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
+    { id: "stats", label: "Stats", icon: BarChart2, path: "/stats" },
     { id: "import", label: "Import/Export", icon: Download, path: "/import" },
     { id: "settings", label: "Settings", icon: SettingsIcon, path: "/settings" }
   ];
@@ -88,7 +110,7 @@ export default function ContinueWatching() {
       <div className="w-full pt-[80px] px-4 md:px-8 pb-12 max-w-[1200px] mx-auto flex-1">
         
         {/* Compact Navigation Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-10 w-full max-w-4xl mx-auto">
+        <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-10 w-full max-w-4xl mx-auto px-1 sm:px-0">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (item.id === "watching" && location.pathname === "/watching");
             const Icon = item.icon;
@@ -97,13 +119,13 @@ export default function ContinueWatching() {
               <Link
                 key={item.id}
                 to={item.path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${
+                className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${
                   isActive 
                   ? "bg-red-600 text-white border-red-600" 
                   : "bg-white/[0.02] border-white/5 text-white/30 hover:text-white hover:bg-white/[0.05]"
                 }`}
               >
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
                 <span className="hidden md:block text-[12px] font-bold tracking-tight whitespace-nowrap">
                   {item.label}
                 </span>
@@ -122,17 +144,17 @@ export default function ContinueWatching() {
           {user?.anilist?.username && (
             <button 
               onClick={handleSync}
-              disabled={isSyncing}
+              disabled={isSyncing || syncCooldown > 0}
               className={`flex items-center justify-center gap-2 px-4 py-2.5 md:py-2 rounded-xl border transition-all text-[10px] md:text-[11px] font-black uppercase tracking-wider w-full sm:w-auto ${
-                isSyncing 
+                (isSyncing || syncCooldown > 0)
                 ? 'bg-white/5 border-white/10 text-white/30 cursor-not-allowed' 
                 : 'bg-[#02A9FF]/10 border-[#02A9FF]/20 text-[#02A9FF] hover:bg-[#02A9FF] hover:text-white hover:border-[#02A9FF]'
               }`}
             >
-              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={isSyncing ? 'animate-spin' : syncCooldown > 0 ? 'opacity-50' : ''} />
               <span>
-                <span className="inline sm:hidden">{isSyncing ? 'Syncing...' : 'AniList Sync'}</span>
-                <span className="hidden sm:inline">{isSyncing ? 'Syncing Library...' : 'AniList Sync'}</span>
+                <span className="inline sm:hidden">{isSyncing ? 'Syncing...' : syncCooldown > 0 ? `Wait ${syncCooldown}s` : 'AniList Sync'}</span>
+                <span className="hidden sm:inline">{isSyncing ? 'Syncing Library...' : syncCooldown > 0 ? `Wait ${syncCooldown}s` : 'AniList Sync'}</span>
               </span>
             </button>
           )}

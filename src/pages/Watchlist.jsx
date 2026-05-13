@@ -6,7 +6,7 @@ import Footer from "../components/layout/Footer";
 import { useAuth } from "../hooks/useAuth";
 import { getWatchlist, removeFromWatchlist, addToWatchlist } from "../services/watchlistService";
 import { syncAnilist } from "../services/authService";
-import { User, Clock, Heart, Bell, Download, Settings, ChevronDown, Check, Play, Tv, Search, X, RefreshCw, ArrowRight, Trash2 } from "lucide-react";
+import { User, Clock, Heart, Bell, Download, Settings, ChevronDown, Check, Play, Tv, Search, X, RefreshCw, ArrowRight, Trash2, BarChart2 } from "lucide-react";
 import { ALL_GENRES } from "../constants/genres";
 
 export default function Watchlist() {
@@ -21,8 +21,29 @@ export default function Watchlist() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
+  const [syncCooldown, setSyncCooldown] = useState(() => {
+    const lastSync = localStorage.getItem('lastAnilistSync');
+    if (lastSync) {
+      const diff = Math.floor((Date.now() - parseInt(lastSync)) / 1000);
+      if (diff < 30) {
+        return 30 - diff;
+      }
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    let timer;
+    if (syncCooldown > 0) {
+      timer = setInterval(() => {
+        setSyncCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [syncCooldown]);
 
   const handleSync = async () => {
+    if (syncCooldown > 0) return;
     if (!user?.anilist?.username) {
       setSyncError({ type: 'auth', message: 'Please connect your AniList account in Settings first to import your bookmarks.' });
       return;
@@ -32,6 +53,7 @@ export default function Watchlist() {
     try {
       const res = await syncAnilist();
       if (res.success) {
+        localStorage.setItem('lastAnilistSync', Date.now().toString());
         window.location.reload(); 
       } else {
         setSyncError({ type: 'error', message: res.message || "Failed to sync with AniList. Please try again later." });
@@ -91,6 +113,7 @@ export default function Watchlist() {
     { id: "watching", label: "Continue Watching", icon: Clock, path: "/watching" },
     { id: "bookmarks", label: "Bookmarks", icon: Heart, path: "/watchlist" },
     { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
+    { id: "stats", label: "Stats", icon: BarChart2, path: "/stats" },
     { id: "import", label: "Import/Export", icon: Download, path: "/import" },
     { id: "settings", label: "Settings", icon: Settings, path: "/settings" }
   ];
@@ -261,7 +284,7 @@ export default function Watchlist() {
       <div className="w-full pt-[80px] px-4 md:px-8 pb-12 max-w-[1600px] mx-auto flex-1">
         
         {/* Compact Navigation Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8 w-full max-w-4xl mx-auto">
+        <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-8 w-full max-w-4xl mx-auto px-1 sm:px-0">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path || (item.id === "bookmarks" && location.pathname === "/watchlist");
             const Icon = item.icon;
@@ -270,13 +293,13 @@ export default function Watchlist() {
               <Link
                 key={item.id}
                 to={item.path}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${
+                className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${
                   isActive 
                   ? "bg-red-600 text-white border-red-600" 
                   : "bg-white/[0.02] border-white/5 text-white/30 hover:text-white hover:bg-white/[0.05]"
                 }`}
               >
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
                 <span className="hidden md:block text-[12px] font-bold tracking-tight whitespace-nowrap">
                   {item.label}
                 </span>
@@ -696,12 +719,15 @@ export default function Watchlist() {
 
                 <button
                   onClick={handleSync}
-                  disabled={isSyncing}
-                  className="flex-2 h-10 bg-red-600 text-white flex items-center justify-center gap-3 rounded-lg active:scale-95 transition-all overflow-hidden relative disabled:opacity-50"
+                  disabled={isSyncing || syncCooldown > 0}
+                  className="flex-2 h-10 bg-red-600 text-white flex items-center justify-center gap-3 rounded-lg active:scale-95 transition-all overflow-hidden relative disabled:opacity-50 disabled:cursor-not-allowed group"
+                  title={syncCooldown > 0 ? `Please wait ${syncCooldown}s before syncing again` : "Sync with AniList"}
                 >
                   <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-                  <span className="text-[11px] font-normal uppercase tracking-[0.2em] relative z-10">{isSyncing ? "Syncing" : "Sync"}</span>
-                  <RefreshCw size={14} className={`relative z-10 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                  <span className="text-[11px] font-normal uppercase tracking-[0.2em] relative z-10">
+                    {isSyncing ? "Syncing" : syncCooldown > 0 ? `Wait ${syncCooldown}s` : "Sync"}
+                  </span>
+                  <RefreshCw size={14} className={`relative z-10 ${isSyncing ? 'animate-spin' : syncCooldown > 0 ? 'opacity-50' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
                 </button>
               </div>
             </div>

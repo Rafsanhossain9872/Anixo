@@ -19,6 +19,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const ContinueWatching = lazy(() => import("./pages/ContinueWatching"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const ImportExport = lazy(() => import("./pages/ImportExport"));
+const Stats = lazy(() => import("./pages/Stats"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/watching" element={<ContinueWatching />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/import" element={<ImportExport />} />
+          <Route path="/stats" element={<Stats />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="*" element={<NotFound />} />

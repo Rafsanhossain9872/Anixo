@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import { useAuth } from "../hooks/useAuth";
 import { updateMe } from "../services/authService";
-import { User, Clock, Heart, Bell, Download, Settings, Key, CheckCircle, Pencil, Eye, EyeOff } from "lucide-react";
+import { User, Clock, Heart, Bell, Download, Settings, Key, CheckCircle, Pencil, Eye, EyeOff, BarChart2 } from "lucide-react";
 import AvatarModal from "../components/user/AvatarModal";
 import { updateMetaTags } from "../utils/seo";
 
@@ -109,6 +109,7 @@ export default function Profile() {
     { id: "watching", label: "Continue Watching", icon: Clock, path: "/watching" },
     { id: "bookmarks", label: "Bookmarks", icon: Heart, path: "/watchlist" },
     { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
+    { id: "stats", label: "Stats", icon: BarChart2, path: "/stats" },
     { id: "import", label: "Import/Export", icon: Download, path: "/import" },
     { id: "settings", label: "Settings", icon: Settings, path: "/settings" }
   ];
@@ -123,7 +124,7 @@ export default function Profile() {
         <div className="w-full pt-[80px] px-4 md:px-8 pb-12 max-w-[1200px] mx-auto flex flex-col items-center">
 
           {/* Compact Navigation Tabs - No Glow */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-3 mb-8 w-full max-w-4xl">
+          <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-8 w-full max-w-4xl px-1 sm:px-0">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path || (item.id === "profile" && location.pathname === "/profile");
               const Icon = item.icon;
@@ -132,12 +133,12 @@ export default function Profile() {
                 <Link
                   key={item.id}
                   to={item.path}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 border ${isActive
+                  className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${isActive
                       ? "bg-red-600 text-white border-red-600"
                       : "bg-white/[0.02] border-white/5 text-white/50 hover:text-white hover:bg-white/[0.05]"
                     }`}
                 >
-                  <Icon size={16} strokeWidth={isActive ? 2.5 : 2} className="shrink-0" />
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
                   <span className="hidden md:block text-[12px] font-medium tracking-tight whitespace-nowrap">
                     {item.label}
                   </span>

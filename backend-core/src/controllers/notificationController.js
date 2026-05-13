@@ -9,6 +9,11 @@ const syncAiringNotifications = async (userId) => {
     const user = await User.findById(userId);
     if (!user) return;
 
+    // ONLY generate notifications if the user is connected to AniList
+    if (!user.anilist || !user.anilist.accessToken) {
+      return;
+    }
+
     // Get IDs from Watchlist (Watching / Planning)
     const activeWatchlist = (user.watchlist || []).filter(w => w.status === 'Watching' || w.status === 'Planning');
     const watchlistIds = activeWatchlist.map(w => parseInt(w.animeId)).filter(id => !isNaN(id));
@@ -87,7 +92,7 @@ export const getNotifications = async (req, res) => {
     // Await the sync so new notifications are instantly visible to the user
     await syncAiringNotifications(req.user._id);
 
-    const notifications = await Notification.find({ user: req.user._id })
+    const notifications = await Notification.find({ user: req.user._id, isHidden: { $ne: true } })
       .sort({ createdAt: -1 })
       .limit(50);
 
@@ -145,7 +150,7 @@ export const markAllRead = async (req, res) => {
 // @desc    Clear all notifications
 export const clearNotifications = async (req, res) => {
   try {
-    await Notification.deleteMany({ user: req.user._id });
+    await Notification.updateMany({ user: req.user._id }, { isHidden: true, isRead: true });
 
     res.status(200).json({
       success: true,

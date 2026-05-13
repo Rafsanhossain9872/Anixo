@@ -26,6 +26,10 @@ const notificationSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  isHidden: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now
