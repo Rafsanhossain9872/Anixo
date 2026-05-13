@@ -91,9 +91,18 @@ export const getProgress = async (req, res) => {
       .sort({ updatedAt: -1 })
       .limit(100);
 
+    const uniqueProgress = [];
+    const seenIds = new Set();
+    for (const p of progressList) {
+      if (!seenIds.has(String(p.animeId))) {
+        seenIds.add(String(p.animeId));
+        uniqueProgress.push(p);
+      }
+    }
+
     res.status(200).json({
       success: true,
-      continueWatching: progressList
+      continueWatching: uniqueProgress
     });
   } catch (error) {
     console.error("Get progress error:", error);

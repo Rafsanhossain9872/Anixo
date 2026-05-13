@@ -1,4 +1,51 @@
 import User from '../models/User.js';
+import axios from 'axios';
+
+// Helper to sync watchlist to AniList
+const syncWatchlistToAnilist = async (user, animeId, status, progress, score) => {
+  if (!user.anilist || !user.anilist.accessToken) return;
+
+  const mediaId = parseInt(animeId);
+  if (isNaN(mediaId)) return;
+
+  const statusMap = {
+    'Watching': 'CURRENT',
+    'Planning': 'PLANNING',
+    'Completed': 'COMPLETED',
+    'Dropped': 'DROPPED',
+    'On-Hold': 'PAUSED',
+    'Paused': 'PAUSED'
+  };
+
+  const variables = { mediaId };
+  if (status) variables.status = statusMap[status] || 'PLANNING';
+  if (progress !== undefined) variables.progress = parseInt(progress);
+  if (score !== undefined) variables.scoreRaw = Math.round(score * 10);
+
+  try {
+    const query = `
+      mutation ($mediaId: Int, $status: MediaListStatus, $progress: Int, $scoreRaw: Int) {
+        SaveMediaListEntry (mediaId: $mediaId, status: $status, progress: $progress, scoreRaw: $scoreRaw) {
+          id
+        }
+      }
+    `;
+
+    await axios.post('https://graphql.anilist.co', {
+      query,
+      variables
+    }, {
+      headers: {
+        Authorization: `Bearer ${user.anilist.accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      }
+    });
+    console.log(`[AniList] Watchlist synced for ${user.username}: Media ${mediaId}`);
+  } catch (error) {
+    console.error("[AniList] Watchlist Sync Error:", error.response?.data || error.message);
+  }
+};
 
 // @desc    Get user watchlist
 export const getWatchlist = async (req, res) => {
@@ -8,9 +55,20 @@ export const getWatchlist = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
+    const uniqueWatchlist = [];
+    const seenIds = new Set();
+    const rawWatchlist = user.watchlist || [];
+    
+    for (const item of rawWatchlist) {
+      if (!seenIds.has(String(item.animeId))) {
+        seenIds.add(String(item.animeId));
+        uniqueWatchlist.push(item);
+      }
+    }
+
     res.status(200).json({
       success: true,
-      watchlist: user.watchlist || []
+      watchlist: uniqueWatchlist
     });
   } catch (error) {
     console.error("Get watchlist error:", error);
@@ -32,6 +90,9 @@ export const addToWatchlist = async (req, res) => {
     // 1. Check if it exists
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Background sync to AniList
+    syncWatchlistToAnilist(user, animeId, status, progress, score);
 
     const existingIndex = user.watchlist.findIndex(item => item.animeId === sAnimeId);
 

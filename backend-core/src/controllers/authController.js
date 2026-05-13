@@ -638,7 +638,12 @@ export const syncAnilistLibrary = async (req, res) => {
           };
 
           if (existingIdx > -1) {
-            user.watchlist[existingIdx] = { ...user.watchlist[existingIdx], ...watchlistItem };
+            const existing = user.watchlist[existingIdx];
+            existing.status = localStatus;
+            existing.progress = progress || 0;
+            existing.score = score || 0;
+            existing.coverImage = coverImage;
+            existing.title = title;
           } else {
             user.watchlist.push(watchlistItem);
           }
