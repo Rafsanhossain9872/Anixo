@@ -8,10 +8,11 @@ import sendEmail from '../utils/sendEmail.js';
 
 // Cloudflare Turnstile Verification
 const verifyTurnstile = async (token) => {
-  // 1. Bypass for local development
-  // We check for a specific dummy token we set in the frontend for localhost
-  if (token === "local-dev-token" || process.env.NODE_ENV !== 'production') {
-    console.log("Turnstile Bypass: Local environment detected.");
+  // Development-only bypass: only activates when BOTH conditions are true.
+  // In production (NODE_ENV==='production') this block is never entered,
+  // so the mock token is rejected and real Cloudflare verification runs.
+  if (token === 'mock-turnstile-token' && process.env.NODE_ENV === 'development') {
+    console.log("Turnstile Bypass: development mock token accepted.");
     return true;
   }
 

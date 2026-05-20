@@ -15,17 +15,17 @@ export default function LoginModal({ isOpen, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const isLocal = typeof window !== 'undefined' && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-  const [cfSuccess, setCfSuccess] = useState(isLocal);
+  const isDev = import.meta.env.DEV;
+  const [cfSuccess, setCfSuccess] = useState(isDev);
   const { loginAuth } = useAuth();
   const navigate = useNavigate();
 
   const turnstileRef = useRef(null);
-  const [cfToken, setCfToken] = useState(isLocal ? "local-dev-token" : "");
+  const [cfToken, setCfToken] = useState(isDev ? "mock-turnstile-token" : "");
 
   useEffect(() => {
-    // On localhost, skip Turnstile entirely — useState initializers already set the bypass values
-    if (isLocal) return;
+    // In development, skip Turnstile entirely — mock token is pre-set
+    if (isDev) return;
 
     if (isOpen && window.turnstile && turnstileRef.current) {
       window.turnstile.render(turnstileRef.current, {
