@@ -8,13 +8,6 @@ import sendEmail from '../utils/sendEmail.js';
 
 // Cloudflare Turnstile Verification
 const verifyTurnstile = async (token) => {
-  // Development-only bypass: only activates when BOTH conditions are true.
-  // In production (NODE_ENV==='production') this block is never entered,
-  // so the mock token is rejected and real Cloudflare verification runs.
-  if (token === 'mock-turnstile-token' && process.env.NODE_ENV === 'development') {
-    console.log("Turnstile Bypass: development mock token accepted.");
-    return true;
-  }
 
   if (!token) return false;
 

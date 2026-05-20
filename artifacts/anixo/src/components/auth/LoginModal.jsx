@@ -15,17 +15,14 @@ export default function LoginModal({ isOpen, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const isDev = import.meta.env.DEV;
-  const [cfSuccess, setCfSuccess] = useState(isDev);
+  const [cfSuccess, setCfSuccess] = useState(false);
   const { loginAuth } = useAuth();
   const navigate = useNavigate();
 
   const turnstileRef = useRef(null);
-  const [cfToken, setCfToken] = useState(isDev ? "mock-turnstile-token" : "");
+  const [cfToken, setCfToken] = useState("");
 
   useEffect(() => {
-    // In development, skip Turnstile entirely — mock token is pre-set
-    if (isDev) return;
 
     if (isOpen && window.turnstile && turnstileRef.current) {
       window.turnstile.render(turnstileRef.current, {

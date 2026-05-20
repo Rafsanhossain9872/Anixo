@@ -20,9 +20,7 @@ app.use(helmet({
 app.use(cors({
     origin: [
         'https://anixo.pages.dev',
-        'http://localhost:5173',
-        /\.vercel\.app$/,
-        /\.github\.dev$/
+        'https://anixo.vercel.app'
     ],
     credentials: true
 })); 
