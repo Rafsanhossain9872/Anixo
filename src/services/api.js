@@ -169,10 +169,12 @@ async function smartRequest(method, path, options = {}) {
   }
 }
 
+
 export const backendApi = axios.create({
-  baseURL: (typeof window !== "undefined" && window.location.hostname === "localhost")
-    ? (import.meta.env.VITE_BACKEND_API?.replace(/\/$/, "") || "http://localhost:5001")
-    : (import.meta.env.VITE_BACKEND_API?.replace(/\/$/, "") || ""),
+    baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-254s.onrender.com",
+    headers: {
+        "Content-Type": "application/json",
+    }
 });
 
 backendApi.interceptors.request.use((config) => {
