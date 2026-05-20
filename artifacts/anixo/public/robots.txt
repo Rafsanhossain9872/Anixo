@@ -1,0 +1,17 @@
+# AniXo Robots.txt — Production SEO
+User-agent: *
+Allow: /
+
+# Block private/auth pages from indexing
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /profile
+Disallow: /settings
+Disallow: /watchlist
+Disallow: /watching
+Disallow: /notifications
+Disallow: /import
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://anixo.online/sitemap.xml

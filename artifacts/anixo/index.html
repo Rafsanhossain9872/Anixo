@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- Favicon / Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="shortcut icon" href="/favicon.png" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Anixo" />
+
+  <!-- Performance: Preconnect to external APIs -->
+
+  <link rel="preconnect" href="https://api.jikan.moe" />
+  <link rel="preconnect" href="https://kitsu.io" />
+
+  <link rel="preload" as="image" href="/logo.png" />
+
+  <!-- Primary Meta Tags -->
+  <title>Watch Free Anime Online, Stream Subbed & Dubbed HD - AniXo</title>
+  <meta name="title" content="Watch Free Anime Online, Stream Subbed & Dubbed HD - AniXo" />
+  <meta name="description"
+    content="AniXo is the best website to watch anime online for free. Watch trending, popular, and new releases with SUB, DUB in HD quality. No Ads Guaranteed! WATCH NOW!" />
+  <meta name="keywords"
+    content="anime, watch anime online, free anime, anilist, anixo, streaming anime, hd anime, sub dubbed anime" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://anixo.online/" />
+  <meta property="og:title" content="Watch Free Anime Online, Stream Subbed & Dubbed HD - AniXo" />
+  <meta property="og:description"
+    content="AniXo is the best website to watch anime online for free. Watch trending, popular, and new releases with SUB, DUB in HD quality. No Ads Guaranteed! WATCH NOW!" />
+  <meta property="og:image" content="https://anixo.online/og-image.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://anixo.online/" />
+  <meta property="twitter:title" content="Watch Free Anime Online, Stream Subbed & Dubbed HD - AniXo" />
+  <meta property="twitter:description"
+    content="AniXo is the best website to watch anime online for free. Watch trending, popular, and new releases with SUB, DUB in HD quality. No Ads Guaranteed! WATCH NOW!" />
+  <meta property="twitter:image" content="https://anixo.online/og-image.png" />
+
+  <!-- Robots -->
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#dc2626" />
+  <link rel="canonical" href="https://anixo.online/" />
+
+  <!-- Schema.org Markup for Google -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AniXo",
+      "alternateName": "Anixo Online",
+      "url": "https://anixo.online/",
+      "image": "https://anixo.online/og-image.png",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://anixo.online/browse?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "description": "Watch free anime online in HD quality with sub and dub. No ads guaranteed.",
+      "genre": ["Anime", "Animation", "Entertainment"]
+    }
+  </script>
+
+  <!-- Organization Schema for Logo -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "url": "https://anixo.online/",
+      "logo": "https://anixo.online/og-image.png",
+      "image": "https://anixo.online/og-image.png",
+      "name": "AniXo"
+    }
+  </script>
+
+  <!-- Sitelinks Navigation Schema -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "SiteNavigationElement",
+          "position": 1,
+          "name": "Movies",
+          "description": "Watch anime movies online for free in HD quality.",
+          "url": "https://anixo.online/browse?format=MOVIE"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 2,
+          "name": "TV Series",
+          "description": "Stream popular anime TV series with sub and dub.",
+          "url": "https://anixo.online/browse?format=TV"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 3,
+          "name": "New Releases",
+          "description": "Watch the latest and newest anime releases.",
+          "url": "https://anixo.online/browse?sort=START_DATE_DESC"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 4,
+          "name": "Popular Anime",
+          "description": "Watch the most popular anime of all time.",
+          "url": "https://anixo.online/browse?sort=POPULARITY_DESC"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 5,
+          "name": "Top Rated",
+          "description": "Discover the highest rated anime series and movies.",
+          "url": "https://anixo.online/browse?sort=SCORE_DESC"
+        },
+        {
+          "@type": "SiteNavigationElement",
+          "position": 6,
+          "name": "Schedule",
+          "description": "Check the weekly airing schedule for ongoing anime.",
+          "url": "https://anixo.online/schedule"
+        }
+      ]
+    }
+  </script>
+
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.log('Service Worker registration failed', err));
+      });
+    }
+  </script>
+</body>
+
+</html>

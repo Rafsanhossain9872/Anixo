@@ -1,45 +1,55 @@
-# [Project name]
+# AniXo
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+AniXo is a free anime streaming web app that lets users search, browse, and watch anime online with sub/dub support in HD quality.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/anixo run dev` — run the frontend (Vite dev server)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port assigned by workflow)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React 19 + Vite + Tailwind CSS v4 + React Router v7
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- DB: PostgreSQL + Drizzle ORM (for future auth backend)
+- Video: ArtPlayer + HLS.js + Plyr
+- Data: AniList GraphQL API, Jikan REST API, Miruro stream proxy
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/anixo/` — React + Vite frontend (served at `/`)
+- `artifacts/anixo/src/pages/` — all page-level route components
+- `artifacts/anixo/src/components/` — UI components (auth, common, home, layout, user, watch)
+- `artifacts/anixo/src/services/api.js` — AniList/Jikan/Miruro API clients + backend axios instance
+- `artifacts/anixo/src/store/authStore.jsx` — global auth state (JWT + localStorage)
+- `artifacts/anixo/src/context/` — language, loading, user list contexts
+- `artifacts/api-server/` — Express backend scaffold
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Frontend is fully client-rendered (CSR) — no SSR, data fetched via useEffect/react-query from external anime APIs
+- Auth backend (`backend-core`) uses MongoDB + JWT; default `VITE_BACKEND_API` points to `https://anixo-254s.onrender.com`
+- AniList GraphQL proxied through `VITE_PYTHON_API` (Hugging Face Space) to avoid CORS
+- Stream sources: Miruro (Cloudflare Worker), custom HLS/iframe sources
+- Tailwind v4 uses `@import "tailwindcss"` with `@tailwindcss/vite` plugin (no postcss.config.js)
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Browse/search anime by genre, format, season, score
+- Watch episodes with HLS video player (ArtPlayer/Plyr), skip OP/ED, subtitle support
+- User accounts: watchlist, watch progress, notifications, settings, AniList sync
+- Schedule page for airing anime, character/staff detail pages
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep all original JSX files as `.jsx` — use `// @ts-ignore` to suppress TypeScript errors on imports
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `VITE_BACKEND_API` env var controls the auth backend URL (defaults to Render-hosted instance)
+- `VITE_PYTHON_API` env var controls the AniList proxy URL (defaults to HF Space)
+- The `postcss.config.js` from the original project must NOT be used — it conflicts with `@tailwindcss/vite`
+- Service Worker (`sw.js`) is in `public/` and registers on load
