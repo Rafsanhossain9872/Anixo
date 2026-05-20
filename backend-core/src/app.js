@@ -17,7 +17,14 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
-app.use(cors());
+app.use(cors({
+    origin: [
+        'https://anixo.pages.dev',
+        'http://localhost:5173',
+        /\.github\.dev$/
+    ],
+    credentials: true
+})); 
 app.use(express.json());
 
 // Essential for Vercel/Proxies to get the real client IP
@@ -48,3 +55,4 @@ app.use(notFound);
 app.use(errorHandler);
 
 export default app;
+ 
