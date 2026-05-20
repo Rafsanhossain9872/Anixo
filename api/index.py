@@ -125,7 +125,8 @@ http = HttpClient()
 
 
 app = Flask(__name__)
-CORS(app)
+# এখানে এডিট করা হয়েছে
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
