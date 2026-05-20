@@ -231,7 +231,7 @@ export const forgotPassword = async (req, res) => {
     // Create reset URL
     // Use origin from request if available, otherwise fallback to env
     const origin = req.headers.origin || req.headers.referer?.split('/').slice(0, 3).join('/');
-    const frontendUrl = origin || process.env.FRONTEND_URL || 'https://anixo.online';
+    const frontendUrl = process.env.FRONTEND_URL || origin || 'https://anixo.pages.dev';
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a put request to: \n\n ${resetUrl}`;

@@ -1,0 +1,26 @@
+Act as a Senior Full-Stack Developer. I have attached a screenshot for your reference. As you can see in the image, users cannot sign up or log in from the live website because the frontend is throwing a "Network Error: Is the backend running on port 5001?". 
+
+My Frontend is deployed on Cloudflare Pages (and also tested/deployed on Vercel) and the Backend is hosted on Render. I have already tried fixing this in GitHub Codespaces, but the issue persists. 
+
+I need you to fix this permanently so that ANY user from anywhere in the world can easily create an account, log in, and use the "Forget Password" feature securely across ALL production deployment platforms (Cloudflare Pages, Vercel, and Render) without any bugs or errors.
+
+Here is the exact setup and your strict boundaries:
+
+1. ENVIRONMENT & PLATFORM CONTEXT:
+- Cloudflare Pages Live URL: https://anixo.pages.dev
+- Vercel Deployment Domains: Any subdomains ending with .vercel.app
+- Backend Live Render API: https://anixo-254s.onrender.com
+- Render Env Variables (Already set by me): MONGO_URI, FRONTEND_URL=https://anixo.pages.dev, etc.
+
+2. THE SPECIFIC FIXES REQUIRED (100% PRODUCTION READY):
+- Frontend API Config: Go to the frontend API service file (likely `src/services/api.js`). Stop it from calling `http://localhost:5001` or falling back to it. Hardcode the `baseURL` to strictly point to my live production Render API: "https://anixo-254s.onrender.com".
+- Backend CORS Configuration: Go to `backend-core/src/app.js` and configure the CORS policy. The `origin` array MUST explicitly allow requests from Cloudflare Pages ("https://anixo.pages.dev"), Vercel deployments (use regex `/\.vercel\.app$/` to allow Vercel links), and local environment ("http://localhost:5173"). Ensure `credentials: true` is enabled. This ensures the backend will accept requests from both Cloudflare and Vercel flawlessly.
+- Password Recovery Flow: Check the "Forget Password" email recovery flow in the backend controllers. Ensure the generated email link strictly utilizes the `FRONTEND_URL` environment variable so that global users are correctly redirected back to the live frontend to reset their passwords.
+
+3. STRICT RULES & RISK PREVENTION:
+- DO NOT touch, modify, or rewrite any core logic related to MongoDB connection strings, authentication algorithms, or UI styles.
+- ONLY fix the routing URLs, baseURL configurations, and CORS settings.
+- DO NOT format or refactor entire files. Make clean, precise, and surgical changes to avoid any future GitHub merge conflicts.
+- Keep the code completely clean and production-ready. DO NOT automatically push to GitHub until I test it here in Replit and explicitly give you permission.
+
+Please run `npm install` for both the frontend and the `backend-core` folder, spin up the development servers, and let me test the Sign Up and Password Recovery system here first.
