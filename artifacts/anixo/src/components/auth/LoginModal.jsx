@@ -47,7 +47,7 @@ export default function LoginModal({ isOpen, onClose }) {
         // window.turnstile.remove(); // Optional: cleanup
       }
     };
-  }, [isOpen, isLocal]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -74,7 +74,7 @@ export default function LoginModal({ isOpen, onClose }) {
           if (window.turnstile && turnstileRef.current) {
             window.turnstile.reset(turnstileRef.current);
             setCfToken("");
-            setCfSuccess(isLocal);
+            setCfSuccess(false);
           }
         }
       } else {
@@ -88,7 +88,7 @@ export default function LoginModal({ isOpen, onClose }) {
           if (window.turnstile && turnstileRef.current) {
             window.turnstile.reset(turnstileRef.current);
             setCfToken("");
-            setCfSuccess(isLocal);
+            setCfSuccess(false);
           }
         }
       }
@@ -97,7 +97,7 @@ export default function LoginModal({ isOpen, onClose }) {
       if (window.turnstile && turnstileRef.current) {
         window.turnstile.reset(turnstileRef.current);
         setCfToken("");
-        setCfSuccess(isLocal);
+        setCfSuccess(false);
       }
       
       if (err.code === 'ERR_NETWORK') {
@@ -209,12 +209,10 @@ export default function LoginModal({ isOpen, onClose }) {
               </div>
             )}
 
-            {/* Real Cloudflare Turnstile (hidden on localhost) */}
-            {!isLocal && (
-              <div className="flex justify-center mt-2">
-                <div ref={turnstileRef} className="cf-turnstile"></div>
-              </div>
-            )}
+            {/* Cloudflare Turnstile */}
+            <div className="flex justify-center mt-2">
+              <div ref={turnstileRef} className="cf-turnstile"></div>
+            </div>
 
             {/* Forgot Password */}
             {isLogin && (
