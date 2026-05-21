@@ -170,7 +170,7 @@ async function smartRequest(method, path, options = {}) {
 }
 
 export const backendApi = axios.create({
-    baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-254s.onrender.com",
+    baseURL: "https://anixo-254s.onrender.com",
     headers: {
         "Content-Type": "application/json",
     }
