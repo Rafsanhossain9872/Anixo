@@ -139,13 +139,13 @@ export default function Portal() {
                   </p>
                   <p className="text-[11px] md:text-[13px] leading-[1.6] text-white/50 font-medium">
                     However, not all platforms deliver an exceptional experience. Among the myriad options,
-                    <Link to="/home" className="text-red-500 hover:text-red-400 transition-colors"> AniXo.online </Link> shines as a beacon of excellence for enthusiasts.
+                    AniXo shines as a beacon of excellence for enthusiasts.
                   </p>
                 </div>
 
                 <div className="space-y-2 md:space-y-3">
                   <h3 className="text-[14px] md:text-[16px] font-bold text-white/90">
-                    1. What is AniXo.online?
+                    1. What is AniXo?
                   </h3>
                   <p className="text-[11px] md:text-[12px] leading-[1.6] text-white/40">
                     AniXo is a premium anime platform that offers a safe, fast, and high-quality streaming experience.
