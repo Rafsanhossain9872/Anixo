@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { login, register } from "../../services/authService";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import { Check, X, Eye, EyeOff } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 
 export default function LoginModal({ isOpen, onClose }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,40 +14,9 @@ export default function LoginModal({ isOpen, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const [cfSuccess, setCfSuccess] = useState(false);
+
   const { loginAuth } = useAuth();
   const navigate = useNavigate();
-
-  const turnstileRef = useRef(null);
-  const [cfToken, setCfToken] = useState("");
-
-  useEffect(() => {
-
-    if (isOpen && window.turnstile && turnstileRef.current) {
-      window.turnstile.render(turnstileRef.current, {
-        sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAADGQxfMRQroxFG6O",
-        callback: (token) => {
-          setCfToken(token);
-          setCfSuccess(true);
-        },
-        "error-callback": () => {
-          setError("Cloudflare verification failed. Please try again.");
-          setCfSuccess(false);
-        },
-        "expired-callback": () => {
-          setCfToken("");
-          setCfSuccess(false);
-        }
-      });
-    }
-
-    return () => {
-      if (window.turnstile && turnstileRef.current) {
-        // window.turnstile.remove(); // Optional: cleanup
-      }
-    };
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -64,42 +33,23 @@ export default function LoginModal({ isOpen, onClose }) {
 
     try {
       if (isLogin) {
-        const res = await login(email, password, cfToken);
+        const res = await login(email, password);
         if (res.token) {
           loginAuth(res.user, res.token);
           onClose();
         } else {
           setError(res.message || "Login failed");
-          // Reset captcha for next attempt
-          if (window.turnstile && turnstileRef.current) {
-            window.turnstile.reset(turnstileRef.current);
-            setCfToken("");
-            setCfSuccess(false);
-          }
         }
       } else {
-        const res = await register(username, email, password, cfToken);
+        const res = await register(username, email, password);
         if (res.token) {
           loginAuth(res.user, res.token);
           onClose();
         } else {
           setError(res.message || "Registration failed");
-          // Reset captcha for next attempt
-          if (window.turnstile && turnstileRef.current) {
-            window.turnstile.reset(turnstileRef.current);
-            setCfToken("");
-            setCfSuccess(false);
-          }
         }
       }
     } catch (err) {
-      // Reset captcha on network/server errors too
-      if (window.turnstile && turnstileRef.current) {
-        window.turnstile.reset(turnstileRef.current);
-        setCfToken("");
-        setCfSuccess(false);
-      }
-      
       if (err.code === 'ERR_NETWORK') {
         setError("Network Error: Backend server is unreachable!");
       } else {
@@ -209,11 +159,6 @@ export default function LoginModal({ isOpen, onClose }) {
               </div>
             )}
 
-            {/* Cloudflare Turnstile */}
-            <div className="flex justify-center mt-2">
-              <div ref={turnstileRef} className="cf-turnstile"></div>
-            </div>
-
             {/* Forgot Password */}
             {isLogin && (
               <div className="text-center mt-0.5 mb-0.5">
@@ -233,7 +178,7 @@ export default function LoginModal({ isOpen, onClose }) {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading || !cfSuccess}
+              disabled={isLoading}
               className="w-full bg-[#E50914] hover:bg-[#f40612] text-white font-bold text-[13px] py-2.5 mt-1 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? "PLEASE WAIT..." : isLogin ? "SIGN IN" : "SIGN UP"}

@@ -1,12 +1,12 @@
 import { backendApi } from "./api";
 
-export const login = async (email, password, cfToken) => {
-  const { data } = await backendApi.post("/auth/login", { email, password, cfToken });
+export const login = async (email, password) => {
+  const { data } = await backendApi.post("/auth/login", { email, password });
   return data;
 };
 
-export const register = async (username, email, password, cfToken) => {
-  const { data } = await backendApi.post("/auth/register", { username, email, password, cfToken });
+export const register = async (username, email, password) => {
+  const { data } = await backendApi.post("/auth/register", { username, email, password });
   return data;
 };
 
