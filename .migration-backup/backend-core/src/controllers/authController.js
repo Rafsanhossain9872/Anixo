@@ -6,27 +6,6 @@ import process from 'node:process';
 import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
 
-// Cloudflare Turnstile Verification
-const verifyTurnstile = async (token) => {
-
-  if (!token) return false;
-
-  try {
-    const params = new URLSearchParams();
-    params.append('secret', process.env.TURNSTILE_SECRET_KEY || '0x4AAAAAADGQxcZgLa0ZRtaJbL3mxiKj4RA');
-    params.append('response', token);
-
-    const response = await axios.post(
-      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      params
-    );
-    return response.data.success;
-  } catch (err) {
-    console.error('Turnstile verification error:', err);
-    return false;
-  }
-};
-
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -37,18 +16,11 @@ const generateToken = (id) => {
 // @desc    Register user
 export const register = async (req, res) => {
   try {
-    const { username, email, password, cfToken } = req.body;
+    const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
       res.status(400);
       throw new Error('Please add all fields');
-    }
-
-    // Verify Turnstile
-    const isHuman = await verifyTurnstile(cfToken);
-    if (!isHuman) {
-      res.status(403);
-      throw new Error('Bot detected or Cloudflare verification failed.');
     }
 
     // Check if email already exists
@@ -89,18 +61,11 @@ export const register = async (req, res) => {
 // @desc    Login user
 export const login = async (req, res) => {
   try {
-    const { email, password, cfToken } = req.body;
+    const { email, password } = req.body;
 
     if (!email || !password) {
       res.status(400);
       throw new Error('Please add email and password');
-    }
-
-    // Verify Turnstile
-    const isHuman = await verifyTurnstile(cfToken);
-    if (!isHuman) {
-      res.status(403);
-      throw new Error('Bot detected or Cloudflare verification failed.');
     }
 
     // Check for user email
