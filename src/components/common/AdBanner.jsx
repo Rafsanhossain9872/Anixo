@@ -131,50 +131,8 @@ export function AdBanner300x250() {
 }
 
 export function AdNativeBanner() {
-  const containerRef = useRef(null);
-  const loadedRef = useRef(false);
-
-  useEffect(() => {
-    let timeoutId;
-    
-    const loadAd = () => {
-      if (loadedRef.current || !containerRef.current) return;
-      loadedRef.current = true;
-
-      const containerId = "container-640fe83b0b8dad53cd77f5258e0536a1";
-
-      // Prevent double injection
-      if (document.getElementById(containerId)) return;
-
-      // Create container div
-      const div = document.createElement('div');
-      div.id = containerId;
-      containerRef.current.appendChild(div);
-
-      // Only load Native Banner on anixo.online (No tag for anixo.buzz yet)
-      if (window.location.hostname.includes('anixo.buzz')) return;
-
-      // Create script
-      const script = document.createElement('script');
-      script.async = true;
-      script.dataset.cfasync = "false";
-      script.src = "//pl29825672.effectivecpmnetwork.com/640fe83b0b8dad53cd77f5258e0536a1/invoke.js";
-      containerRef.current.appendChild(script);
-    };
-
-    timeoutId = setTimeout(loadAd, 100);
-
-    return () => {
-      clearTimeout(timeoutId);
-      loadedRef.current = false;
-    };
-  }, [window.location.hostname]);
-
-  return (
-    <div className="w-full flex justify-center py-4 my-2 px-2 overflow-hidden bg-[#0d0d0d]/30 border-y border-white/5">
-      <div ref={containerRef} className="w-full max-w-[1400px] overflow-x-auto" />
-    </div>
-  );
+  // Hidden by user request
+  return null;
 }
 
 // PopAds Banner Component (Add your PopAds banner code here if needed)
