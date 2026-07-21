@@ -6,7 +6,7 @@ export function AdBanner728x90() {
 
   useEffect(() => {
     let timeoutId;
-    
+
     const loadAd = () => {
       if (loadedRef.current || !containerRef.current) return;
       loadedRef.current = true;
@@ -71,7 +71,7 @@ export function AdBanner300x250() {
 
   useEffect(() => {
     let timeoutId;
-    
+
     const loadAd = () => {
       if (loadedRef.current || !containerRef.current) return;
       loadedRef.current = true;
@@ -88,6 +88,7 @@ export function AdBanner300x250() {
       iframe.scrolling = 'no';
       iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
       container.appendChild(iframe);
+
 
       const hostname = window.location.hostname;
       const isBuzz = hostname.includes('anixo.buzz');
@@ -146,7 +147,7 @@ export function PopAdsBanner() {
 
     // Add your PopAds banner code here when you get it
     // For now, this is a placeholder
-    
+
     return () => {
       loadedRef.current = false;
     };
