@@ -116,6 +116,7 @@ export function AdBanner300x250() {
       iframeDoc.close();
     };
 
+
     timeoutId = setTimeout(loadAd, 100);
 
     return () => {
