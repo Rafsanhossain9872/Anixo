@@ -124,7 +124,7 @@ export default function Watch({ isWatch2GetherMode }) {
 
  const [episodeLayout, setEpisodeLayout] = useState("grid"); // "grid" | "list"
  const [playerLang, setPlayerLang] = useState("sub");
- const [activeServer, setActiveServer] = useState(2);
+ const [activeServer, setActiveServer] = useState(1);
 
 
 
