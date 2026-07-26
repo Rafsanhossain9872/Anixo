@@ -152,6 +152,18 @@ export default function PlayerToolbar({
                 <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">{t('player.report')}</span>
               </button>
 
+              {/* Anaixo.buzz Embeds Link */}
+              <a
+                href="https://anixo.buzz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 sm:gap-2 text-white/70 hover:text-discord-500 transition-all group"
+                title="Get Free Anime Iframe Embeds at anaixo.buzz"
+              >
+                <span className="text-[15px] sm:text-[17px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
+                <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">Embed</span>
+              </a>
+
               {/* Watch Together Button */}
               {!wtRoom && handleCreateWtRoom && (
                 <div className="flex items-center bg-discord-500/10 rounded-full border border-discord-500/20 overflow-hidden">
