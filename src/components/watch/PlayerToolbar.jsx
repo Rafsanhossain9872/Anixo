@@ -229,14 +229,14 @@ export default function PlayerToolbar({
             </div>
 
             <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-0.5 md:gap-1 sm:mr-auto sm:mr-20">
-              {[1, 2, 3, 4, 5, 6].map((s) => (
+              {[1, 2, 3, 4, 5].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}
-                  disabled={wtRoom && s !== 3}
+                  disabled={wtRoom && s !== 1}
                   className={`px-1.5 sm:px-3 py-0.5 sm:py-1.5 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-sm border transition-all flex-shrink-0 ${activeServer === s
                     ? "bg-discord-600 border-discord-600 text-white "
-                    : wtRoom && s !== 3
+                    : wtRoom && s !== 1
                       ? "border-white/10 text-white/20 cursor-not-allowed bg-black/20"
                       : "border-white/15 text-white/40 hover:text-white hover:border-white/15 bg-white/5"
                     }`}

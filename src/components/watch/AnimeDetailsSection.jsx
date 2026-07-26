@@ -115,8 +115,8 @@ export default function AnimeDetailsSection({
             </div>
           </div>
 
-          {/* Download (Server 5 specific) */}
-          {activeServer === 5 && streamUrl && (
+          {/* Download (Server 4 specific) */}
+          {activeServer === 4 && streamUrl && (
             <button
               onClick={() => {
                 const downloadUrl = streamUrl.includes('#')

@@ -88,7 +88,7 @@ export default function VideoPlayerSection({
     let isIframe = false;
     let currentIframeUrl = streamUrl;
 
-    if (activeServer === 3 && streamData?.all_streams) {
+    if (activeServer === 1 && streamData?.all_streams) {
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
@@ -266,7 +266,7 @@ export default function VideoPlayerSection({
                                                 <button
                                                     onClick={() =>
                                                         setActiveServer((prev) =>
-                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : 1
+                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : prev === 4 ? 5 : 1
                                                         )
                                                     }
                                                     className="px-5 py-2 bg-discord-600 hover:bg-discord-700 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"

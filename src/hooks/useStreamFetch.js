@@ -73,7 +73,6 @@ export function useStreamFetch({
 
       try {
         let url = "";
-        let hasSources = false;
 
         // --- SERVER 1: ANIXO EMBED (iframe) ---
         if (activeServer === 1) {
@@ -114,55 +113,8 @@ export function useStreamFetch({
           }
         }
 
-        // --- SERVER 3: ANIKO BACKUP ---
+        // --- SERVER 3: MEGAPLAY (AniList ID) ---
         else if (activeServer === 3) {
-          const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
-          const anilistId = anime?.id || (!isMal ? id : null);
-          const anikoBase = import.meta.env.VITE_ANIKO_API || "http://localhost:3000";
-
-          if (anilistId) {
-            try {
-              const res = await fetch(`${anikoBase}/api/watch/${anilistId}/${langParam}/${activeEpisode}`);
-              if (!res.ok) throw new Error("Failed to fetch Server 3");
-              const data = await res.json();
-
-              const audioKey = langParam === "sub" ? "ssub" : "sdub";
-              const providerData = data[audioKey];
-
-              if (providerData && providerData.streams && providerData.streams.length > 0) {
-                const hasHls = providerData.streams.some(s => s.type === "hls");
-
-                if (hasHls) {
-                  setStreamData({
-                    server_name: "SERVER 3 (Aniko)",
-                    lang: langParam,
-                    all_streams: providerData.streams,
-                    subtitles: providerData.subtitles || []
-                  });
-                  hasSources = true;
-                } else {
-                  url = providerData.streams[0].url;
-                  setStreamData({
-                    server_name: "SERVER 3 (Aniko)",
-                    lang: langParam,
-                    all_streams: providerData.streams,
-                    subtitles: providerData.subtitles || [],
-                  });
-                  hasSources = true;
-                }
-              } else {
-                setFetchError("No valid video source found on Server 3.");
-              }
-            } catch {
-              setFetchError("Error fetching from Server 3.");
-            }
-          } else {
-            setFetchError("AniList ID is required for Server 3. Try another server.");
-          }
-        }
-
-        // --- SERVER 4: MEGAPLAY (AniList ID) ---
-        else if (activeServer === 4) {
           const langParam =
             playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const megaBase =
@@ -173,14 +125,14 @@ export function useStreamFetch({
           if (anilistId) {
             url = `${megaBase}/stream/ani/${anilistId}/${activeEpisode}/${langParam}`;
             setStreamData({
-              server_name: "SERVER 4 (AniList)",
+              server_name: "SERVER 3 (AniList)",
               lang: langParam,
             });
           } else if (anime?.idMal || isMal) {
             const malId = anime?.idMal || id;
             url = `${megaBase}/stream/mal/${malId}/${activeEpisode}/${langParam}`;
             setStreamData({
-              server_name: "SERVER 4 (MAL-Fallback)",
+              server_name: "SERVER 3 (MAL-Fallback)",
               lang: langParam,
             });
           } else {
@@ -188,8 +140,8 @@ export function useStreamFetch({
           }
         }
 
-        // --- SERVER 5: VIDNEST (AniList ID - Embed Anime) ---
-        else if (activeServer === 5) {
+        // --- SERVER 4: VIDNEST (AniList ID - Embed Anime) ---
+        else if (activeServer === 4) {
           const langParam =
             playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const anilistId = anime?.id || (!isMal ? id : null);
@@ -197,18 +149,18 @@ export function useStreamFetch({
           if (anilistId) {
             url = `https://vidnest.fun/anime/${anilistId}/${activeEpisode}/${langParam}`;
             setStreamData({
-              server_name: "SERVER 5 (Vidnest)",
+              server_name: "SERVER 4 (Vidnest)",
               lang: langParam,
             });
           } else {
             setFetchError(
-              "AniList ID is required for Server 5. Try another server."
+              "AniList ID is required for Server 4. Try another server."
             );
           }
         }
 
-        // --- SERVER 6: TRYEMBED (AniList ID) ---
-        else if (activeServer === 6) {
+        // --- SERVER 5: TRYEMBED (AniList ID) ---
+        else if (activeServer === 5) {
           const langParam =
             playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const anilistId = anime?.id || (!isMal ? id : null);
@@ -230,18 +182,18 @@ export function useStreamFetch({
             url = `https://tryembed.us.cc/embed/anime/${anilistId}/${activeEpisode}/${langParam}${queryString}`;
 
             setStreamData({
-              server_name: "SERVER 6 (Tryembed)",
+              server_name: "SERVER 5 (Tryembed)",
               lang: langParam,
             });
           } else {
             setFetchError(
-              "AniList ID is required for Server 6. Try another server."
+              "AniList ID is required for Server 5. Try another server."
             );
           }
         }
 
         if (url) {
-          if (activeServer === 2 || activeServer === 4) {
+          if (activeServer === 2 || activeServer === 3) {
             // Inject Autoplay and premium params for Megaplay
             try {
               const urlObj = new URL(url);
@@ -264,12 +216,9 @@ export function useStreamFetch({
               setStreamUrl(finalUrl);
             }
           } else {
-            // Keep Vidnest, Tryembed, Anineko, Aniko URLs clean without Megaplay-specific parameters
+            // Keep Vidnest, Tryembed, Anineko URLs clean without Megaplay-specific parameters
             setStreamUrl(url);
           }
-        } else if (activeServer === 3 && hasSources) {
-          // If we have HLS sources set for Server 3, we don't need a URL
-          setStreamUrl("");
         } else {
           setFetchError("Stream link not found for this server.");
 

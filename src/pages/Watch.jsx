@@ -296,7 +296,7 @@ export default function Watch({ isWatch2GetherMode }) {
            alert(res.error);
          } else {
            if (res.animeId) setOverrideId(res.animeId);
-           setActiveServer(3);
+           setActiveServer(1);
            setWtRoom({ roomId: wtRoomParam, hostId: res.hostId, members: res.members, state: res.state, isHost: res.isHost });
            if (res.state.episode !== activeEpisode) {
              setActiveEpisode(res.state.episode);
@@ -322,9 +322,9 @@ export default function Watch({ isWatch2GetherMode }) {
 
   const handleCreateWtRoom = () => {
     if (!user) return setShowLoginModal(true);
-    if (activeServer !== 3) {
-      alert("Watch Together only supports Server 3. Switching you to Server 3.");
-      setActiveServer(3);
+    if (activeServer !== 1) {
+      alert("Watch Together only supports Server 1. Switching you to Server 1.");
+      setActiveServer(1);
     }
    
    if (!wtSocketRef.current?.connected) {
@@ -348,9 +348,9 @@ export default function Watch({ isWatch2GetherMode }) {
 
   const handleScheduleWtRoom = () => {
     if (!user) return setShowLoginModal(true);
-    if (activeServer !== 3) {
-      alert("Watch Together only supports Server 3. Switching you to Server 3.");
-      setActiveServer(3);
+    if (activeServer !== 1) {
+      alert("Watch Together only supports Server 1. Switching you to Server 1.");
+      setActiveServer(1);
     }
     
     if (!wtSocketRef.current?.connected) {
@@ -881,8 +881,8 @@ export default function Watch({ isWatch2GetherMode }) {
  />
  </section>
 
- {/* Sub-Server Selector for Server 1 and 3 */}
- {!(wtRoom && !wtRoom.isHost) && (activeServer === 1 || activeServer === 3) && streamData?.all_streams && streamData.all_streams.length > 1 && (
+ {/* Sub-Server Selector for Server 1 */}
+ {!(wtRoom && !wtRoom.isHost) && activeServer === 1 && streamData?.all_streams && streamData.all_streams.length > 1 && (
  <div className="bg-[#0a0a0a] border-b border-x border-white/15">
  <button
  onClick={() => setShowSubServers(prev => !prev)}
