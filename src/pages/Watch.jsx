@@ -13,7 +13,7 @@ import LoginModal from "../components/auth/LoginModal";
 import { useAuth } from "../hooks/useAuth";
 import { useWatchlist } from "../hooks/useWatchlist";
 import { useWatchProgress } from "../hooks/useWatchProgress";
-import { Home as HomeIcon, Info } from "lucide-react";
+import { Home as HomeIcon, Info, AlertTriangle, Server, X, Wrench } from "lucide-react";
 import { useWatchSEO } from "../hooks/useWatchSEO";
 import { usePlayerEvents } from "../hooks/usePlayerEvents";
 import { useStreamFetch } from "../hooks/useStreamFetch";
@@ -122,9 +122,18 @@ export default function Watch({ isWatch2GetherMode }) {
  }
  }, [activeEpisode, navigate, location.pathname, openSmartLink, location.search]);
 
- const [episodeLayout, setEpisodeLayout] = useState("grid"); // "grid" | "list"
- const [playerLang, setPlayerLang] = useState("sub");
- const [activeServer, setActiveServer] = useState(1);
+  const [episodeLayout, setEpisodeLayout] = useState("grid"); // "grid" | "list"
+  const [playerLang, setPlayerLang] = useState("sub");
+  const [activeServer, setActiveServer] = useState(1);
+
+  const [showServerNotice, setShowServerNotice] = useState(() => {
+    return sessionStorage.getItem("server_notice_dismissed") !== "true";
+  });
+
+  const dismissServerNotice = () => {
+    setShowServerNotice(false);
+    sessionStorage.setItem("server_notice_dismissed", "true");
+  };
 
 
 
@@ -807,11 +816,36 @@ export default function Watch({ isWatch2GetherMode }) {
  );
  }
 
-
-
- return (
+return (
  <div className={`min-h-screen font-sans text-white relative bg-transparent overflow-x-hidden ${isFocusMode ? "overflow-hidden" : ""}`}>
  {!isFocusMode && <Navbar />}
+
+ {/* Server Notice Modal */}
+ {showServerNotice && (
+   <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+     <div className="w-full max-w-sm bg-[#141028] border border-white/10 rounded-xl p-5 shadow-2xl text-white relative">
+       <button
+         onClick={dismissServerNotice}
+         className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+       >
+         <X size={18} />
+       </button>
+
+       <h3 className="text-base font-bold mb-2">Notice</h3>
+       
+       <p className="text-xs text-white/70 leading-relaxed mb-5">
+         Server 1 (Custom Player) is currently undergoing maintenance. If you experience buffering or playback issues, please switch to another server. We are actively working to fix this.
+       </p>
+
+       <button
+         onClick={dismissServerNotice}
+         className="w-full py-2 bg-discord-600 hover:bg-discord-700 font-bold rounded-lg text-xs transition-colors"
+       >
+         Close
+       </button>
+     </div>
+   </div>
+ )}
 
  {/* Focus Mode Curtain */}
  {isFocusMode && (
