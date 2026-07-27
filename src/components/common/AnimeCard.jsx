@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { Link } from "react-router-dom";
+import { optimizeImage } from "../../utils/image";
 
 export default function AnimeCard({ anime }) {
  const [isVisible, setIsVisible] = useState(false);
@@ -93,7 +94,7 @@ export default function AnimeCard({ anime }) {
  <div className="relative w-full aspect-[2/3] overflow-hidden rounded-2xl border border-white/15 shadow-lg group-hover:shadow-2xl transition-[transform,shadow] duration-500 group-hover:-translate-y-1" style={{ backgroundColor: anime.color || '#181818', transform: 'translateZ(0)' }}>
  {isVisible && !imgError ? (
  <img
- src={anime.coverImage?.large || anime.coverImage?.extraLarge || anime.coverImage?.medium}
+ src={optimizeImage(anime.coverImage?.large || anime.coverImage?.extraLarge || anime.coverImage?.medium, 300)}
  alt={getTitle(anime.title)}
  loading="lazy"
  onError={() => setImgError(true)}

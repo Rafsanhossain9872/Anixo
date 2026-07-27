@@ -4,6 +4,7 @@ import { Bookmark, Play, Mic, ClosedCaption, Check, Trash2, LogIn, ChevronLeft, 
 import { useUserList } from "../../context/UserListContext";
 import { useAuth } from "../../hooks/useAuth";
 import LoginModal from "../auth/LoginModal";
+import { optimizeImage } from "../../utils/image";
 
 export default function Hero({ data = [], isLoading }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -88,7 +89,7 @@ export default function Hero({ data = [], isLoading }) {
               >
                 {/* Mobile Poster Image (Top aligned to show faces) */}
                 <img
-                  src={anime.coverImage?.extraLarge || anime.bannerImage}
+                  src={optimizeImage(anime.coverImage?.extraLarge || anime.bannerImage, 800)}
                   alt={anime.title?.english}
                   fetchPriority={isFirst ? "high" : "auto"}
                   loading={isFirst ? "eager" : "lazy"}
@@ -97,7 +98,7 @@ export default function Hero({ data = [], isLoading }) {
                 />
                 {/* Desktop/Tablet Banner Image (Centered correctly) */}
                 <img
-                  src={anime.bannerImage || anime.coverImage?.extraLarge}
+                  src={optimizeImage(anime.bannerImage || anime.coverImage?.extraLarge, 1920)}
                   alt={anime.title?.english}
                   fetchPriority={isFirst ? "high" : "auto"}
                   loading={isFirst ? "eager" : "lazy"}
