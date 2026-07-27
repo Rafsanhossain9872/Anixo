@@ -128,7 +128,8 @@ export default function Home() {
     staleTime: 1000 * 60 * 60,
   });
   const popularThisSeason = popularThisSeasonData?.media || [];
-  const seasonInfo = popularThisSeasonData?.pageInfo || { lastPage: 1 };
+  const seasonInfo = popularThisSeasonData?.pageInfo || {};
+  const seasonTotalPages = seasonInfo.lastPage || (seasonInfo.total ? Math.ceil(seasonInfo.total / cardsPerPage) : (seasonInfo.hasNextPage ? Math.max(seasonPage + 1, 5) : 1));
 
   const { data: newReleasesData = [], isLoading: loadingNew } = useQuery({
     queryKey: ["newReleases"],
@@ -249,7 +250,7 @@ export default function Home() {
         />
         <Pagination
           currentPage={seasonPage}
-          totalPages={seasonInfo.lastPage > 4 ? 4 : seasonInfo.lastPage}
+          totalPages={seasonTotalPages}
           onPageChange={(p) => {
             setSeasonPage(p);
             scrollToSection("popular-season");

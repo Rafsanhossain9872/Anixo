@@ -1003,14 +1003,6 @@ export default function Watch({ isWatch2GetherMode }) {
  recommendations={recommendations}
  />
 
- {/* Ad Banner */}
- <div className="flex justify-center py-4">
- <AdsterraSmartLinkBanner />
- </div>
- <div className="flex justify-center py-4">
- <AdBanner300x250 />
- </div>
-
  {/* Recommendations Section */}
  {recommendations && recommendations.length > 0 && (
  <div className="mt-16 pt-8 border-t border-white/15">

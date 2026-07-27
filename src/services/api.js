@@ -536,7 +536,7 @@ export async function getBrowseAnime(variables) {
 export const ANIME_QUERY = `
   query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus]) {
     Page(page: $page, perPage: 50) {
-      pageInfo { total hasNextPage }
+      pageInfo { total hasNextPage lastPage }
       media(type: ANIME, sort: $sort, status_in: $status_in, isAdult: false) {
         id
         title { romaji english native }
