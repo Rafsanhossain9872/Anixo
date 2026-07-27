@@ -26,8 +26,8 @@ const W2GNoticeBanner = () => {
               <span className="hidden sm:inline">System Update:</span>
               <span className="sm:hidden">Update:</span>
             </span>
-            <span className="opacity-90 hidden sm:inline">The Server 1 dub problem is now fixed. You can enjoy smooth English dub anime streaming.</span>
-            <span className="opacity-90 sm:hidden">Server 1 dub problem is fixed!</span>
+            <span className="opacity-90 hidden sm:inline">The Server 1 facing some problem right now please use different server .</span>
+            <span className="opacity-90 sm:hidden">Server 1 Temporary Problem</span>
           </p>
         </div>
 
