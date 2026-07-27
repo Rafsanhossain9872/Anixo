@@ -1,7 +1,7 @@
-export function optimizeImage(url, width = 300, quality = 80) {
+export function optimizeImage(url) {
   if (!url) return '';
   
   // AniList CDN already uses Cloudflare and blocks weserv.nl proxy.
-  // Returning the original URL to prevent "Missing Cover" errors.
+  // Returning the original URL directly.
   return url;
 }
