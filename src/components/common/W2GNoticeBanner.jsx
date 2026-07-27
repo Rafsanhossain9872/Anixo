@@ -26,8 +26,8 @@ const W2GNoticeBanner = () => {
               <span className="hidden sm:inline">System Update:</span>
               <span className="sm:hidden">Update:</span>
             </span>
-            <span className="opacity-90 hidden sm:inline">The Server 1 facing some problem right now please use different server .</span>
-            <span className="opacity-90 sm:hidden">Server 1 Temporary Problem</span>
+            <span className="opacity-90 hidden sm:inline">The Server 1 is Fixed now .</span>
+            <span className="opacity-90 sm:hidden">Server 1 Dub Fixed</span>
           </p>
         </div>
 
