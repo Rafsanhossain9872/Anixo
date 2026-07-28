@@ -834,7 +834,7 @@ return (
        <h3 className="text-base font-bold mb-2">Notice</h3>
        
        <p className="text-xs text-white/70 leading-relaxed mb-5">
-         Server 1 (Custom Player) is currently undergoing maintenance. If you experience buffering or playback issues, please switch to another server. We are actively working to fix this.
+         Server 1 (Custom Player) is Fixed Now u can use it without any Problem & New Fast servers are coming soon.. 
        </p>
 
        <button
