@@ -389,12 +389,29 @@ export const SEARCH_QUERY = `
   }
 `;
 
+// Format search queries to fix AniList's strict string matching
+function formatSearchQuery(q) {
+  if (!q || typeof q !== "string") return q;
+  return q
+    .replace(/\brezero\b/gi, "re zero")
+    .replace(/\bdanmachi\b/gi, "dungeon ni deai")
+    .replace(/\bkonosuba\b/gi, "kono subarashii")
+    .replace(/\boregairu\b/gi, "yahari ore no seishun")
+    .replace(/\bsao\b/gi, "sword art online")
+    .replace(/\baot\b/gi, "attack on titan")
+    .replace(/\bfmab\b/gi, "fullmetal alchemist brotherhood")
+    .replace(/\bhxh\b/gi, "hunter x hunter")
+    .replace(/\bmha\b/gi, "my hero academia")
+    .replace(/\btensura\b/gi, "tensei shitara slime");
+}
+
 export async function searchAnime(query, filters = {}) {
   if (!query && Object.keys(filters).length === 0) return [];
   try {
+    const formattedQuery = formatSearchQuery(query);
     // Priority: Search using AniList for standard IDs and metadata
     const variables = {
-      search: query || undefined,
+      search: formattedQuery || undefined,
       perPage: 15,
       ...filters
     };
@@ -402,7 +419,23 @@ export async function searchAnime(query, filters = {}) {
     const anilistRes = await fetchFromAniList(BROWSE_QUERY, variables);
 
     if (anilistRes?.media?.length > 0) {
-      return anilistRes.media;
+      let resultMedia = cleanMediaList(anilistRes.media);
+      
+      // SMART SEARCH: Augment navbar quick search with Jikan if < 10 results
+      if (query && resultMedia.length < 10) {
+        try {
+          const jikanRes = await fetchFromJikan("/anime", { q: query, limit: 15 });
+          if (jikanRes?.media?.length > 0) {
+            const jikanClean = cleanMediaList(jikanRes.media);
+            const existingIds = new Set(resultMedia.map(m => m.id));
+            const extra = jikanClean.filter(m => !existingIds.has(m.id));
+            resultMedia = [...resultMedia, ...extra];
+          }
+        } catch (e) {
+          console.warn("[Search] Smart Search augmentation failed:", e.message);
+        }
+      }
+      return resultMedia;
     }
 
     // Fallback: Search using Jikan (MyAnimeList) if AniList is unreachable or returns no results
@@ -459,6 +492,11 @@ export const BROWSE_QUERY = `
 `;
 
 export async function getBrowseAnime(variables) {
+  // Apply formatting to search query if present
+  if (variables.search) {
+    variables.search = formatSearchQuery(variables.search);
+  }
+  
   const varKey = JSON.stringify(variables);
   const cachedData = cache.get(`browse_${varKey}`);
   if (cachedData) return cachedData;
@@ -489,13 +527,37 @@ export async function getBrowseAnime(variables) {
     console.warn("[Browse] Local proxy failed:", err.message);
   }
 
+  // Helper function for Smart Search Augmentation
+  const applySmartSearch = async (media, pageInfo) => {
+    let resultMedia = cleanMediaList(media);
+    // SMART SEARCH: If text search returns few results, augment with Jikan's fuzzy search
+    if (variables.search && resultMedia.length < 10) {
+      try {
+        console.info("[Browse] Smart Search: Augmenting with Jikan for:", variables.search);
+        const jikanRes = await getBrowseAnimeJikanDirect(variables);
+        if (jikanRes?.media?.length > 0) {
+          const jikanClean = cleanMediaList(jikanRes.media);
+          const existingIds = new Set(resultMedia.map(m => m.id));
+          const extra = jikanClean.filter(m => !existingIds.has(m.id));
+          if (extra.length > 0) {
+            resultMedia = [...resultMedia, ...extra];
+            pageInfo.total = Math.max(pageInfo.total, resultMedia.length);
+          }
+        }
+      } catch (e) {
+        console.warn("[Browse] Smart Search augmentation failed:", e.message);
+      }
+    }
+    return { media: resultMedia, pageInfo };
+  };
+
   // 2. Direct AniList GraphQL call
   try {
     const { data } = await axios.post("https://graphql.anilist.co", payload, { headers, timeout: 12000 });
     const page = data?.data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Direct AniList succeeded");
-      const result = { media: cleanMediaList(page.media), pageInfo: page.pageInfo };
+      const result = await applySmartSearch(page.media, page.pageInfo);
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }
@@ -507,7 +569,7 @@ export async function getBrowseAnime(variables) {
   try {
     const proxyRes = await fetchFromAniList(BROWSE_QUERY, variables);
     if (proxyRes?.media?.length > 0) {
-      const result = { media: cleanMediaList(proxyRes.media), pageInfo: proxyRes.pageInfo };
+      const result = await applySmartSearch(proxyRes.media, proxyRes.pageInfo);
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }

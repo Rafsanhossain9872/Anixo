@@ -17,7 +17,7 @@ const Browse = lazy(() => import("./pages/Browse"));
 const Watch = lazy(() => import("./pages/Watch"));
 const Character = lazy(() => import("./pages/Character"));
 const Staff = lazy(() => import("./pages/Staff"));
-const Schedule = lazy(() => import("./pages/Schedule"));
+
 const DMCA = lazy(() => import("./pages/DMCA"));
 const NSFW = lazy(() => import("./pages/NSFW"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -102,7 +102,7 @@ function AppRoutes() {
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/character/:id" element={<Character />} />
             <Route path="/staff/:id" element={<Staff />} />
-            <Route path="/schedule" element={<Schedule />} />
+
             <Route path="/dmca" element={<DMCA />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/watchlist" element={<Watchlist />} />
