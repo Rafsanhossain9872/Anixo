@@ -111,8 +111,7 @@ export default function Watch({ isWatch2GetherMode }) {
     navigate({
       pathname: location.pathname,
       search: newParams.toString(),
-      replace: true, // Use replace so back button behavior
-    });
+    }, { replace: true });
 
     // Optional: Open smart link every 3 episodes
     if (activeEpisode !== lastOpenedEpisode.current && (activeEpisode - lastOpenedEpisode.current) % 3 === 0) {
@@ -246,7 +245,7 @@ export default function Watch({ isWatch2GetherMode }) {
       alert("The host has ended this Watch Together session.");
       setWtRoom(null);
       setWtMessages([]);
-      navigate(window.location.pathname);
+      navigate(window.location.pathname, { replace: true });
     });
 
     socket.on('wt_sync_state', (newState) => {
@@ -380,7 +379,7 @@ export default function Watch({ isWatch2GetherMode }) {
     wtSocketRef.current?.emit('leave_wt_room');
     setWtRoom(null);
     setWtMessages([]);
-    navigate(window.location.pathname);
+    navigate(window.location.pathname, { replace: true });
   };
 
   const handleEndWtRoom = () => {
@@ -389,7 +388,7 @@ export default function Watch({ isWatch2GetherMode }) {
       wtSocketRef.current.emit('end_wt_room');
       setWtRoom(null);
       setWtMessages([]);
-      navigate(window.location.pathname);
+      navigate(window.location.pathname, { replace: true });
     }
   };
 

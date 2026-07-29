@@ -100,8 +100,10 @@ const cache = {
 
 
 // Helper to filter out adult and Rx (Hentai) rated anime from media lists
-function cleanMediaList(media) {
+function cleanMediaList(media, allowAdult = false) {
   if (!media || !Array.isArray(media)) return [];
+  if (allowAdult) return media; // Return all if adult is explicitly requested
+  
   return media.filter(anime => {
     if (!anime) return false;
     const isAdult = anime.isAdult === true;
@@ -419,14 +421,16 @@ export async function searchAnime(query, filters = {}) {
     const anilistRes = await fetchFromAniList(BROWSE_QUERY, variables);
 
     if (anilistRes?.media?.length > 0) {
-      let resultMedia = cleanMediaList(anilistRes.media);
+      // Allow adult content if the user explicitly typed a search query
+      const allowAdult = !!query;
+      let resultMedia = cleanMediaList(anilistRes.media, allowAdult);
       
       // SMART SEARCH: Augment navbar quick search with Jikan if < 10 results
       if (query && resultMedia.length < 10) {
         try {
           const jikanRes = await fetchFromJikan("/anime", { q: query, limit: 15 });
           if (jikanRes?.media?.length > 0) {
-            const jikanClean = cleanMediaList(jikanRes.media);
+            const jikanClean = cleanMediaList(jikanRes.media, allowAdult);
             const existingIds = new Set(resultMedia.map(m => m.id));
             const extra = jikanClean.filter(m => !existingIds.has(m.id));
             resultMedia = [...resultMedia, ...extra];
@@ -466,10 +470,10 @@ export async function getGenres() {
 }
 
 export const BROWSE_QUERY = `
-  query ($page: Int, $perPage: Int, $search: String, $format_in: [MediaFormat], $sort: [MediaSort], $seasonYear: Int, $status: MediaStatus, $genre_in: [String], $tag_in: [String], $season: MediaSeason, $country: CountryCode, $averageScore_greater: Int) {
+  query ($page: Int, $perPage: Int, $search: String, $format_in: [MediaFormat], $sort: [MediaSort], $seasonYear: Int, $status: MediaStatus, $genre_in: [String], $tag_in: [String], $season: MediaSeason, $country: CountryCode, $averageScore_greater: Int, $isAdult: Boolean) {
     Page(page: $page, perPage: $perPage) {
       pageInfo { total currentPage lastPage hasNextPage perPage }
-      media(type: ANIME, search: $search, format_in: $format_in, sort: $sort, seasonYear: $seasonYear, status: $status, genre_in: $genre_in, tag_in: $tag_in, season: $season, countryOfOrigin: $country, averageScore_greater: $averageScore_greater, isAdult: false) {
+      media(type: ANIME, search: $search, format_in: $format_in, sort: $sort, seasonYear: $seasonYear, status: $status, genre_in: $genre_in, tag_in: $tag_in, season: $season, countryOfOrigin: $country, averageScore_greater: $averageScore_greater, isAdult: $isAdult) {
         id
         title { romaji english native }
         coverImage { extraLarge large medium }
@@ -510,6 +514,15 @@ export async function getBrowseAnime(variables) {
     )
   );
 
+  // If isAdult is explicitly true or user is searching by text, allow both 18+ and normal
+  const allowAdult = cleanVars.isAdult === true || !!cleanVars.search;
+  
+  if (allowAdult) {
+    delete cleanVars.isAdult;
+  } else {
+    cleanVars.isAdult = false;
+  }
+
   const payload = { query: BROWSE_QUERY, variables: cleanVars };
   const headers = { "Content-Type": "application/json", "Accept": "application/json" };
 
@@ -519,7 +532,7 @@ export async function getBrowseAnime(variables) {
     const page = data?.data?.Page || data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Local proxy succeeded (AniList)");
-      const result = { media: cleanMediaList(page.media), pageInfo: page.pageInfo };
+      const result = { media: cleanMediaList(page.media, allowAdult), pageInfo: page.pageInfo };
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }
@@ -536,7 +549,7 @@ export async function getBrowseAnime(variables) {
         console.info("[Browse] Smart Search: Augmenting with Jikan for:", variables.search);
         const jikanRes = await getBrowseAnimeJikanDirect(variables);
         if (jikanRes?.media?.length > 0) {
-          const jikanClean = cleanMediaList(jikanRes.media);
+          const jikanClean = cleanMediaList(jikanRes.media, allowAdult);
           const existingIds = new Set(resultMedia.map(m => m.id));
           const extra = jikanClean.filter(m => !existingIds.has(m.id));
           if (extra.length > 0) {
@@ -583,7 +596,7 @@ export async function getBrowseAnime(variables) {
     try {
       const directRes = await getBrowseAnimeJikanDirect(variables);
       if (directRes?.media?.length > 0) {
-        const finalRes = { ...directRes, media: cleanMediaList(directRes.media), isJikanFallback: true };
+        const finalRes = { ...directRes, media: cleanMediaList(directRes.media, allowAdult), isJikanFallback: true };
         cache.set(`browse_${varKey}`, finalRes, CACHE_TTL.BROWSE);
         return finalRes;
       }
