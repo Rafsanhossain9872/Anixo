@@ -24,10 +24,8 @@ export function AdBanner728x90() {
       iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
       container.appendChild(iframe);
 
-      const hostname = window.location.hostname;
-      const isBuzz = hostname.includes('anixo.buzz');
-      const adKey = isBuzz ? '9a7c3e1f939b5adb39ff408aaf45db1e' : '41feeb0d0418514f2c25b35780bc88ed';
-      const adDomain = isBuzz ? 'dependedunmoved.com' : 'www.highperformanceformat.com';
+      const adKey = '98cb9789d3be273d73a20c5472affbc8';
+      const adDomain = 'www.highperformanceformat.com';
 
       const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
       iframeDoc.open();
@@ -89,11 +87,8 @@ export function AdBanner300x250() {
       iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox';
       container.appendChild(iframe);
 
-
-      const hostname = window.location.hostname;
-      const isBuzz = hostname.includes('anixo.buzz');
-      const adKey = isBuzz ? '2e3ec9b3c3b6d88d98ef03a219c31831' : '2e3d69816973ce46100c1352a0a696f7';
-      const adDomain = isBuzz ? 'dependedunmoved.com' : 'www.highperformanceformat.com';
+      const adKey = 'a1588ab19bd492d10d370d7362724ae6';
+      const adDomain = 'www.highperformanceformat.com';
 
       const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
       iframeDoc.open();
