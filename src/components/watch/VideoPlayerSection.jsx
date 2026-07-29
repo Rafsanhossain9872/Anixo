@@ -2,11 +2,11 @@ import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import VideoPlayer from "../common/VideoPlayer";
 import ArtPlayer from "../common/ArtPlayer";
-import PlyrPlayer from "../common/PlyrPlayer";
+import AnikoPlayer from "../common/AnikoPlayer";
 
 // ================= CONFIGURATION =================
-// Change to 'art' for ArtPlayer, or 'plyr' for PlyrPlayer
-const PREFERRED_HLS_PLAYER = 'plyr';
+// Change to 'art' for ArtPlayer, or 'aniko' for AnikoPlayer (custom HLS player)
+const PREFERRED_HLS_PLAYER = 'aniko';
 // =================================================
 
 /**
@@ -33,6 +33,7 @@ export default function VideoPlayerSection({
     setActiveEpisode,
     iframeRef,
     activeSubServer = 0,
+    setActiveSubServer,
     skipTimes,
     videoRef,
     onPlay,
@@ -57,7 +58,7 @@ export default function VideoPlayerSection({
             }
             prevServerRef.current = activeServer;
         }
-    }, [activeServer]);
+    }, [activeServer, iframeRef]);
 
     // Resolve current episode image for player background/loading placeholder
     const currentEpisodeImage = useMemo(() => {
@@ -88,7 +89,7 @@ export default function VideoPlayerSection({
     let isIframe = false;
     let currentIframeUrl = streamUrl;
 
-    if (activeServer === 1 && streamData?.all_streams) {
+    if ((activeServer === 1 || activeServer === 6) && streamData?.all_streams) {
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
@@ -149,7 +150,7 @@ export default function VideoPlayerSection({
             });
         }
         return subs;
-    }, [streamData?.subtitles, activeServer, isIframe, anikoBase]);
+    }, [streamData?.subtitles, isIframe, anikoBase]);
 
     return (
         <>
@@ -284,11 +285,14 @@ export default function VideoPlayerSection({
                     <div className="w-full h-full">
                         {!isIframe && videoSrc ? (
                             videoType === 'hls' || videoSrc.includes('.m3u8') ? (
-                                PREFERRED_HLS_PLAYER === 'plyr' ? (
-                                    <PlyrPlayer
-                                        key={`plyrplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
+                                PREFERRED_HLS_PLAYER === 'aniko' ? (
+                                    <AnikoPlayer
+                                        key={`anikoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
                                         src={videoSrc}
                                         type={videoType}
+                                        availableStreams={streamData?.all_streams || []}
+                                        currentStreamIndex={activeSubServer}
+                                        onStreamChange={(index) => setActiveSubServer(index)}
                                         poster={
                                             anime?.coverImage?.extraLarge || anime?.coverImage?.large
                                         }

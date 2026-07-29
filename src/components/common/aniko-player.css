@@ -1,0 +1,831 @@
+/* ═══════════════════════════════════════════════════════════════
+   Aniko Custom Player — Scoped for React Integration
+   All rules scoped under .aniko-player-root to avoid global clashes
+   ═══════════════════════════════════════════════════════════════ */
+
+.aniko-player-root {
+  --ap-accent: #6366f1;
+  --ap-accent-glow: rgba(99, 102, 241, 0.4);
+  --ap-bg: #000;
+  --ap-controls-bg: rgba(0, 0, 0, 0.65);
+  --ap-controls-blur: 20px;
+  --ap-glass: rgba(255, 255, 255, 0.06);
+  --ap-glass-border: rgba(255, 255, 255, 0.08);
+  --ap-text: #fff;
+  --ap-text-dim: rgba(255, 255, 255, 0.5);
+  --ap-text-soft: rgba(255, 255, 255, 0.7);
+  --ap-radius: 8px;
+  --ap-radius-sm: 6px;
+  --ap-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Subtitle Customization */
+  --sub-color: #ffffff;
+  --sub-bg: rgba(0, 0, 0, 0.75);
+  --sub-size: clamp(10px, 2.5vw, 18px);
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--ap-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--ap-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  border-radius: 10px;
+}
+
+.aniko-player-root .ap-hidden { display: none !important; }
+
+/* ─── Player Wrapper ─────────────────────────────────────────── */
+.aniko-player-root .ap-player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--ap-bg);
+  overflow: hidden;
+  cursor: default;
+}
+
+.aniko-player-root .ap-player-wrapper.controls-visible { cursor: default; }
+.aniko-player-root .ap-player-wrapper.controls-hidden  { cursor: none; }
+
+.aniko-player-root .ap-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/* Position subtitles cleanly near bottom */
+.aniko-player-root .ap-video::-webkit-media-text-track-display {
+  transform: translateY(-20px) !important;
+}
+
+.aniko-player-root .ap-player-wrapper:not(.user-inactive) .ap-video::-webkit-media-text-track-display {
+  transform: translateY(-60px) !important;
+}
+
+.aniko-player-root .ap-video::cue {
+  font-size: var(--sub-size, 16px);
+  background: var(--sub-bg, rgba(0, 0, 0, 0.75));
+  color: var(--sub-color, #ffffff);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.3;
+}
+
+.aniko-player-root .ap-click-area {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
+/* ─── Gradient Overlays ──────────────────────────────────────── */
+.aniko-player-root .ap-gradient {
+  position: absolute;
+  left: 0; right: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--ap-transition);
+}
+
+.aniko-player-root .ap-gradient-top {
+  top: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+}
+
+.aniko-player-root .ap-gradient-bottom {
+  bottom: 0;
+  height: 180px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+}
+
+.aniko-player-root .ap-player-wrapper.controls-visible .ap-gradient {
+  opacity: 1;
+}
+
+/* ─── Overlays (Loading / Error) ─────────────────────────────── */
+.aniko-player-root .ap-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  gap: 16px;
+}
+
+.aniko-player-root .ap-overlay-loading {
+  z-index: 15;
+  pointer-events: none;
+}
+
+.aniko-player-root .ap-overlay-error {
+  z-index: 50;
+}
+
+/* Loading Ring Animation */
+.aniko-player-root .ap-loader-ring {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.aniko-player-root .ap-loader-ring div {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 3px solid transparent;
+  border-top-color: var(--ap-accent);
+  border-radius: 50%;
+  animation: ap-loader-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.aniko-player-root .ap-loader-ring div:nth-child(1) { animation-delay: -0.45s; }
+.aniko-player-root .ap-loader-ring div:nth-child(2) { animation-delay: -0.3s; opacity: 0.8; }
+.aniko-player-root .ap-loader-ring div:nth-child(3) { animation-delay: -0.15s; opacity: 0.6; }
+.aniko-player-root .ap-loader-ring div:nth-child(4) { opacity: 0.4; }
+
+@keyframes ap-loader-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error */
+.aniko-player-root .ap-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  max-width: 300px;
+}
+
+.aniko-player-root .ap-error-content p {
+  font-size: 14px;
+  color: var(--ap-text-soft);
+  line-height: 1.5;
+}
+
+.aniko-player-root .ap-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border: 1px solid var(--ap-accent);
+  border-radius: 20px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--ap-accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--ap-transition);
+  font-family: inherit;
+}
+
+.aniko-player-root .ap-retry-btn:hover {
+  background: var(--ap-accent);
+  color: #fff;
+  box-shadow: 0 0 20px var(--ap-accent-glow);
+}
+
+/* ─── Center Indicator (play/pause flash) ────────────────────── */
+.aniko-player-root .ap-center-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 30;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: none;
+}
+
+.aniko-player-root .ap-center-indicator.flash {
+  animation: ap-indicator-flash 0.5s ease-out forwards;
+}
+
+@keyframes ap-indicator-flash {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+  30%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* ─── Top Bar ────────────────────────────────────────────────── */
+.aniko-player-root .ap-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0; right: 0;
+  z-index: 20;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--ap-transition), transform var(--ap-transition);
+  pointer-events: none;
+}
+
+.aniko-player-root .ap-player-wrapper.controls-visible .ap-top-bar {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.aniko-player-root .ap-video-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
+}
+
+/* ─── Skip Buttons ───────────────────────────────────────────── */
+.aniko-player-root .ap-skip-btn {
+  position: absolute;
+  z-index: 25;
+  bottom: 90px;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--ap-transition);
+  transform: translateX(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.aniko-player-root .ap-player-wrapper.controls-visible .ap-skip-btn.visible {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.aniko-player-root .ap-skip-btn:hover {
+  background: var(--ap-accent);
+  border-color: var(--ap-accent);
+  box-shadow: 0 0 20px var(--ap-accent-glow);
+}
+
+.aniko-player-root .ap-skip-btn--outro {
+  bottom: 90px;
+}
+
+/* ─── Bottom Controls ────────────────────────────────────────── */
+.aniko-player-root .ap-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 35;
+  padding: 0 12px 10px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity var(--ap-transition), transform var(--ap-transition);
+  pointer-events: none;
+}
+
+.aniko-player-root .ap-player-wrapper.controls-visible .ap-controls {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ─── Seek Bar ───────────────────────────────────────────────── */
+.aniko-player-root .ap-seek-container {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.aniko-player-root .ap-seek-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  overflow: visible;
+  transition: height 0.15s ease;
+}
+
+.aniko-player-root .ap-seek-container:hover .ap-seek-track {
+  height: 5px;
+}
+
+.aniko-player-root .ap-seek-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.05s linear;
+}
+
+.aniko-player-root .ap-seek-buffered {
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 1;
+}
+
+.aniko-player-root .ap-seek-hl {
+  background: rgba(255, 235, 59, 0.5);
+  z-index: 2;
+}
+
+.aniko-player-root .ap-seek-played {
+  background: var(--ap-accent);
+  z-index: 3;
+}
+
+.aniko-player-root .ap-seek-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  background: var(--ap-accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  z-index: 4;
+  transition: transform 0.15s ease;
+  box-shadow: 0 0 8px var(--ap-accent-glow);
+}
+
+.aniko-player-root .ap-seek-container:hover .ap-seek-thumb {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.aniko-player-root .ap-seek-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.85);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-bottom: 6px;
+}
+
+.aniko-player-root .ap-seek-container:hover .ap-seek-tooltip {
+  opacity: 1;
+}
+
+/* ─── Controls Row ───────────────────────────────────────────── */
+.aniko-player-root .ap-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  gap: 4px;
+}
+
+.aniko-player-root .ap-controls-left,
+.aniko-player-root .ap-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ─── Control Button ─────────────────────────────────────────── */
+.aniko-player-root .ap-ctrl-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: var(--ap-radius-sm);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.aniko-player-root .ap-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.aniko-player-root .ap-ctrl-btn:active {
+  transform: scale(0.92);
+}
+
+.aniko-player-root .ap-ctrl-btn svg {
+  flex-shrink: 0;
+}
+
+/* ─── Volume ─────────────────────────────────────────────────── */
+.aniko-player-root .ap-volume-area {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* ─── Time Display ───────────────────────────────────────────── */
+.aniko-player-root .ap-time-display {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ap-text-soft);
+  white-space: nowrap;
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Speed Label ────────────────────────────────────────────── */
+.aniko-player-root .ap-speed-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ─── Quality Badge ──────────────────────────────────────────── */
+.aniko-player-root .ap-quality-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  background: var(--ap-accent);
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1.2;
+}
+
+/* ─── Dropdown Menus ─────────────────────────────────────────── */
+.aniko-player-root .ap-dropdown-anchor {
+  position: relative;
+}
+
+.aniko-player-root .ap-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 160px;
+  max-width: 85vw;
+  background: rgba(15, 15, 20, 0.92);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--ap-glass-border);
+  border-radius: var(--ap-radius);
+  padding: 8px 0;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: ap-menu-in 0.2s ease;
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.aniko-player-root .ap-dropdown-menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.aniko-player-root .ap-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.aniko-player-root .ap-dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+@keyframes ap-menu-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.aniko-player-root .ap-menu-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ap-text-dim);
+  padding: 4px 14px 8px;
+}
+
+.aniko-player-root .ap-menu-options {
+  display: flex;
+  flex-direction: column;
+}
+
+.aniko-player-root .ap-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--ap-text-soft);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aniko-player-root .ap-menu-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.aniko-player-root .ap-menu-option.active {
+  color: var(--ap-accent);
+  font-weight: 600;
+}
+
+.aniko-player-root .ap-menu-option.active::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--ap-accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.aniko-player-root .ap-menu-option:not(.active)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 500px) {
+  .aniko-player-root .ap-controls {
+    padding: 0 8px 6px;
+  }
+
+  .aniko-player-root .ap-ctrl-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .aniko-player-root .ap-time-display {
+    font-size: 11px;
+  }
+
+  .aniko-player-root .ap-top-bar {
+    padding: 10px 14px;
+  }
+
+  .aniko-player-root .ap-video-title {
+    font-size: 12px;
+  }
+
+  .aniko-player-root .ap-skip-btn {
+    bottom: 70px;
+    right: 12px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+
+  .aniko-player-root .ap-video::-webkit-media-text-track-display {
+    transform: translateY(-16px) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .aniko-player-root .ap-time-display { display: none; }
+}
+
+/* ─── Fullscreen adjustments ─────────────────────────────────── */
+:fullscreen .aniko-player-root .ap-player-wrapper,
+:-webkit-full-screen .aniko-player-root .ap-player-wrapper {
+  width: 100vw;
+  height: 100vh;
+}
+
+:fullscreen .aniko-player-root .ap-video::-webkit-media-text-track-display,
+:-webkit-full-screen .aniko-player-root .ap-video::-webkit-media-text-track-display {
+  transform: translateY(-20px) !important;
+}
+
+.aniko-player-root .ap-player-wrapper:not(.user-inactive):fullscreen .ap-video::-webkit-media-text-track-display,
+.aniko-player-root .ap-player-wrapper:not(.user-inactive):-webkit-full-screen .ap-video::-webkit-media-text-track-display {
+  transform: translateY(-60px) !important;
+}
+
+/* ─── Mobile & Landscape fullscreen positioning ──────────────── */
+@media (max-width: 900px), (orientation: landscape) and (max-height: 500px) {
+  .aniko-player-root .ap-video::cue,
+  :fullscreen .aniko-player-root .ap-video::cue,
+  :-webkit-full-screen .aniko-player-root .ap-video::cue {
+    font-size: clamp(11px, 3.2vw, 15px) !important;
+    padding: 3px 8px !important;
+    line-height: 1.25 !important;
+  }
+
+  .aniko-player-root .ap-video::-webkit-media-text-track-display,
+  :fullscreen .aniko-player-root .ap-video::-webkit-media-text-track-display,
+  :-webkit-full-screen .aniko-player-root .ap-video::-webkit-media-text-track-display {
+    transform: translateY(-12px) !important;
+  }
+
+  .aniko-player-root .ap-player-wrapper:not(.user-inactive) .ap-video::-webkit-media-text-track-display,
+  .aniko-player-root .ap-player-wrapper:not(.user-inactive):fullscreen .ap-video::-webkit-media-text-track-display {
+    transform: translateY(-45px) !important;
+  }
+}
+
+/* ─── Nested Settings Menu ───────────────────────────────────── */
+.aniko-player-root .ap-settings-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.aniko-player-root .ap-settings-panel.ap-hidden {
+  display: none !important;
+}
+
+.aniko-player-root .ap-settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  font-family: inherit;
+}
+.aniko-player-root .ap-settings-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.aniko-player-root .ap-settings-item > span:first-child {
+  flex-grow: 1;
+  text-align: left;
+}
+.aniko-player-root .ap-settings-val {
+  font-size: 12px;
+  color: var(--ap-text-dim);
+  margin-right: 4px;
+}
+.aniko-player-root .ap-settings-item::after {
+  content: '›';
+  font-size: 18px;
+  color: var(--ap-text-dim);
+  line-height: 1;
+}
+.aniko-player-root .ap-settings-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 4px;
+  font-family: inherit;
+}
+.aniko-player-root .ap-settings-back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ─── Double Tap Animations ──────────────────────────────────── */
+.aniko-player-root .ap-dt-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 50;
+  overflow: hidden;
+}
+.aniko-player-root .ap-dt-left { left: 0; border-top-right-radius: 50%; border-bottom-right-radius: 50%; }
+.aniko-player-root .ap-dt-right { right: 0; border-top-left-radius: 50%; border-bottom-left-radius: 50%; }
+
+.aniko-player-root .ap-dt-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px 28px;
+  border-radius: 40px;
+  transform: scale(0.8);
+  backdrop-filter: blur(8px);
+}
+.aniko-player-root .ap-dt-icon span {
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: white;
+}
+.aniko-player-root .ap-dt-ripple {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  transform: scale(0);
+}
+
+.aniko-player-root .ap-dt-indicator.animate {
+  animation: ap-dt-fade 0.5s ease-out;
+}
+.aniko-player-root .ap-dt-indicator.animate .ap-dt-icon {
+  animation: ap-dt-pop 0.3s ease-out forwards;
+}
+.aniko-player-root .ap-dt-indicator.animate .ap-dt-ripple {
+  animation: ap-dt-ripple-anim 0.5s ease-out;
+}
+
+@keyframes ap-dt-fade {
+  0% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes ap-dt-pop {
+  0% { transform: scale(0.8); }
+  100% { transform: scale(1); }
+}
+@keyframes ap-dt-ripple-anim {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* ─── Stream Guard Notice ────────────────────────────────────── */
+.aniko-player-root .ap-stream-guard-notice {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(18, 18, 28, 0.95);
+  border: 1px solid rgba(99, 102, 241, 0.5);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 100;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+@keyframes ap-secPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}

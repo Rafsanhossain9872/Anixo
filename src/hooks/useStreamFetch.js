@@ -74,19 +74,40 @@ export function useStreamFetch({
       try {
         let url = "";
 
-        // --- SERVER 1: ANIXO EMBED (iframe) ---
+        // --- SERVER 1: ANIKO HLS SERVER ---
         if (activeServer === 1) {
           const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const anilistId = anime?.id || (!isMal ? id : null);
-
-          if (anilistId) {
-            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
-            setStreamData({
-              server_name: "SERVER 1 (Anixo)",
-              lang: langParam,
-            });
+          const anikoBase = import.meta.env.VITE_ANIKO_SERVER_API;
+          
+          if (anilistId && anikoBase) {
+             const res = await fetch(`${anikoBase}/api/watch/${anilistId}/${langParam}/${activeEpisode}`);
+             if (!res.ok) throw new Error("Aniko API failed");
+             const json = await res.json();
+             const key = Object.keys(json)[0];
+             const data = json[key];
+             
+             if (data && data.streams && data.streams.length > 0) {
+                 const hlsStream = data.streams.find(s => s.type === "hls" || s.url.includes('.m3u8')) || data.streams[0];
+                 
+                 // Instead of an iframe URL, we inject the sources and subtitles directly into streamData
+                 setStreamData({
+                     server_name: "SERVER 1 (Aniko)",
+                     lang: langParam,
+                     sources: [{ url: hlsStream.url, type: 'hls' }],
+                     subtitles: data.subtitles || [],
+                     all_streams: data.streams,
+                     skipTimes: {
+                         op: data.intro && data.intro.end > 0 ? { interval: { startTime: data.intro.start, endTime: data.intro.end }, skipType: 'op' } : null,
+                         ed: data.outro && data.outro.end > 0 ? { interval: { startTime: data.outro.start, endTime: data.outro.end }, skipType: 'ed' } : null,
+                     }
+                 });
+                 url = hlsStream.url;
+             } else {
+                 setFetchError("No streams found on Server 1 for this episode.");
+             }
           } else {
-            setFetchError("AniList ID is required for Server 1. Try another server.");
+             setFetchError("AniList ID or Server Config missing for Server 1.");
           }
         }
 
@@ -192,6 +213,22 @@ export function useStreamFetch({
           }
         }
 
+        // --- SERVER 6: ANIXO EMBED (iframe) ---
+        else if (activeServer === 6) {
+          const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
+          const anilistId = anime?.id || (!isMal ? id : null);
+
+          if (anilistId) {
+            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            setStreamData({
+              server_name: "SERVER 6 (Anixo)",
+              lang: langParam,
+            });
+          } else {
+            setFetchError("AniList ID is required for Server 6. Try another server.");
+          }
+        }
+
         if (url) {
           if (activeServer === 2 || activeServer === 3) {
             // Inject Autoplay and premium params for Megaplay
@@ -217,7 +254,7 @@ export function useStreamFetch({
             }
           } else {
             // Keep Vidnest, Tryembed, Anineko URLs clean without Megaplay-specific parameters
-            setStreamUrl(url);
+            setStreamUrl(activeServer === 1 ? "aniko-stream" : url);
           }
         } else {
           setFetchError("Stream link not found for this server.");
