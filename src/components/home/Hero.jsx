@@ -5,6 +5,7 @@ import { useUserList } from "../../context/UserListContext";
 import { useAuth } from "../../hooks/useAuth";
 import LoginModal from "../auth/LoginModal";
 import { optimizeImage } from "../../utils/image";
+import { getWatchUrl } from "../../utils/url";
 
 export default function Hero({ data = [], isLoading }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -164,7 +165,7 @@ export default function Hero({ data = [], isLoading }) {
 
                   {/* Primary Actions (Mobile Centered) */}
                   <div className="flex items-center justify-center md:justify-start gap-3 md:gap-5">
-                    <Link to={`/watch/${anime.id}`} className="group flex items-center justify-center gap-3 md:px-10 py-3 md:py-4 bg-discord-600 text-white text-[13px] font-bold uppercase tracking-[0.15em] rounded-full hover:bg-discord-700 transition-all transform active:scale-95 shadow-xl min-w-[50px] md:min-w-0">
+                    <Link to={getWatchUrl(anime.id, anime.title)} className="group flex items-center justify-center gap-3 md:px-10 py-3 md:py-4 bg-discord-600 text-white text-[13px] font-bold uppercase tracking-[0.15em] rounded-full hover:bg-discord-700 transition-all transform active:scale-95 shadow-xl min-w-[50px] md:min-w-0">
                       <Play size={20} md:size={18} fill="currentColor" className="group-hover:scale-110 transition-transform" />
                       <span className="hidden md:block">Watch Now</span>
                     </Link>

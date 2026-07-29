@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { Link } from "react-router-dom";
 import { optimizeImage } from "../../utils/image";
+import { getWatchUrl } from "../../utils/url";
 
 export default function AnimeCard({ anime }) {
  const [isVisible, setIsVisible] = useState(false);
@@ -64,7 +65,8 @@ export default function AnimeCard({ anime }) {
  if (anime.currentTime) queryParams.set("t", anime.currentTime);
  }
  const queryString = queryParams.toString();
- const cardUrl = `/watch/${anime.id}${queryString ? `?${queryString}` : ""}`;
+ const baseUrl = getWatchUrl(anime.id, anime.title);
+ const cardUrl = `${baseUrl}${queryString ? `?${queryString}` : ""}`;
 
  return (
  <Link

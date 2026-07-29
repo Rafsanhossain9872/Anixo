@@ -100,6 +100,7 @@ function AppRoutes() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/nsfw/*" element={<NSFW />} />
             <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/watch/:id/:slug" element={<Watch />} />
             <Route path="/character/:id" element={<Character />} />
             <Route path="/staff/:id" element={<Staff />} />
 

@@ -4,6 +4,7 @@ import { ALL_GENRES } from "../../constants/genres";
 import NavSidebar from "./NavSidebar";
 import { useLanguage } from "../../context/LanguageContext";
 import { searchAnime } from "../../services/api";
+import { getWatchUrl } from "../../utils/url";
 import { MessageSquare, Mic, Clock, CheckCircle, CheckCircle2, SlidersHorizontal, X, Users } from "lucide-react";
 
 import { useAuth } from "../../hooks/useAuth";
@@ -363,7 +364,7 @@ export default function Navbar() {
                               return (
                                 <Link
                                   key={anime.id}
-                                  to={`/watch/${anime.id}`}
+                                  to={getWatchUrl(anime.id, anime.title)}
                                   onClick={() => {
                                     setShowDropdown(false);
                                     setSearchQuery("");
@@ -624,7 +625,7 @@ export default function Navbar() {
                             return (
                               <Link
                                 key={anime.id}
-                                to={`/watch/${anime.id}`}
+                                to={getWatchUrl(anime.id, anime.title)}
                                 onClick={() => {
                                   setIsSearchOpen(false);
                                   setSearchQuery("");

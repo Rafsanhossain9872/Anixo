@@ -21,7 +21,7 @@ import { useEpisodeList } from "../hooks/useEpisodeList";
 import { useAniSkip } from "../hooks/useAniSkip";
 import { io } from "socket.io-client";
 import { WT_SERVER } from "../services/api";
-
+import { slugify } from "../utils/url";
 // Extracted Watch sub-components
 import PlayerToolbar from "../components/watch/PlayerToolbar";
 import WatchTogetherSidebar from "../components/watch/WatchTogetherSidebar";
@@ -460,6 +460,20 @@ export default function Watch({ isWatch2GetherMode }) {
     staleTime: 1000 * 60 * 60 * 24, // 24 Hours Cache - Reduces 90% of repeat detail requests
     cacheTime: 1000 * 60 * 60 * 24,
   });
+
+  // URL Auto-Replace for SEO
+  useEffect(() => {
+    if (anime && !isWatch2GetherMode) {
+      const titleStr = anime.title?.english || anime.title?.romaji || anime.title?.native || "anime";
+      const correctSlug = slugify(titleStr);
+      const currentPath = window.location.pathname;
+      const expectedPath = `/watch/${id}/${correctSlug}`;
+      
+      if (!currentPath.includes(correctSlug)) {
+        window.history.replaceState(null, "", `${expectedPath}${window.location.search}${window.location.hash}`);
+      }
+    }
+  }, [anime, id, isWatch2GetherMode]);
 
   // Watchlist hook (must be after anime is declared)
   const {

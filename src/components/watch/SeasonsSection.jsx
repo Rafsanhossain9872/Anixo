@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getWatchUrl } from "../../utils/url";
 
 export default function SeasonsSection({ stableSeasons, getTitle }) {
  const { t } = useTranslation();
@@ -26,7 +27,7 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  {stableSeasons.map((item) => (
  <Link
  key={item.id}
- to={item.isActive ? "#" : `/watch/${item.id}`}
+ to={item.isActive ? "#" : getWatchUrl(item.id, item.title)}
  onClick={(e) => item.isActive && e.preventDefault()}
  className={`flex-shrink-0 relative group transition-all duration-500 rounded-[8px] overflow-hidden border ${item.isActive
  ? 'border-discord-600/60 '
