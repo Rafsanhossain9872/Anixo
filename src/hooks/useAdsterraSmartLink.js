@@ -1,4 +1,4 @@
-export const ADSTERRA_SMART_LINK = "https://dependedunmoved.com/kyy99erhbc?key=644614ebc48ade4ce12a485a5a3cea3a";
+export const ADSTERRA_SMART_LINK = "https://www.effectivecpmnetwork.com/xha7i7sypg?key=367010d83bbe4ffa2ebf0677eea2ba01";
 
 // Global state to prevent multiple listeners stacking up
 let isFallbackListenerAttached = false;
