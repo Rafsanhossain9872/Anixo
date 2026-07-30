@@ -1,18 +1,32 @@
-import { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
-import { isAggressiveAdsActive } from '../../utils/adsConfig';
+import { useState, useEffect } from 'react';
+import { X, AlertTriangle, Clock } from 'lucide-react';
+import { isAggressiveAdsActive, AGGRESSIVE_ADS_END_TIME } from '../../utils/adsConfig';
 
 const W2GNoticeBanner = () => {
   const [dismissed, setDismissed] = useState(() => {
     return sessionStorage.getItem('server_cost_homepage_notice_dismissed') === 'true';
   });
 
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+
+  useEffect(() => {
+    if (dismissed || timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [dismissed, timeLeft]);
+
   const handleDismiss = () => {
     setDismissed(true);
     sessionStorage.setItem('server_cost_homepage_notice_dismissed', 'true');
   };
 
-  if (dismissed || !isAggressiveAdsActive()) return null;
+  if (dismissed || !isAggressiveAdsActive() || timeLeft <= 0) return null;
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
   return (
     <div className="max-w-[1720px] mx-auto px-2 md:px-4 mt-4 mb-2">
@@ -27,6 +41,11 @@ const W2GNoticeBanner = () => {
               <span className="text-red-400 font-bold uppercase tracking-widest text-[10px] sm:text-[11px] block sm:inline mb-0.5 sm:mb-0 sm:mr-2">Notice:</span>
               To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the <span className="inline-block font-bold text-red-300 bg-red-500/10 px-1.5 py-0.5 mt-1 sm:mt-0 rounded uppercase border border-red-500/20 sm:ml-1 text-[10px] sm:text-[12px]">next 12 hours (~36 Episodes) only</span>.
             </p>
+            <div className="flex items-center gap-1.5 mt-2 sm:mt-1 text-red-400/80 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+              <Clock size={12} className="animate-pulse text-red-400" />
+              <span>Time Remaining:</span>
+              <span className="tabular-nums bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 text-red-300">{String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+            </div>
           </div>
         </div>
 
