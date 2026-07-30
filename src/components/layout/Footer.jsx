@@ -1,11 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { AGGRESSIVE_ADS_END_TIME } from "../../utils/adsConfig";
 import { MessageSquare, Heart, Info, Tv, AlertTriangle } from "lucide-react";
 import ContactModal from "../common/ContactModal";
 import CacheGuideModal from "../common/CacheGuideModal";
 import CacheIssueBanner from "../common/CacheIssueBanner";
 import { AdBanner728x90, AdBanner300x250 } from "../common/AdBanner";
 import OnlineUsers from "../common/OnlineUsers";
+
+function AdsCountdownTimer() {
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timeLeft]);
+
+  if (timeLeft <= 0) return null;
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  return (
+    <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg text-red-400 font-bold text-xs md:text-sm">
+      <AlertTriangle size={14} className="animate-pulse" />
+      <span>Ads normalized in:</span>
+      <span className="tabular-nums tracking-wider">{String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+    </div>
+  );
+}
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -207,8 +234,9 @@ export default function Footer() {
               <Link to="/nsfw" className="ml-2 text-white/10 hover:text-discord-600 transition-colors">18+</Link>
             </div>
 
-            {/* Online Users */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-center">
+            {/* Online Users & Timer */}
+            <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
+              <AdsCountdownTimer />
               <OnlineUsers />
             </div>
 
