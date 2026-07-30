@@ -38,9 +38,9 @@ export default function PlayerToolbar({
     <>
       {/* Action Toolbar */}
       <section
-        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 sm:gap-8 select-none"
+        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-y-4 gap-x-2 sm:gap-4 lg:gap-6 select-none"
       >
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6 lg:gap-10">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
           <button
             onClick={() => setIsFocusMode(!isFocusMode)}
             className={`flex items-center gap-1 sm:gap-2 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
@@ -71,7 +71,7 @@ export default function PlayerToolbar({
           </div>
         </div>
 
-        <div className={`flex items-center gap-3 sm:gap-6 lg:gap-8 ml-auto sm:ml-0 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+        <div className={`flex items-center gap-3 sm:gap-4 lg:gap-6 ml-auto sm:ml-0 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
           <button
             onClick={goPrevEpisode}
             className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
@@ -157,11 +157,10 @@ export default function PlayerToolbar({
                 href="https://anixo.buzz"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 sm:gap-2 text-white/70 hover:text-discord-500 transition-all group"
+                className="flex items-center text-white/70 hover:text-discord-500 transition-all group"
                 title="Get Free Anime Iframe Embeds at anaixo.buzz"
               >
                 <span className="text-[15px] sm:text-[17px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
-                <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">Embed</span>
               </a>
 
               {/* Watch Together Button */}
@@ -169,11 +168,10 @@ export default function PlayerToolbar({
                 <div className="flex items-center bg-discord-500/10 rounded-full border border-discord-500/20 overflow-hidden">
                   <button
                     onClick={handleCreateWtRoom}
-                    className="flex items-center gap-1.5 sm:gap-3 transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
+                    className="flex items-center justify-center transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
                     title="Start Watch Together Now"
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline text-[12px] font-bold uppercase tracking-wider text-discord-500">Watch Together</span>
                   </button>
                   {handleScheduleWtRoom && (
                     <>
@@ -229,7 +227,7 @@ export default function PlayerToolbar({
             </div>
 
             <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-0.5 md:gap-1 sm:mr-auto sm:mr-20">
-              {[1, 2, 3, 4, 5].map((s) => (
+              {[1, 2, 3, 4, 5, 6].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}

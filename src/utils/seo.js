@@ -26,7 +26,7 @@ export const updateMetaTags = ({
     document.querySelector('meta[property="twitter:description"]')?.setAttribute("content", description);
   }
 
-  // Update Keywords
+  // Update Keywords/
   if (keywords) {
     let keywordsTag = document.querySelector('meta[name="keywords"]');
     if (!keywordsTag) {
@@ -52,7 +52,7 @@ export const updateMetaTags = ({
     const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url}`;
     document.querySelector('meta[property="og:url"]')?.setAttribute("content", fullUrl);
     document.querySelector('meta[property="twitter:url"]')?.setAttribute("content", fullUrl);
-    
+
     // Update Canonical
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -71,7 +71,7 @@ export const updateMetaTags = ({
       document.querySelector(`meta[property="${name}"]`)?.remove();
       return;
     }
-    
+
     // Set by name
     let nameTag = document.querySelector(`meta[name="${name}"]`);
     if (!nameTag) {
@@ -105,7 +105,7 @@ export const updateMetaTags = ({
     robotsTag.setAttribute('name', 'robots');
     document.head.appendChild(robotsTag);
   }
-  
+
   if (noindex) {
     robotsTag.setAttribute("content", "noindex, nofollow");
   } else {
@@ -116,7 +116,7 @@ export const updateMetaTags = ({
 export const updateStructuredData = (schemaData) => {
   // Find existing schema tag
   let script = document.querySelector('script[data-dynamic-schema]');
-  
+
   if (!script) {
     // If not found, create a new one (don't touch the base schema from index.html)
     script = document.createElement('script');
@@ -124,7 +124,7 @@ export const updateStructuredData = (schemaData) => {
     script.setAttribute('data-dynamic-schema', 'true');
     document.head.appendChild(script);
   }
-  
+
   script.textContent = JSON.stringify(schemaData);
 };
 
