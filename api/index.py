@@ -1,4 +1,4 @@
-import json, os, time, re, queue, threading
+import json, os, time, re
 from dotenv import load_dotenv
 from urllib.parse import quote as url_quote
 
@@ -14,14 +14,12 @@ import os
 import re
 import json
 import logging
-import difflib
 import hashlib
 from functools import wraps
 
 from flask import Flask, jsonify, request, Response
 from datetime import datetime
 from flask_cors import CORS
-from bs4 import BeautifulSoup
 import requests
 import cloudscraper
 
@@ -114,11 +112,6 @@ class HttpClient:
         resp = self.get(url, params=params, **kwargs)
         resp.raise_for_status()
         return resp.text
-
-    def get_soup(self, url, params=None, **kwargs):
-        """GET and return parsed BeautifulSoup."""
-        html = self.get_html(url, params=params, **kwargs)
-        return BeautifulSoup(html, "html.parser")
 
 
 # Global client instance
@@ -217,13 +210,6 @@ def api_response(fn):
     return wrapper
 
 
-
-
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  INSTANTIATE SCRAPERS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 
@@ -433,15 +419,8 @@ def index():
             },
             "metadata": {
                 "/api/malsync/<mal_id>": "MALSync lookup",
-
                 "/api/jikan/proxy?path=": "Direct Jikan REST proxy",
                 "/api/check-dub/<id>": "Quick check for dub availability"
-            },
-            "community": {
-                "/api/comments": "Get/Post comments",
-                "/api/comments/vote": "Like/Dislike comments",
-                "/api/comments/edit": "Update existing comments",
-                "/api/comments/delete": "Soft-delete comments"
             }
         }
     })
