@@ -6,6 +6,7 @@ import ScrollToTop from "./components/common/ScrollToTop";
 import PageLoader from "./components/common/PageLoader";
 import AdLoader from "./components/common/AdLoader";
 import ServerCostNotice from "./components/common/ServerCostNotice";
+import W2GNoticeBanner from "./components/common/W2GNoticeBanner";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
 // Eagerly loaded pages (critical path — must render instantly)

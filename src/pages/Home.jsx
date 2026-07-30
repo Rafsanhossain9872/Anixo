@@ -16,6 +16,7 @@ import Hero from "../components/home/Hero";
 import AnimeRow from "../components/home/AnimeRow";
 import { useAuth } from "../hooks/useAuth";
 import ShareBanner from "../components/common/ShareBanner";
+import W2GNoticeBanner from "../components/common/W2GNoticeBanner";
 import { AdNativeBanner } from "../components/common/AdBanner";
 import { AdsterraSmartLinkBanner } from "../components/common/AdsterraSmartLink";
 import Pagination from "../components/common/Pagination";
@@ -172,6 +173,8 @@ export default function Home() {
       <Hero data={trendingData?.media} isLoading={loadingTrending} />
 
       <ShareBanner />
+
+      <W2GNoticeBanner />
 
       {/* Continue Watching */}
       {globalProgress && globalProgress.length > 0 && (
