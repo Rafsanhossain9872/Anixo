@@ -29,7 +29,7 @@ const ServerCostNotice = () => {
           <p className="text-[15px] sm:text-base md:text-lg text-gray-200 font-medium leading-relaxed">
             <span className="font-bold text-red-400 block md:inline mb-1 md:mb-0 md:mr-2 text-lg md:text-xl">Server Support Notice:</span>
             <span className="text-white/90">
-              To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the next 12 hours. We deeply appreciate your patience and support, as this helps us maintain a smooth experience for everyone.
+              To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the <span className="inline-block bg-red-500/20 text-red-300 font-bold px-2.5 py-0.5 mx-1 rounded-md border border-red-500/30 uppercase tracking-wide text-sm md:text-base">next 12 hours only</span>. We deeply appreciate your patience and support, as this helps us maintain a smooth experience for everyone.
             </span>
           </p>
         </div>
