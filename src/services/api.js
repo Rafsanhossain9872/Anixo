@@ -542,7 +542,7 @@ export async function getBrowseAnime(variables) {
 
   // Helper function for Smart Search Augmentation
   const applySmartSearch = async (media, pageInfo) => {
-    let resultMedia = cleanMediaList(media);
+    let resultMedia = cleanMediaList(media, allowAdult);
     // SMART SEARCH: If text search returns few results, augment with Jikan's fuzzy search
     if (variables.search && resultMedia.length < 10) {
       try {
