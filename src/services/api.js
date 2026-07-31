@@ -1281,32 +1281,52 @@ export async function getFillerEpisodes(malId) {
 
   try {
     const fillerMap = {};
-    let hasNextPage = true;
-    let page = 1;
-
-    // Fetch all pages (Jikan max is 100 eps per page)
-    while (hasNextPage) {
-      const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
-        params: { path: `/v4/anime/${malId}/episodes?page=${page}` }
+    // Fetch first page
+    const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
+      params: { path: `/v4/anime/${malId}/episodes?page=1` }
+    });
+    
+    const data = responseData?.data;
+    const pagination = responseData?.pagination;
+    
+    if (data && Array.isArray(data)) {
+      data.forEach(ep => {
+        fillerMap[ep.mal_id] = {
+          isFiller: ep.filler || false,
+          isRecap: ep.recap || false
+        };
       });
-      
-      const data = responseData?.data;
-      const pagination = responseData?.pagination;
-      
-      if (data && Array.isArray(data)) {
-        data.forEach(ep => {
-          fillerMap[ep.mal_id] = {
-            isFiller: ep.filler || false,
-            isRecap: ep.recap || false
-          };
-        });
-      }
+    }
 
-      hasNextPage = pagination?.has_next_page || false;
-      page++;
+    const lastPage = pagination?.last_visible_page || 1;
+    
+    // Fetch remaining pages in parallel if they exist
+    if (lastPage > 1) {
+      const pagePromises = [];
+      // Safety break to prevent too many requests (limit to 15 pages = 1500 eps)
+      const maxPages = Math.min(lastPage, 15);
       
-      // Safety break to prevent infinite loops on massive anime
-      if (page > 15) break; 
+      for (let p = 2; p <= maxPages; p++) {
+        pagePromises.push(
+          smartRequest("get", "/api/jikan/proxy", {
+            params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
+          })
+        );
+      }
+      
+      const results = await Promise.all(pagePromises);
+      
+      results.forEach(res => {
+        const pageData = res?.data?.data;
+        if (pageData && Array.isArray(pageData)) {
+          pageData.forEach(ep => {
+            fillerMap[ep.mal_id] = {
+              isFiller: ep.filler || false,
+              isRecap: ep.recap || false
+            };
+          });
+        }
+      });
     }
 
     return fillerMap;
