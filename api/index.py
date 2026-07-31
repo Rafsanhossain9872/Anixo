@@ -878,12 +878,14 @@ def get_afl_fillers():
             continue
             
         classes = tr.get('class', [])
-        is_filler = 'filler' in classes or 'mixed_canon/filler' in classes
+        is_filler = 'filler' in classes
+        is_mixed = 'mixed_canon/filler' in classes
         is_recap = 'recap' in classes
         
-        if is_filler or is_recap:
+        if is_filler or is_mixed or is_recap:
             fillers[str(ep_num)] = {
                 "isFiller": is_filler,
+                "isMixed": is_mixed,
                 "isRecap": is_recap
             }
             

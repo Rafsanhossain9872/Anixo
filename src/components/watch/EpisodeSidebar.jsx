@@ -97,15 +97,21 @@ export default function EpisodeSidebar({
           {/* Filler Toggle & Info */}
           {!isEpisodeSearchOpen && fillerData && Object.keys(fillerData).length > 0 && (
             <div className="flex items-center justify-between mt-2 pt-3 border-t border-white/5">
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest flex items-center gap-1.5">
                   <Filter size={12} />
                   Hide Filler Episodes
                 </span>
-                <span className="text-[9px] text-amber-500/80 uppercase font-bold tracking-widest flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
-                  Orange = Filler
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] text-amber-500/80 uppercase font-bold tracking-widest flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
+                    Filler
+                  </span>
+                  <span className="text-[9px] text-emerald-500/80 uppercase font-bold tracking-widest flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+                    Mixed Canon
+                  </span>
+                </div>
               </div>
               <button
                 onClick={() => setHideFillerEpisodes(!hideFillerEpisodes)}
@@ -148,12 +154,13 @@ export default function EpisodeSidebar({
             <div className="flex flex-col gap-2">
               {currentSlice.map(ep => {
                 const isFiller = fillerData && fillerData[ep]?.isFiller;
+                const isMixed = fillerData && fillerData[ep]?.isMixed;
                 return (
                   <button
                     key={ep}
                     onClick={() => setActiveEpisode(ep)}
                     disabled={isW2GNonHost}
-                    title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : ""}
+                    title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : isMixed ? "Mixed Canon/Filler" : ""}
                     className={`w-full text-left flex flex-col gap-1 px-4 py-3 text-[12px] font-medium transition-all rounded-[2px] border relative overflow-hidden ${
                       activeEpisode === ep
                         ? "bg-discord-600/10 text-discord-500 border-discord-500 shadow-lg"
@@ -161,10 +168,13 @@ export default function EpisodeSidebar({
                           ? "bg-[#161616] text-white/30 border-white/5 cursor-not-allowed"
                           : isFiller
                             ? "bg-amber-500/5 text-amber-100/70 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40"
-                            : "bg-[#161616] text-white/70 border-white/15 hover:bg-[#202020] hover:text-white"
+                            : isMixed
+                              ? "bg-emerald-500/5 text-emerald-100/70 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+                              : "bg-[#161616] text-white/70 border-white/15 hover:bg-[#202020] hover:text-white"
                     }`}
                   >
                     {isFiller && <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/50" />}
+                    {isMixed && <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-500/50" />}
                     <div className="flex items-start justify-between gap-3 w-full pl-1">
                       <div className="flex items-start gap-3">
                         <span className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-40 shrink-0 mt-[2px]">{t('sidebar.ep')}{String(ep).padStart(2, '0')}</span>
@@ -172,6 +182,9 @@ export default function EpisodeSidebar({
                       </div>
                       {isFiller && (
                         <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 shrink-0">Filler</span>
+                      )}
+                      {isMixed && (
+                        <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-500 shrink-0">Mixed</span>
                       )}
                     </div>
                   </button>
@@ -187,12 +200,13 @@ export default function EpisodeSidebar({
             >
               {currentSlice.map(ep => {
                 const isFiller = fillerData && fillerData[ep]?.isFiller;
+                const isMixed = fillerData && fillerData[ep]?.isMixed;
                 return (
                   <button
                     key={ep}
                     onClick={() => setActiveEpisode(ep)}
                     disabled={isW2GNonHost}
-                    title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : ""}
+                    title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : isMixed ? "Mixed Canon/Filler" : ""}
                     className={`aspect-square w-full flex items-center justify-center text-[12px] font-bold transition-colors rounded-[4px] relative overflow-hidden ${
                       activeEpisode === ep
                         ? "bg-discord-600 text-white shadow-md shadow-discord-600/20"
@@ -202,11 +216,14 @@ export default function EpisodeSidebar({
                             ? "bg-[#1a1a1a] text-white/30 hover:bg-[#2a2a2a] hover:text-white"
                             : isFiller
                               ? "bg-amber-950/40 text-amber-500 hover:bg-amber-900/60 hover:text-amber-300 border border-amber-500/20"
-                              : "bg-[#2a2a2a] text-white/90 hover:bg-white hover:text-black hover:shadow-lg"
+                              : isMixed
+                                ? "bg-emerald-950/40 text-emerald-500 hover:bg-emerald-900/60 hover:text-emerald-300 border border-emerald-500/20"
+                                : "bg-[#2a2a2a] text-white/90 hover:bg-white hover:text-black hover:shadow-lg"
                     }`}
                   >
                     {ep}
                     {isFiller && activeEpisode !== ep && <div className="absolute bottom-1 w-1 h-1 rounded-full bg-amber-500/50" />}
+                    {isMixed && activeEpisode !== ep && <div className="absolute bottom-1 w-1 h-1 rounded-full bg-emerald-500/50" />}
                   </button>
                 );
               })}
