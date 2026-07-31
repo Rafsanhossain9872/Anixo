@@ -1263,6 +1263,59 @@ export async function getSecondaryEpisodeMeta(title, altTitle = "", kitsuId = ""
   }
 }
 
+export async function getStreamingEpisodes(id) {
+  try {
+    const { data } = await smartRequest("get", `/api/episodes/${id}`);
+    return data;
+  } catch (err) {
+    console.error("Error fetching streaming episodes:", err);
+    return [];
+  }
+}
+
+// ------------------------------------------------------------------
+// NEW: Filler & Recap Episode Tracking (via Jikan V4 API)
+// ------------------------------------------------------------------
+export async function getFillerEpisodes(malId) {
+  if (!malId) return {};
+
+  try {
+    const fillerMap = {};
+    let hasNextPage = true;
+    let page = 1;
+
+    // Fetch all pages (Jikan max is 100 eps per page)
+    while (hasNextPage) {
+      const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
+        params: { path: `/v4/anime/${malId}/episodes?page=${page}` }
+      });
+      
+      const data = responseData?.data;
+      const pagination = responseData?.pagination;
+      
+      if (data && Array.isArray(data)) {
+        data.forEach(ep => {
+          fillerMap[ep.mal_id] = {
+            isFiller: ep.filler || false,
+            isRecap: ep.recap || false
+          };
+        });
+      }
+
+      hasNextPage = pagination?.has_next_page || false;
+      page++;
+      
+      // Safety break to prevent infinite loops on massive anime
+      if (page > 15) break; 
+    }
+
+    return fillerMap;
+  } catch (err) {
+    console.error("Error fetching filler episodes from Jikan:", err.message);
+    return {};
+  }
+}
+
 export async function getMalSyncMapping(malId) {
   if (!malId) return null;
   try {
