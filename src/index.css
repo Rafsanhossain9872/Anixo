@@ -50,7 +50,6 @@
 
 html {
   overflow-x: hidden;
-  scrollbar-color: #dc2626 #0b0e14;
   scrollbar-width: thin;
 }
 
@@ -71,13 +70,12 @@ body {
 
 /* Custom Themed Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b0e14;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {

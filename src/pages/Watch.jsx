@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails } from "../services/api";
+import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useLoading } from "../context/LoadingContext";
 import Navbar from "../components/layout/Navbar";
@@ -152,6 +152,10 @@ export default function Watch({ isWatch2GetherMode }) {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [activeSubServer, setActiveSubServer] = useState(0);
   const [showSubServers, setShowSubServers] = useState(false);
+  const [hideFillerEpisodes, setHideFillerEpisodes] = useState(() => getSafeStorage("hideFiller", false));
+
+  // Sync hideFiller to localStorage
+  useEffect(() => localStorage.setItem("hideFiller", JSON.stringify(hideFillerEpisodes)), [hideFillerEpisodes]);
 
   const [prevEpAndServer, setPrevEpAndServer] = useState({ ep: activeEpisode, server: activeServer });
   if (prevEpAndServer.ep !== activeEpisode || prevEpAndServer.server !== activeServer) {
@@ -545,6 +549,13 @@ export default function Watch({ isWatch2GetherMode }) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  const { data: fillerData } = useQuery({
+    queryKey: ["fillerDataV2", anime?.idMal],
+    queryFn: () => getFillerEpisodes(anime?.idMal, anime?.title?.english || anime?.title?.romaji || anime?.title?.native),
+    enabled: !!anime?.idMal,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   // Unified priority resolver: Jikan > Anilist
   const resolvedInfo = useMemo(() => {
     const get = (field, ...fallbacks) => {
@@ -594,7 +605,7 @@ export default function Watch({ isWatch2GetherMode }) {
     episodesList, filteredEpisodes, episodePage, setEpisodePage,
     episodeSearchQuery, setEpisodeSearchQuery, isEpisodeSearchOpen,
     setIsEpisodeSearchOpen, EPISODES_PER_PAGE
-  } = useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpisode, id });
+  } = useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpisode, id, fillerData, hideFillerEpisodes });
 
   // ── Stream fetch: URL, loading, error state ──
   const {
@@ -974,16 +985,26 @@ export default function Watch({ isWatch2GetherMode }) {
                 />
               )}
               <EpisodeSidebar
+                episodesList={episodesList}
                 filteredEpisodes={filteredEpisodes}
-                episodeLayout={episodeLayout} setEpisodeLayout={setEpisodeLayout}
-                episodePage={episodePage} setEpisodePage={setEpisodePage}
+                episodeLayout={episodeLayout}
+                setEpisodeLayout={setEpisodeLayout}
+                episodePage={episodePage}
+                setEpisodePage={setEpisodePage}
                 EPISODES_PER_PAGE={EPISODES_PER_PAGE}
-                activeEpisode={activeEpisode} setActiveEpisode={setActiveEpisode}
+                activeEpisode={activeEpisode}
+                setActiveEpisode={setActiveEpisode}
                 watchedEpisodes={watchedEpisodes}
-                isEpisodeSearchOpen={isEpisodeSearchOpen} setIsEpisodeSearchOpen={setIsEpisodeSearchOpen}
-                episodeSearchQuery={episodeSearchQuery} setEpisodeSearchQuery={setEpisodeSearchQuery}
-                malEpisodes={malEpisodes} anime={anime}
+                isEpisodeSearchOpen={isEpisodeSearchOpen}
+                setIsEpisodeSearchOpen={setIsEpisodeSearchOpen}
+                episodeSearchQuery={episodeSearchQuery}
+                setEpisodeSearchQuery={setEpisodeSearchQuery}
+                malEpisodes={malEpisodes}
+                anime={anime}
                 wtRoom={wtRoom}
+                fillerData={fillerData}
+                hideFillerEpisodes={hideFillerEpisodes}
+                setHideFillerEpisodes={setHideFillerEpisodes}
               />
             </div>
           )}

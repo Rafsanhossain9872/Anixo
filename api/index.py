@@ -829,6 +829,72 @@ def api_jikan_proxy():
 #  STARTUP
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@app.route("/api/afl/fillers", methods=["GET"])
+@api_response
+def get_afl_fillers():
+    title = request.args.get("title")
+    if not title:
+        return {"error": "Missing title"}, 400
+    
+    from bs4 import BeautifulSoup
+    import urllib.parse
+    import re
+
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    target_url = f"https://www.animefillerlist.com/shows/{slug}"
+    
+    show_res = http.get(target_url, timeout=10)
+    
+    # If not found directly, fallback to search
+    if show_res.status_code == 404:
+        search_url = f"https://www.animefillerlist.com/search/node/{urllib.parse.quote(title)}"
+        search_res = http.get(search_url, timeout=10)
+        
+        soup = BeautifulSoup(search_res.text, 'html.parser')
+        target_url = None
+        for a in soup.select('.search-result .title a'):
+            href = a.get('href', '')
+            if href.startswith('https://www.animefillerlist.com/shows/') and len(href.split('/')) == 5:
+                target_url = href
+                break
+                
+        if target_url:
+            show_res = http.get(target_url, timeout=10)
+
+    if show_res.status_code != 200:
+        return {}
+        
+    soup = BeautifulSoup(show_res.text, 'html.parser')
+    fillers = {}
+    
+    for tr in soup.select('table.EpisodeList tr'):
+        num_el = tr.select_one('.Number')
+        if not num_el:
+            continue
+            
+        try:
+            ep_num = int(num_el.text.strip())
+        except ValueError:
+            continue
+            
+        classes = tr.get('class', [])
+        is_filler = 'filler' in classes
+        is_mixed = 'mixed_canon/filler' in classes
+        is_recap = 'recap' in classes
+        
+        if is_filler or is_mixed or is_recap:
+            fillers[str(ep_num)] = {
+                "isFiller": is_filler,
+                "isMixed": is_mixed,
+                "isRecap": is_recap
+            }
+            
+    return fillers
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  STARTUP
+# ═══════════════════════════════════════════════════════════════════════════════
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
     log.info(f"Anixo API starting on port {port}...")
