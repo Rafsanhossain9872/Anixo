@@ -1276,12 +1276,29 @@ export async function getStreamingEpisodes(id) {
 // ------------------------------------------------------------------
 // NEW: Filler & Recap Episode Tracking (via Jikan V4 API)
 // ------------------------------------------------------------------
-export async function getFillerEpisodes(malId) {
-  if (!malId) return {};
+export async function getFillerEpisodes(malId, title) {
+  if (!title && !malId) return {};
 
   try {
+    // Attempt AnimeFillerList first if title is available
+    if (title) {
+      try {
+        const { data: aflData } = await smartRequest("get", "/api/afl/fillers", {
+          params: { title: title }
+        });
+        
+        if (aflData && Object.keys(aflData).length > 0) {
+          return aflData;
+        }
+      } catch (err) {
+        console.warn("AFL Fetch failed, falling back to Jikan:", err.message);
+      }
+    }
+    
+    // Fallback to Jikan using MAL ID if AFL failed or title wasn't provided
+    if (!malId) return {};
+    
     const fillerMap = {};
-    // Fetch first page
     const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
       params: { path: `/v4/anime/${malId}/episodes?page=1` }
     });
@@ -1300,10 +1317,8 @@ export async function getFillerEpisodes(malId) {
 
     const lastPage = pagination?.last_visible_page || 1;
     
-    // Fetch remaining pages in parallel if they exist
     if (lastPage > 1) {
       const pagePromises = [];
-      // Safety break to prevent too many requests (limit to 15 pages = 1500 eps)
       const maxPages = Math.min(lastPage, 15);
       
       for (let p = 2; p <= maxPages; p++) {
@@ -1331,7 +1346,7 @@ export async function getFillerEpisodes(malId) {
 
     return fillerMap;
   } catch (err) {
-    console.error("Error fetching filler episodes from Jikan:", err.message);
+    console.error("Error fetching filler episodes:", err.message);
     return {};
   }
 }

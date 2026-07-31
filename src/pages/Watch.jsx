@@ -551,7 +551,7 @@ export default function Watch({ isWatch2GetherMode }) {
 
   const { data: fillerData } = useQuery({
     queryKey: ["fillerDataV2", anime?.idMal],
-    queryFn: () => getFillerEpisodes(anime?.idMal),
+    queryFn: () => getFillerEpisodes(anime?.idMal, anime?.title?.english || anime?.title?.romaji || anime?.title?.native),
     enabled: !!anime?.idMal,
     staleTime: 1000 * 60 * 60 * 24,
   });
