@@ -840,24 +840,27 @@ def get_afl_fillers():
     import urllib.parse
     import re
 
-    # 1. Search AFL
-    search_url = f"https://www.animefillerlist.com/search/node/{urllib.parse.quote(title)}"
-    search_res = http.get(search_url, timeout=10)
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    target_url = f"https://www.animefillerlist.com/shows/{slug}"
     
-    soup = BeautifulSoup(search_res.text, 'html.parser')
-    first_result = None
-    for a in soup.select('.search-result .title a'):
-        href = a.get('href', '')
-        if href.startswith('https://www.animefillerlist.com/shows/') and len(href.split('/')) == 5:
-            first_result = href
-            break
-            
-    if not first_result:
-        slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
-        first_result = f"https://www.animefillerlist.com/shows/{slug}"
+    show_res = http.get(target_url, timeout=10)
+    
+    # If not found directly, fallback to search
+    if show_res.status_code == 404:
+        search_url = f"https://www.animefillerlist.com/search/node/{urllib.parse.quote(title)}"
+        search_res = http.get(search_url, timeout=10)
         
-    # 2. Fetch the show page
-    show_res = http.get(first_result, timeout=10)
+        soup = BeautifulSoup(search_res.text, 'html.parser')
+        target_url = None
+        for a in soup.select('.search-result .title a'):
+            href = a.get('href', '')
+            if href.startswith('https://www.animefillerlist.com/shows/') and len(href.split('/')) == 5:
+                target_url = href
+                break
+                
+        if target_url:
+            show_res = http.get(target_url, timeout=10)
+
     if show_res.status_code != 200:
         return {}
         
