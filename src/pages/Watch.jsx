@@ -985,6 +985,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 />
               )}
               <EpisodeSidebar
+                episodesList={episodesList}
                 filteredEpisodes={filteredEpisodes}
                 episodeLayout={episodeLayout}
                 setEpisodeLayout={setEpisodeLayout}

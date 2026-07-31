@@ -86,15 +86,19 @@ export function useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpi
     });
   }, [episodesList, episodeSearchQuery, malEpisodes, hideFillerEpisodes, fillerData, activeEpisode]);
 
-  // Clamp episodePage when filteredEpisodes changes (e.g. searching or toggling fillers)
+  const isSearching = episodeSearchQuery.trim().length > 0;
+  const effectiveTotalPages = isSearching
+    ? Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE)
+    : Math.ceil(episodesList.length / EPISODES_PER_PAGE);
+
+  // Clamp episodePage when effective pages change
   useEffect(() => {
-    const totalPages = Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE);
-    if (episodePage >= totalPages && totalPages > 0) {
-      setTimeout(() => setEpisodePage(totalPages - 1), 0);
-    } else if (filteredEpisodes.length === 0 && episodePage !== 0) {
+    if (effectiveTotalPages > 0 && episodePage >= effectiveTotalPages) {
+      setTimeout(() => setEpisodePage(effectiveTotalPages - 1), 0);
+    } else if (effectiveTotalPages === 0 && episodePage !== 0) {
       setTimeout(() => setEpisodePage(0), 0);
     }
-  }, [filteredEpisodes, episodePage]);
+  }, [effectiveTotalPages, episodePage]);
 
   return {
     episodesList,

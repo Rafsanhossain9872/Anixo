@@ -5,7 +5,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 export default function EpisodeSidebar({
-  filteredEpisodes, episodeLayout, setEpisodeLayout,
+  episodesList, filteredEpisodes, episodeLayout, setEpisodeLayout,
   episodePage, setEpisodePage, EPISODES_PER_PAGE,
   activeEpisode, setActiveEpisode, watchedEpisodes,
   isEpisodeSearchOpen, setIsEpisodeSearchOpen,
@@ -14,10 +14,19 @@ export default function EpisodeSidebar({
   fillerData, hideFillerEpisodes, setHideFillerEpisodes
 }) {
   const { t } = useTranslation();
-  const totalPages = Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE);
-  const pageStart = episodePage * EPISODES_PER_PAGE + 1;
-  const pageEnd = Math.min((episodePage + 1) * EPISODES_PER_PAGE, filteredEpisodes.length);
-  const currentSlice = filteredEpisodes.slice(episodePage * EPISODES_PER_PAGE, (episodePage + 1) * EPISODES_PER_PAGE);
+  const isSearching = episodeSearchQuery?.trim().length > 0;
+  
+  const pageStart = isSearching
+    ? episodePage * EPISODES_PER_PAGE + 1
+    : episodePage * EPISODES_PER_PAGE + 1;
+    
+  const pageEnd = isSearching
+    ? Math.min((episodePage + 1) * EPISODES_PER_PAGE, filteredEpisodes.length)
+    : Math.min((episodePage + 1) * EPISODES_PER_PAGE, episodesList?.length || 0);
+
+  const currentSlice = isSearching
+    ? filteredEpisodes.slice(episodePage * EPISODES_PER_PAGE, (episodePage + 1) * EPISODES_PER_PAGE)
+    : filteredEpisodes.filter(ep => ep >= pageStart && ep <= pageEnd);
 
   // Helper: resolve episode title from multiple sources
   const getEpTitle = (ep) => {
@@ -118,7 +127,7 @@ export default function EpisodeSidebar({
               <span className="text-[11px] font-bold tracking-widest text-white/80">
                 {String(pageStart).padStart(3, '0')}-{String(pageEnd).padStart(3, '0')}
               </span>
-              <button disabled={episodePage >= totalPages - 1} onClick={() => setEpisodePage(p => p + 1)} className={`transition-colors ${episodePage < totalPages - 1 ? 'text-white hover:text-discord-500' : 'text-white/5'}`}>
+              <button disabled={isSearching ? episodePage >= Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE) - 1 : episodePage >= Math.ceil((episodesList?.length || 0) / EPISODES_PER_PAGE) - 1} onClick={() => setEpisodePage(p => p + 1)} className={`transition-colors ${(isSearching ? episodePage < Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE) - 1 : episodePage < Math.ceil((episodesList?.length || 0) / EPISODES_PER_PAGE) - 1) ? 'text-white hover:text-discord-500' : 'text-white/5'}`}>
                 <ChevronRight size={18} />
               </button>
             </div>
