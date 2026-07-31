@@ -135,7 +135,7 @@ export default function EpisodeSidebar({
         )}
 
         {/* Episode List */}
-        <div className="flex-1 overflow-y-auto p-3 lg:p-4 custom-scrollbar bg-[#0d0d0d]">
+        <div className="flex-1 overflow-y-auto p-3 lg:p-4 mini-scrollbar bg-[#0d0d0d]">
           {filteredEpisodes.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-white/30 animate-in fade-in duration-300">
               <Search size={32} className="mb-3 opacity-20" />
