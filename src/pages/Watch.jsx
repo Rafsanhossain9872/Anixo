@@ -272,6 +272,10 @@ export default function Watch({ isWatch2GetherMode }) {
       setActiveEpisode(epNum);
     });
 
+    socket.on('wt_chat_history', (msgs) => {
+      setWtMessages(msgs || []);
+    });
+
     socket.on('wt_new_message', (msg) => {
       setWtMessages(prev => [...prev, msg]);
     });
