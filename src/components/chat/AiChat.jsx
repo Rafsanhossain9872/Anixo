@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MessageSquare, X, Send, Bot, Star, Play, Maximize2, Minimize2, Trash2, ChevronDown } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Star, Play, Maximize2, Minimize2, Trash2, ChevronDown, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../../hooks/useAuth';
+import { useUserList } from '../../context/UserListContext';
 import LoginModal from '../auth/LoginModal';
 
 const TypewriterMessage = ({ content, onComplete, onTick }) => {
@@ -134,6 +134,8 @@ const AiChat = () => {
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isBrowsing, setIsBrowsing] = useState(false);
+  const [browsingQuery, setBrowsingQuery] = useState('');
   const [isBlocked, setIsBlocked] = useState(false);
   
   const [chipsVisible, setChipsVisible] = useState(() => {
@@ -147,6 +149,7 @@ const AiChat = () => {
   const personaMenuRef = useRef(null);
 
   const { user } = useAuth();
+  const { list: userWatchlist } = useUserList();
 
   useEffect(() => {
     localStorage.setItem('anixo_chat_history', JSON.stringify(messages));
@@ -272,6 +275,7 @@ const AiChat = () => {
 
     setInput('');
     setChipsVisible(false);
+    setBrowsingQuery('');
 
     // Add user message to state
     const newMessages = [...messages, { role: 'user', content: userMsg }];
@@ -283,30 +287,86 @@ const AiChat = () => {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
       const token = localStorage.getItem('token');
 
-      const response = await axios.post(`${apiUrl}/ai`, {
-        messages: newMessages,
-        persona: persona
-      }, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      // Format watchlist concisely for AI to save tokens
+      const formattedWatchlist = userWatchlist?.map(item => ({
+        id: item.animeId,
+        title: item.title?.english || item.title?.romaji || "Unknown Anime",
+        status: item.status,
+        score: item.score || 0
+      })) || [];
+
+      const response = await fetch(`${apiUrl}/ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          messages: newMessages,
+          persona: persona,
+          watchlist: formattedWatchlist
+        })
       });
 
-      const data = response.data;
-      if (data.isBlocked) {
-        setIsBlocked(true);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
       
-      if (data.success) {
-        setMessages([
-          ...newMessages,
-          {
-            role: 'assistant',
-            content: data.aiMessage,
-            recommendations: data.recommendations,
-            isTyping: true
+      let done = false;
+      let rawData = '';
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          rawData += decoder.decode(value, { stream: true });
+          const chunks = rawData.split('\n\n');
+          rawData = chunks.pop(); // Keep incomplete chunk
+          
+          for (const chunk of chunks) {
+            if (chunk.startsWith('data: ')) {
+              const dataStr = chunk.replace('data: ', '');
+              try {
+                const data = JSON.parse(dataStr);
+                
+                if (data.status === 'error') {
+                  throw new Error(data.message || 'Failed to get response');
+                }
+                
+                if (data.status === 'browsing') {
+                  setIsBrowsing(true);
+                  if (data.query) setBrowsingQuery(data.query);
+                }
+                
+                if (data.status === 'done') {
+                  if (data.isBlocked) {
+                    setIsBlocked(true);
+                  }
+                  if (data.success) {
+                    setMessages([
+                      ...newMessages,
+                      {
+                        role: 'assistant',
+                        content: data.aiMessage,
+                        recommendations: data.recommendations,
+                        webSearchQuery: data.webSearchQuery,
+                        searchContext: data.searchContext,
+                        isTyping: true
+                      }
+                    ]);
+                  }
+                  setIsLoading(false);
+                  setIsBrowsing(false);
+                }
+              } catch(e) {
+                console.error("Error parsing stream chunk:", e, chunk);
+              }
+            }
           }
-        ]);
-      } else {
-        throw new Error(data.message || 'Failed to get response');
+        }
       }
     } catch (error) {
       console.error("AI Chat Error:", error);
@@ -317,8 +377,8 @@ const AiChat = () => {
           content: "Sorry, I'm having trouble connecting to my brain right now. Please try again later!"
         }
       ]);
-    } finally {
       setIsLoading(false);
+      setIsBrowsing(false);
     }
   };
 
@@ -443,12 +503,20 @@ const AiChat = () => {
               <>
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  <div className={`max-w-[85%] rounded-2xl p-3 ${msg.role === 'user'
-                    ? 'bg-discord-600 text-white rounded-br-none'
-                    : 'bg-white/5 text-gray-200 rounded-bl-none border border-white/15'
+                    <div className={`p-3 max-w-[90%] md:max-w-[85%] break-words shadow-sm relative ${
+                      msg.role === 'user'
+                      ? 'bg-discord-500 text-white rounded-2xl rounded-br-none ml-auto'
+                      : 'bg-white/5 text-gray-200 rounded-2xl rounded-bl-none border border-white/10'
                     }`}>
-                    {msg.role === 'assistant' ? (
-                      msg.isTyping ? (
+                      {msg.role === 'assistant' && msg.webSearchQuery && (
+                        <div className="flex items-center gap-1.5 text-xs text-white/50 mb-2 pb-2 border-b border-white/5">
+                          <Globe size={12} />
+                          <span>Searched: "{msg.webSearchQuery}"</span>
+                        </div>
+                      )}
+                      
+                      {msg.role === 'assistant' ? (
+                        msg.isTyping ? (
                         <TypewriterMessage 
                           content={msg.content} 
                           onTick={scrollToBottom}
@@ -562,9 +630,18 @@ const AiChat = () => {
             {isLoading && (
               <div className="flex items-start">
                 <div className="bg-white/5 text-gray-200 rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-1.5 border border-white/15 w-fit">
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  {isBrowsing ? (
+                    <div className="flex items-center gap-2 text-sm text-discord-400 font-medium">
+                      <Globe size={14} className="animate-pulse" />
+                      {browsingQuery ? `Browsing the web for "${browsingQuery}"...` : "Browsing the web..."}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
