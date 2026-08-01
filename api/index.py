@@ -837,12 +837,16 @@ def api_jikan_proxy():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/afl/fillers", methods=["GET"])
-@cached("afl_fillers", ttl=86400)
 @api_response
 def get_afl_fillers():
     title = request.args.get("title")
     if not title:
         return {"error": "Missing title"}, 400
+        
+    cache_key = f"afl_fillers:{title.lower().strip()}"
+    entry = _cache.get(cache_key)
+    if entry and (time.time() - entry["ts"]) < 86400:
+        return entry["data"]
     
     from bs4 import BeautifulSoup
     import urllib.parse
@@ -870,6 +874,7 @@ def get_afl_fillers():
             show_res = http.get(target_url, timeout=10)
 
     if show_res.status_code != 200:
+        _cache[cache_key] = {"data": {}, "ts": time.time()}
         return {}
         
     soup = BeautifulSoup(show_res.text, 'html.parser')
@@ -897,6 +902,7 @@ def get_afl_fillers():
                 "isRecap": is_recap
             }
             
+    _cache[cache_key] = {"data": fillers, "ts": time.time()}
     return fillers
 
 # ═══════════════════════════════════════════════════════════════════════════════
