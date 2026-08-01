@@ -830,6 +830,7 @@ def api_jikan_proxy():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route("/api/afl/fillers", methods=["GET"])
+@cached("afl_fillers", ttl=86400)
 @api_response
 def get_afl_fillers():
     title = request.args.get("title")

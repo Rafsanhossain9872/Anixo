@@ -4,3 +4,4 @@ requests
 cloudscraper
 gunicorn
 python-dotenv
+beautifulsoup4
