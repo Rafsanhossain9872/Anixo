@@ -294,7 +294,9 @@ export default function VideoPlayerSection({
                                         currentStreamIndex={activeSubServer}
                                         onStreamChange={(index) => setActiveSubServer(index)}
                                         poster={
-                                            anime?.coverImage?.extraLarge || anime?.coverImage?.large
+                                            (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
+                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
+                                            : null
                                         }
                                         subtitles={processedSubtitles}
                                         skipTimes={skipTimes}
@@ -320,7 +322,9 @@ export default function VideoPlayerSection({
                                         src={videoSrc}
                                         type={videoType}
                                         poster={
-                                            anime?.coverImage?.extraLarge || anime?.coverImage?.large
+                                            (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
+                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
+                                            : null
                                         }
                                         subtitles={processedSubtitles}
                                         skipTimes={skipTimes}
@@ -347,7 +351,9 @@ export default function VideoPlayerSection({
                                     src={videoSrc}
                                     type={videoType}
                                     poster={
-                                        anime?.coverImage?.extraLarge || anime?.coverImage?.large
+                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
+                                        ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
+                                        : null
                                     }
                                     subtitles={processedSubtitles}
                                     initialTime={initialTime}
