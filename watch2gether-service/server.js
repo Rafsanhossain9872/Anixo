@@ -140,7 +140,8 @@ io.on('connection', async (socket) => {
         episode: data.episode || 1,
         time: 0,
         playing: false
-      }
+      },
+      messages: []
     });
 
     socket.join(`wt-${roomId}`);
@@ -187,12 +188,17 @@ io.on('connection', async (socket) => {
       hostId: room.members.get(room.host)?.id
     });
 
-    io.to(`wt-${roomId}`).emit('wt_new_message', {
+    const sysMsg = {
       _id: `sys_${Date.now()}_${Math.random()}`,
       type: 'system',
       text: `${socket.displayName} joined the room`,
       createdAt: new Date()
-    });
+    };
+    room.messages.push(sysMsg);
+    if (room.messages.length > 100) room.messages.shift();
+    socket.to(`wt-${roomId}`).emit('wt_new_message', sysMsg);
+    
+    socket.emit('wt_chat_history', room.messages);
 
     callback({ 
       success: true, 
@@ -254,6 +260,9 @@ io.on('connection', async (socket) => {
       isHost: room.host === socket.id
     };
 
+    room.messages.push(msg);
+    if (room.messages.length > 100) room.messages.shift();
+
     io.to(`wt-${socket.wtRoomId}`).emit('wt_new_message', msg);
   });
 
@@ -280,12 +289,14 @@ io.on('connection', async (socket) => {
     if (room && room.host === socket.id) {
       room.status = 'ended';
       io.to(`wt-${socket.wtRoomId}`).emit('wt_room_ended');
-      io.to(`wt-${socket.wtRoomId}`).emit('wt_new_message', {
+      const sysMsg = {
         _id: `sys_end_${Date.now()}_${Math.random()}`,
         type: 'system',
         text: `${socket.displayName} ended the room session`,
         createdAt: new Date()
-      });
+      };
+      room.messages.push(sysMsg);
+      io.to(`wt-${socket.wtRoomId}`).emit('wt_new_message', sysMsg);
     }
   });
 
@@ -331,12 +342,15 @@ io.on('connection', async (socket) => {
                   
                   io.to(newHostSocketId).emit('wt_host_transferred');
                   
-                  io.to(`wt-${sock.wtRoomId}`).emit('wt_new_message', {
+                  const sysMsg = {
                     _id: `sys_host_${Date.now()}_${Math.random()}`,
                     type: 'system',
                     text: `${currentRoom.members.get(newHostSocketId).displayName} is the new host`,
                     createdAt: new Date()
-                  });
+                  };
+                  currentRoom.messages.push(sysMsg);
+                  if (currentRoom.messages.length > 100) currentRoom.messages.shift();
+                  io.to(`wt-${sock.wtRoomId}`).emit('wt_new_message', sysMsg);
                   
                   io.to(`wt-${sock.wtRoomId}`).emit('wt_room_update', {
                     members: Array.from(currentRoom.members.values()),
@@ -353,12 +367,15 @@ io.on('connection', async (socket) => {
             hostId: room.members.get(room.host)?.id
           });
           
-          io.to(`wt-${sock.wtRoomId}`).emit('wt_new_message', {
+          const sysMsg2 = {
             _id: `sys_${Date.now()}_${Math.random()}`,
             type: 'system',
             text: `${sock.displayName} left the room`,
             createdAt: new Date()
-          });
+          };
+          room.messages.push(sysMsg2);
+          if (room.messages.length > 100) room.messages.shift();
+          io.to(`wt-${sock.wtRoomId}`).emit('wt_new_message', sysMsg2);
         }
       }
       sock.leave(`wt-${sock.wtRoomId}`);

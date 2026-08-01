@@ -272,6 +272,10 @@ export default function Watch({ isWatch2GetherMode }) {
       setActiveEpisode(epNum);
     });
 
+    socket.on('wt_chat_history', (msgs) => {
+      setWtMessages(msgs || []);
+    });
+
     socket.on('wt_new_message', (msg) => {
       setWtMessages(prev => [...prev, msg]);
     });
@@ -1032,6 +1036,13 @@ export default function Watch({ isWatch2GetherMode }) {
               animeId={id}
               animeTitle={getTitle(anime.title)}
               episode={activeEpisode}
+              onTimestampClick={(seconds) => {
+                if (videoRef.current) {
+                  videoRef.current.seek(seconds);
+                  videoRef.current.play();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               relations={relations}
               recommendations={recommendations}
             />

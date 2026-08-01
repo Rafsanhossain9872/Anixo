@@ -75,6 +75,7 @@ const parseBasicMarkdown = (text) => {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
+        .replace(/\b((?:[0-9]+:)?[0-5]?[0-9]:[0-5][0-9])\b/g, '<button class="timestamp-link text-[#00B4D8] hover:underline cursor-pointer" data-time="$1">$1</button>')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/~~(.*?)~~/g, '<del>$1</del>')
@@ -371,7 +372,7 @@ const ReplyInputBox = ({ user, replyText, setReplyText, onSubmit, onCancel, plac
     );
 };
 
-export default function CommentSection({ animeId, episode }) {
+export default function CommentSection({ animeId, episode, onTimestampClick }) {
     const { user } = useAuth();
     
     const [comments, setComments] = useState([]);
@@ -977,7 +978,27 @@ export default function CommentSection({ animeId, episode }) {
     });
 
     return (
-        <div className="mt-6 sm:mt-10 lg:mt-16 bg-[#0B0E14] rounded-xl sm:rounded-sm p-3 sm:p-6 lg:p-8 border border-white/[0.05] shadow-2xl">
+        <div 
+            className="mt-6 sm:mt-10 lg:mt-16 bg-[#0B0E14] rounded-xl sm:rounded-sm p-3 sm:p-6 lg:p-8 border border-white/[0.05] shadow-2xl"
+            onClick={(e) => {
+                const timestampEl = e.target.closest('.timestamp-link');
+                if (timestampEl && onTimestampClick) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const timeStr = timestampEl.dataset.time;
+                    if (timeStr) {
+                        const parts = timeStr.split(':').map(Number);
+                        let seconds = 0;
+                        if (parts.length === 3) {
+                            seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+                        } else if (parts.length === 2) {
+                            seconds = parts[0] * 60 + parts[1];
+                        }
+                        onTimestampClick(seconds);
+                    }
+                }
+            }}
+        >
             {/* Header */}
             <div className="flex items-center justify-between mb-6 sm:mb-8 border-b border-white/15 pb-4">
                 <div className="flex items-center gap-4 sm:gap-6">

@@ -1318,30 +1318,28 @@ export async function getFillerEpisodes(malId, title) {
     const lastPage = pagination?.last_visible_page || 1;
     
     if (lastPage > 1) {
-      const pagePromises = [];
       const maxPages = Math.min(lastPage, 15);
       
+      // Fetch sequentially to avoid Jikan 429 rate limits
       for (let p = 2; p <= maxPages; p++) {
-        pagePromises.push(
-          smartRequest("get", "/api/jikan/proxy", {
+        try {
+          const res = await smartRequest("get", "/api/jikan/proxy", {
             params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
-          })
-        );
-      }
-      
-      const results = await Promise.all(pagePromises);
-      
-      results.forEach(res => {
-        const pageData = res?.data?.data;
-        if (pageData && Array.isArray(pageData)) {
-          pageData.forEach(ep => {
-            fillerMap[ep.mal_id] = {
-              isFiller: ep.filler || false,
-              isRecap: ep.recap || false
-            };
           });
+          const pageData = res.data?.data;
+          if (pageData) {
+            pageData.forEach(ep => {
+              if (ep.filler || ep.recap) {
+                fillerMap[ep.mal_id] = { isFiller: ep.filler, isRecap: ep.recap };
+              }
+            });
+          }
+          // Small delay to respect rate limit
+          await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+          console.error(`Jikan fallback failed on page ${p}:`, err.message);
         }
-      });
+      }
     }
 
     return fillerMap;

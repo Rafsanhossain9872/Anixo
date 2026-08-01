@@ -6,3 +6,4 @@ python-dotenv
 gunicorn
 pymongo
 dnspython
+beautifulsoup4

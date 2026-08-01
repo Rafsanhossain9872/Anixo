@@ -798,7 +798,14 @@ def api_jikan_proxy():
     if not path.startswith("/v4/"):
         path = "/v4/" + path.lstrip("/")
 
+    # Prevent path traversal and SSRF via URL-encoded characters
+    if ".." in path or "%" in path:
+        return {"error": "Invalid Jikan path"}, 400
+    from urllib.parse import urlparse
     full_url = f"https://api.jikan.moe{path}"
+    parsed = urlparse(full_url)
+    if parsed.scheme != "https" or parsed.netloc != "api.jikan.moe":
+        return {"error": "Invalid Jikan path"}, 400
     
     # Preserve other query params
     params = request.args.to_dict()
@@ -810,7 +817,7 @@ def api_jikan_proxy():
     j_resp = None
     for attempt in range(3):
         try:
-            j_resp = requests.get(full_url, params=params, timeout=10)
+            j_resp = requests.get(full_url, params=params, timeout=10, allow_redirects=False)
             if j_resp.status_code == 200:
                 break
             if j_resp.status_code == 429:
@@ -835,6 +842,11 @@ def get_afl_fillers():
     title = request.args.get("title")
     if not title:
         return {"error": "Missing title"}, 400
+        
+    cache_key = f"afl_fillers:{title.lower().strip()}"
+    entry = _cache.get(cache_key)
+    if entry and (time.time() - entry["ts"]) < 86400:
+        return entry["data"]
     
     from bs4 import BeautifulSoup
     import urllib.parse
@@ -862,6 +874,7 @@ def get_afl_fillers():
             show_res = http.get(target_url, timeout=10)
 
     if show_res.status_code != 200:
+        _cache[cache_key] = {"data": {}, "ts": time.time()}
         return {}
         
     soup = BeautifulSoup(show_res.text, 'html.parser')
@@ -889,6 +902,7 @@ def get_afl_fillers():
                 "isRecap": is_recap
             }
             
+    _cache[cache_key] = {"data": fillers, "ts": time.time()}
     return fillers
 
 # ═══════════════════════════════════════════════════════════════════════════════
