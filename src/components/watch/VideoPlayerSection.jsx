@@ -1,13 +1,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import VideoPlayer from "../common/VideoPlayer";
-import ArtPlayer from "../common/ArtPlayer";
-import PlyrPlayer from "../common/PlyrPlayer";
-
-// ================= CONFIGURATION =================
-// Change to 'art' for ArtPlayer, or 'plyr' for PlyrPlayer
-const PREFERRED_HLS_PLAYER = 'plyr';
-// =================================================
+import AnikoPlayer from "../common/AnikoPlayer";
 
 /**
  * VideoPlayerSection
@@ -33,6 +27,7 @@ export default function VideoPlayerSection({
     setActiveEpisode,
     iframeRef,
     activeSubServer = 0,
+    setActiveSubServer,
     skipTimes,
     videoRef,
     onPlay,
@@ -57,7 +52,7 @@ export default function VideoPlayerSection({
             }
             prevServerRef.current = activeServer;
         }
-    }, [activeServer]);
+    }, [activeServer, iframeRef]);
 
     // Resolve current episode image for player background/loading placeholder
     const currentEpisodeImage = useMemo(() => {
@@ -88,7 +83,7 @@ export default function VideoPlayerSection({
     let isIframe = false;
     let currentIframeUrl = streamUrl;
 
-    if (activeServer === 3 && streamData?.all_streams) {
+    if ((activeServer === 1 || activeServer === 6) && streamData?.all_streams) {
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
@@ -149,7 +144,7 @@ export default function VideoPlayerSection({
             });
         }
         return subs;
-    }, [streamData?.subtitles, activeServer, isIframe, anikoBase]);
+    }, [streamData?.subtitles, isIframe, anikoBase]);
 
     return (
         <>
@@ -266,7 +261,7 @@ export default function VideoPlayerSection({
                                                 <button
                                                     onClick={() =>
                                                         setActiveServer((prev) =>
-                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : 1
+                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : prev === 4 ? 5 : 1
                                                         )
                                                     }
                                                     className="px-5 py-2 bg-discord-600 hover:bg-discord-700 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"
@@ -284,66 +279,45 @@ export default function VideoPlayerSection({
                     <div className="w-full h-full">
                         {!isIframe && videoSrc ? (
                             videoType === 'hls' || videoSrc.includes('.m3u8') ? (
-                                PREFERRED_HLS_PLAYER === 'plyr' ? (
-                                    <PlyrPlayer
-                                        key={`plyrplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
-                                        src={videoSrc}
-                                        type={videoType}
-                                        poster={
-                                            anime?.coverImage?.extraLarge || anime?.coverImage?.large
+                                <AnikoPlayer
+                                    key={`anikoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
+                                    src={videoSrc}
+                                    type={videoType}
+                                    availableStreams={streamData?.all_streams || []}
+                                    currentStreamIndex={activeSubServer}
+                                    onStreamChange={(index) => setActiveSubServer(index)}
+                                    poster={
+                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
+                                        ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
+                                        : null
+                                    }
+                                    subtitles={processedSubtitles}
+                                    skipTimes={skipTimes}
+                                    initialTime={initialTime}
+                                    onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                                    onEnded={() => {
+                                        if (autoNext && activeEpisode < episodesList.length) {
+                                            const nextEp = episodesList.find(
+                                                (e) => e.number === activeEpisode + 1
+                                            );
+                                            if (nextEp) setActiveEpisode(nextEp.number);
                                         }
-                                        subtitles={processedSubtitles}
-                                        skipTimes={skipTimes}
-                                        initialTime={initialTime}
-                                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                                        onEnded={() => {
-                                            if (autoNext && activeEpisode < episodesList.length) {
-                                                const nextEp = episodesList.find(
-                                                    (e) => e.number === activeEpisode + 1
-                                                );
-                                                if (nextEp) setActiveEpisode(nextEp.number);
-                                            }
-                                        }}
-                                        ref={videoRef}
-                                        onPlay={onPlay}
-                                        onPause={onPause}
-                                        onSeeked={onSeeked}
-                                        disableControls={isWatch2GetherMode && !isW2GHost}
-                                    />
-                                ) : (
-                                    <ArtPlayer
-                                        key={`artplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
-                                        src={videoSrc}
-                                        type={videoType}
-                                        poster={
-                                            anime?.coverImage?.extraLarge || anime?.coverImage?.large
-                                        }
-                                        subtitles={processedSubtitles}
-                                        skipTimes={skipTimes}
-                                        initialTime={initialTime}
-                                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                                        onEnded={() => {
-                                            if (autoNext && activeEpisode < episodesList.length) {
-                                                const nextEp = episodesList.find(
-                                                    (e) => e.number === activeEpisode + 1
-                                                );
-                                                if (nextEp) setActiveEpisode(nextEp.number);
-                                            }
-                                        }}
-                                        ref={videoRef}
-                                        onPlay={onPlay}
-                                        onPause={onPause}
-                                        onSeeked={onSeeked}
-                                        disableControls={isWatch2GetherMode && !isW2GHost}
-                                    />
-                                )
+                                    }}
+                                    ref={videoRef}
+                                    onPlay={onPlay}
+                                    onPause={onPause}
+                                    onSeeked={onSeeked}
+                                    disableControls={isWatch2GetherMode && !isW2GHost}
+                                />
                             ) : (
                                 <VideoPlayer
                                     key={`videoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
                                     src={videoSrc}
                                     type={videoType}
                                     poster={
-                                        anime?.coverImage?.extraLarge || anime?.coverImage?.large
+                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
+                                        ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
+                                        : null
                                     }
                                     subtitles={processedSubtitles}
                                     initialTime={initialTime}

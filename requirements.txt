@@ -1,7 +1,7 @@
 flask
 flask-cors
 requests
-beautifulsoup4
 cloudscraper
 gunicorn
 python-dotenv
+beautifulsoup4

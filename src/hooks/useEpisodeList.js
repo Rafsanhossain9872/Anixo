@@ -5,9 +5,9 @@ export const EPISODES_PER_PAGE = 50;
 /**
  * useEpisodeList
  * Handles computing the total episodes list, filtering by search query,
- * and managing pagination state.
+ * filtering out filler episodes, and managing pagination state.
  */
-export function useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpisode, id }) {
+export function useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpisode, id, fillerData, hideFillerEpisodes }) {
   const [episodePage, setEpisodePage] = useState(0);
   const [episodeSearchQuery, setEpisodeSearchQuery] = useState("");
   const [isEpisodeSearchOpen, setIsEpisodeSearchOpen] = useState(false);
@@ -62,25 +62,43 @@ export function useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpi
   }, [anime, malEpisodes]);
 
   const filteredEpisodes = useMemo(() => {
-    if (!episodeSearchQuery) return episodesList;
+    let result = episodesList;
+
+    // Filter out filler episodes if the toggle is ON
+    if (hideFillerEpisodes && fillerData) {
+      result = result.filter(ep => {
+        const isFiller = fillerData[ep]?.isFiller;
+        // Don't hide the episode if the user is currently watching it
+        if (ep === activeEpisode) return true;
+        return !isFiller;
+      });
+    }
+
+    if (!episodeSearchQuery) return result;
+    
+    // Filter by search query
     const query = episodeSearchQuery.toLowerCase().trim();
-    return episodesList.filter((ep) => {
+    return result.filter((ep) => {
       const epStr = String(ep);
       const jikanData = malEpisodes?.find((e) => e.mal_id === ep);
       const title = (jikanData?.title || "").toLowerCase();
       return epStr.includes(query) || title.includes(query);
     });
-  }, [episodesList, episodeSearchQuery, malEpisodes]);
+  }, [episodesList, episodeSearchQuery, malEpisodes, hideFillerEpisodes, fillerData, activeEpisode]);
 
-  // Clamp episodePage when filteredEpisodes changes (e.g. searching)
+  const isSearching = episodeSearchQuery.trim().length > 0;
+  const effectiveTotalPages = isSearching
+    ? Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE)
+    : Math.ceil(episodesList.length / EPISODES_PER_PAGE);
+
+  // Clamp episodePage when effective pages change
   useEffect(() => {
-    const totalPages = Math.ceil(filteredEpisodes.length / EPISODES_PER_PAGE);
-    if (episodePage >= totalPages && totalPages > 0) {
-      setTimeout(() => setEpisodePage(totalPages - 1), 0);
-    } else if (filteredEpisodes.length === 0 && episodePage !== 0) {
+    if (effectiveTotalPages > 0 && episodePage >= effectiveTotalPages) {
+      setTimeout(() => setEpisodePage(effectiveTotalPages - 1), 0);
+    } else if (effectiveTotalPages === 0 && episodePage !== 0) {
       setTimeout(() => setEpisodePage(0), 0);
     }
-  }, [filteredEpisodes, episodePage]);
+  }, [effectiveTotalPages, episodePage]);
 
   return {
     episodesList,

@@ -1,4 +1,4 @@
-import json, os, time, re, queue, threading
+import json, os, time, re
 from dotenv import load_dotenv
 from urllib.parse import quote as url_quote
 
@@ -14,14 +14,12 @@ import os
 import re
 import json
 import logging
-import difflib
 import hashlib
 from functools import wraps
 
 from flask import Flask, jsonify, request, Response
 from datetime import datetime
 from flask_cors import CORS
-from bs4 import BeautifulSoup
 import requests
 import cloudscraper
 
@@ -114,11 +112,6 @@ class HttpClient:
         resp = self.get(url, params=params, **kwargs)
         resp.raise_for_status()
         return resp.text
-
-    def get_soup(self, url, params=None, **kwargs):
-        """GET and return parsed BeautifulSoup."""
-        html = self.get_html(url, params=params, **kwargs)
-        return BeautifulSoup(html, "html.parser")
 
 
 # Global client instance
@@ -217,13 +210,6 @@ def api_response(fn):
     return wrapper
 
 
-
-
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  INSTANTIATE SCRAPERS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 
 
@@ -433,15 +419,8 @@ def index():
             },
             "metadata": {
                 "/api/malsync/<mal_id>": "MALSync lookup",
-
                 "/api/jikan/proxy?path=": "Direct Jikan REST proxy",
                 "/api/check-dub/<id>": "Quick check for dub availability"
-            },
-            "community": {
-                "/api/comments": "Get/Post comments",
-                "/api/comments/vote": "Like/Dislike comments",
-                "/api/comments/edit": "Update existing comments",
-                "/api/comments/delete": "Soft-delete comments"
             }
         }
     })
@@ -819,7 +798,14 @@ def api_jikan_proxy():
     if not path.startswith("/v4/"):
         path = "/v4/" + path.lstrip("/")
 
+    # Prevent path traversal and SSRF via URL-encoded characters
+    if ".." in path or "%" in path:
+        return {"error": "Invalid Jikan path"}, 400
+    from urllib.parse import urlparse
     full_url = f"https://api.jikan.moe{path}"
+    parsed = urlparse(full_url)
+    if parsed.scheme != "https" or parsed.netloc != "api.jikan.moe":
+        return {"error": "Invalid Jikan path"}, 400
     
     # Preserve other query params
     params = request.args.to_dict()
@@ -831,7 +817,7 @@ def api_jikan_proxy():
     j_resp = None
     for attempt in range(3):
         try:
-            j_resp = requests.get(full_url, params=params, timeout=10)
+            j_resp = requests.get(full_url, params=params, timeout=10, allow_redirects=False)
             if j_resp.status_code == 200:
                 break
             if j_resp.status_code == 429:
@@ -845,6 +831,79 @@ def api_jikan_proxy():
         return {"error": f"Jikan failed with status {j_resp.status_code if j_resp else 'timeout'}"}, 502
     
     return j_resp.json()
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  STARTUP
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/afl/fillers", methods=["GET"])
+@api_response
+def get_afl_fillers():
+    title = request.args.get("title")
+    if not title:
+        return {"error": "Missing title"}, 400
+        
+    cache_key = f"afl_fillers:{title.lower().strip()}"
+    entry = _cache.get(cache_key)
+    if entry and (time.time() - entry["ts"]) < 86400:
+        return entry["data"]
+    
+    from bs4 import BeautifulSoup
+    import urllib.parse
+    import re
+
+    slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+    target_url = f"https://www.animefillerlist.com/shows/{slug}"
+    
+    show_res = http.get(target_url, timeout=10)
+    
+    # If not found directly, fallback to search
+    if show_res.status_code == 404:
+        search_url = f"https://www.animefillerlist.com/search/node/{urllib.parse.quote(title)}"
+        search_res = http.get(search_url, timeout=10)
+        
+        soup = BeautifulSoup(search_res.text, 'html.parser')
+        target_url = None
+        for a in soup.select('.search-result .title a'):
+            href = a.get('href', '')
+            if href.startswith('https://www.animefillerlist.com/shows/') and len(href.split('/')) == 5:
+                target_url = href
+                break
+                
+        if target_url:
+            show_res = http.get(target_url, timeout=10)
+
+    if show_res.status_code != 200:
+        _cache[cache_key] = {"data": {}, "ts": time.time()}
+        return {}
+        
+    soup = BeautifulSoup(show_res.text, 'html.parser')
+    fillers = {}
+    
+    for tr in soup.select('table.EpisodeList tr'):
+        num_el = tr.select_one('.Number')
+        if not num_el:
+            continue
+            
+        try:
+            ep_num = int(num_el.text.strip())
+        except ValueError:
+            continue
+            
+        classes = tr.get('class', [])
+        is_filler = 'filler' in classes
+        is_mixed = 'mixed_canon/filler' in classes
+        is_recap = 'recap' in classes
+        
+        if is_filler or is_mixed or is_recap:
+            fillers[str(ep_num)] = {
+                "isFiller": is_filler,
+                "isMixed": is_mixed,
+                "isRecap": is_recap
+            }
+            
+    _cache[cache_key] = {"data": fillers, "ts": time.time()}
+    return fillers
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  STARTUP

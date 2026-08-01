@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Tv, Heart, Star, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { getWatchUrl } from "../../utils/url";
 
 /* ── Skeleton Loaders ── */
 function SkeletonListItem() {
@@ -49,7 +50,7 @@ function ListItem({ anime }) {
   return (
     <div
       className="flex items-center gap-4 py-2.5 px-2 -mx-2 cursor-pointer group border-b border-white/15 last:border-0 hover:bg-white/[0.03] rounded-xl transition-all duration-300"
-      onClick={() => navigate(`/watch/${anime.id}`)}
+      onClick={() => navigate(getWatchUrl(anime.id, anime.title))}
     >
       <div className="relative overflow-hidden rounded-[6px] shrink-0 shadow-md ring-1 ring-white/5 group-hover:ring-white/20 transition-all duration-300">
         <img
@@ -98,7 +99,7 @@ function RankedItem({ anime, rank, featured }) {
 
   if (featured) {
     return (
-      <div className="cursor-pointer group mb-4 relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 hover:ring-discord-500/50 transition-all duration-500" onClick={() => navigate(`/watch/${anime.id}`)}>
+      <div className="cursor-pointer group mb-4 relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 hover:ring-discord-500/50 transition-all duration-500" onClick={() => navigate(getWatchUrl(anime.id, anime.title))}>
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#1a1a1a]">
           <img
             src={anime.coverImage?.large}
@@ -137,7 +138,7 @@ function RankedItem({ anime, rank, featured }) {
   return (
     <div
       className="flex items-center gap-4 py-2.5 px-2 -mx-2 cursor-pointer group border-b border-white/15 last:border-0 hover:bg-white/[0.03] rounded-xl transition-all duration-300"
-      onClick={() => navigate(`/watch/${anime.id}`)}
+      onClick={() => navigate(getWatchUrl(anime.id, anime.title))}
     >
       <span className="text-[32px] font-black italic text-white/10 group-hover:text-discord-500 transition-all duration-300 w-8 text-center select-none group-hover:-translate-y-1 drop-shadow-sm">
         {rank}

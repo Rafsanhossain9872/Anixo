@@ -38,9 +38,9 @@ export default function PlayerToolbar({
     <>
       {/* Action Toolbar */}
       <section
-        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-6 lg:px-10 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-y-4 gap-x-2 sm:gap-8 select-none"
+        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-y-4 gap-x-2 sm:gap-4 lg:gap-6 select-none"
       >
-        <div className="flex flex-wrap items-center gap-3 sm:gap-6 lg:gap-10">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
           <button
             onClick={() => setIsFocusMode(!isFocusMode)}
             className={`flex items-center gap-1 sm:gap-2 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
@@ -71,7 +71,7 @@ export default function PlayerToolbar({
           </div>
         </div>
 
-        <div className={`flex items-center gap-3 sm:gap-6 lg:gap-8 ml-auto sm:ml-0 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+        <div className={`flex items-center gap-3 sm:gap-4 lg:gap-6 ml-auto sm:ml-0 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
           <button
             onClick={goPrevEpisode}
             className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
@@ -152,16 +152,26 @@ export default function PlayerToolbar({
                 <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">{t('player.report')}</span>
               </button>
 
+              {/* Anaixo.buzz Embeds Link */}
+              <a
+                href="https://anixo.buzz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-white/70 hover:text-discord-500 transition-all group"
+                title="Get Free Anime Iframe Embeds at anaixo.buzz"
+              >
+                <span className="text-[15px] sm:text-[17px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
+              </a>
+
               {/* Watch Together Button */}
               {!wtRoom && handleCreateWtRoom && (
                 <div className="flex items-center bg-discord-500/10 rounded-full border border-discord-500/20 overflow-hidden">
                   <button
                     onClick={handleCreateWtRoom}
-                    className="flex items-center gap-1.5 sm:gap-3 transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
+                    className="flex items-center justify-center transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
                     title="Start Watch Together Now"
                   >
                     <Users size={14} className="sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline text-[12px] font-bold uppercase tracking-wider text-discord-500">Watch Together</span>
                   </button>
                   {handleScheduleWtRoom && (
                     <>
@@ -221,10 +231,10 @@ export default function PlayerToolbar({
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}
-                  disabled={wtRoom && s !== 3}
+                  disabled={wtRoom && s !== 1}
                   className={`px-1.5 sm:px-3 py-0.5 sm:py-1.5 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-sm border transition-all flex-shrink-0 ${activeServer === s
                     ? "bg-discord-600 border-discord-600 text-white "
-                    : wtRoom && s !== 3
+                    : wtRoom && s !== 1
                       ? "border-white/10 text-white/20 cursor-not-allowed bg-black/20"
                       : "border-white/15 text-white/40 hover:text-white hover:border-white/15 bg-white/5"
                     }`}

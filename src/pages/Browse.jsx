@@ -43,6 +43,7 @@ export default function Browse() {
       rating: searchParams.get("rating") || "",
       language: searchParams.getAll("language"),
       excludeMyList: searchParams.get("onList") === "false",
+      isAdult: searchParams.get("isAdult") === "true",
       page: parseInt(searchParams.get("page") || "1"),
     };
   }, [searchParams]);
@@ -116,6 +117,7 @@ export default function Browse() {
     if (filters.country.length > 0) vars.country = filters.country[0];
     if (filters.rating) vars.averageScore_greater = parseInt(filters.rating);
     if (filters.language.length > 0) vars.language = filters.language;
+    if (filters.isAdult) vars.isAdult = true;
 
     return { vars, lang: filters.language };
   }, [filters]);
@@ -414,15 +416,26 @@ export default function Browse() {
                             </div>
 
                             <div className="pt-2 border-t border-white/15 flex items-center justify-between">
-                              <button
-                                onClick={() => setSingleFilter("onList", filters.excludeMyList ? "" : "false")}
-                                className="flex items-center gap-1.5 group py-1"
-                              >
-                                <div className={`w-2.5 h-2.5 rounded-[2px] border transition-all flex items-center justify-center ${filters.excludeMyList ? 'bg-discord-600 border-discord-600' : 'bg-white/5 border-white/10 group-hover:border-white/20'}`}>
-                                  {filters.excludeMyList && <Check size={7} strokeWidth={4} className="text-white" />}
-                                </div>
-                                <span className={`text-[10px] transition-colors ${filters.excludeMyList ? 'text-white/90' : 'text-white/30 group-hover:text-white/50'}`}>{t('browse.excludeList')}</span>
-                              </button>
+                              <div className="flex gap-4">
+                                <button
+                                  onClick={() => setSingleFilter("onList", filters.excludeMyList ? "" : "false")}
+                                  className="flex items-center gap-1.5 group py-1"
+                                >
+                                  <div className={`w-2.5 h-2.5 rounded-[2px] border transition-all flex items-center justify-center ${filters.excludeMyList ? 'bg-discord-600 border-discord-600' : 'bg-white/5 border-white/10 group-hover:border-white/20'}`}>
+                                    {filters.excludeMyList && <Check size={7} strokeWidth={4} className="text-white" />}
+                                  </div>
+                                  <span className={`text-[10px] transition-colors ${filters.excludeMyList ? 'text-white/90' : 'text-white/30 group-hover:text-white/50'}`}>{t('browse.excludeList')}</span>
+                                </button>
+                                <button
+                                  onClick={() => setSingleFilter("isAdult", filters.isAdult ? "" : "true")}
+                                  className="flex items-center gap-1.5 group py-1"
+                                >
+                                  <div className={`w-2.5 h-2.5 rounded-[2px] border transition-all flex items-center justify-center ${filters.isAdult ? 'bg-[#ff3b3b] border-[#ff3b3b]' : 'bg-white/5 border-white/10 group-hover:border-white/20'}`}>
+                                    {filters.isAdult && <Check size={7} strokeWidth={4} className="text-white" />}
+                                  </div>
+                                  <span className={`text-[10px] font-bold tracking-widest transition-colors ${filters.isAdult ? 'text-[#ff3b3b]' : 'text-white/30 group-hover:text-white/50'}`}>18+</span>
+                                </button>
+                              </div>
                               <div className="flex gap-2">
                                 <button onClick={handleReset} className="text-[9px] uppercase tracking-widest text-white/20 hover:text-white transition-colors">{t('browse.reset')}</button>
                                 <button onClick={() => setOpenDropdown(null)} className="px-4 py-1 bg-white/5 border border-white/10 text-white/60 text-[9px] uppercase tracking-[0.2em] rounded-md hover:bg-white/10 transition-all">{t('browse.close')}</button>

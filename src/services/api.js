@@ -100,8 +100,10 @@ const cache = {
 
 
 // Helper to filter out adult and Rx (Hentai) rated anime from media lists
-function cleanMediaList(media) {
+function cleanMediaList(media, allowAdult = false) {
   if (!media || !Array.isArray(media)) return [];
+  if (allowAdult) return media; // Return all if adult is explicitly requested
+  
   return media.filter(anime => {
     if (!anime) return false;
     const isAdult = anime.isAdult === true;
@@ -389,12 +391,29 @@ export const SEARCH_QUERY = `
   }
 `;
 
+// Format search queries to fix AniList's strict string matching
+function formatSearchQuery(q) {
+  if (!q || typeof q !== "string") return q;
+  return q
+    .replace(/\brezero\b/gi, "re zero")
+    .replace(/\bdanmachi\b/gi, "dungeon ni deai")
+    .replace(/\bkonosuba\b/gi, "kono subarashii")
+    .replace(/\boregairu\b/gi, "yahari ore no seishun")
+    .replace(/\bsao\b/gi, "sword art online")
+    .replace(/\baot\b/gi, "attack on titan")
+    .replace(/\bfmab\b/gi, "fullmetal alchemist brotherhood")
+    .replace(/\bhxh\b/gi, "hunter x hunter")
+    .replace(/\bmha\b/gi, "my hero academia")
+    .replace(/\btensura\b/gi, "tensei shitara slime");
+}
+
 export async function searchAnime(query, filters = {}) {
   if (!query && Object.keys(filters).length === 0) return [];
   try {
+    const formattedQuery = formatSearchQuery(query);
     // Priority: Search using AniList for standard IDs and metadata
     const variables = {
-      search: query || undefined,
+      search: formattedQuery || undefined,
       perPage: 15,
       ...filters
     };
@@ -402,7 +421,25 @@ export async function searchAnime(query, filters = {}) {
     const anilistRes = await fetchFromAniList(BROWSE_QUERY, variables);
 
     if (anilistRes?.media?.length > 0) {
-      return anilistRes.media;
+      // Allow adult content if the user explicitly typed a search query
+      const allowAdult = !!query;
+      let resultMedia = cleanMediaList(anilistRes.media, allowAdult);
+      
+      // SMART SEARCH: Augment navbar quick search with Jikan if < 10 results
+      if (query && resultMedia.length < 10) {
+        try {
+          const jikanRes = await fetchFromJikan("/anime", { q: query, limit: 15 });
+          if (jikanRes?.media?.length > 0) {
+            const jikanClean = cleanMediaList(jikanRes.media, allowAdult);
+            const existingIds = new Set(resultMedia.map(m => m.id));
+            const extra = jikanClean.filter(m => !existingIds.has(m.id));
+            resultMedia = [...resultMedia, ...extra];
+          }
+        } catch (e) {
+          console.warn("[Search] Smart Search augmentation failed:", e.message);
+        }
+      }
+      return resultMedia;
     }
 
     // Fallback: Search using Jikan (MyAnimeList) if AniList is unreachable or returns no results
@@ -433,10 +470,10 @@ export async function getGenres() {
 }
 
 export const BROWSE_QUERY = `
-  query ($page: Int, $perPage: Int, $search: String, $format_in: [MediaFormat], $sort: [MediaSort], $seasonYear: Int, $status: MediaStatus, $genre_in: [String], $tag_in: [String], $season: MediaSeason, $country: CountryCode, $averageScore_greater: Int) {
+  query ($page: Int, $perPage: Int, $search: String, $format_in: [MediaFormat], $sort: [MediaSort], $seasonYear: Int, $status: MediaStatus, $genre_in: [String], $tag_in: [String], $season: MediaSeason, $country: CountryCode, $averageScore_greater: Int, $isAdult: Boolean) {
     Page(page: $page, perPage: $perPage) {
       pageInfo { total currentPage lastPage hasNextPage perPage }
-      media(type: ANIME, search: $search, format_in: $format_in, sort: $sort, seasonYear: $seasonYear, status: $status, genre_in: $genre_in, tag_in: $tag_in, season: $season, countryOfOrigin: $country, averageScore_greater: $averageScore_greater, isAdult: false) {
+      media(type: ANIME, search: $search, format_in: $format_in, sort: $sort, seasonYear: $seasonYear, status: $status, genre_in: $genre_in, tag_in: $tag_in, season: $season, countryOfOrigin: $country, averageScore_greater: $averageScore_greater, isAdult: $isAdult) {
         id
         title { romaji english native }
         coverImage { extraLarge large medium }
@@ -459,6 +496,11 @@ export const BROWSE_QUERY = `
 `;
 
 export async function getBrowseAnime(variables) {
+  // Apply formatting to search query if present
+  if (variables.search) {
+    variables.search = formatSearchQuery(variables.search);
+  }
+  
   const varKey = JSON.stringify(variables);
   const cachedData = cache.get(`browse_${varKey}`);
   if (cachedData) return cachedData;
@@ -472,6 +514,15 @@ export async function getBrowseAnime(variables) {
     )
   );
 
+  // If isAdult is explicitly true or user is searching by text, allow both 18+ and normal
+  const allowAdult = cleanVars.isAdult === true || !!cleanVars.search;
+  
+  if (allowAdult) {
+    delete cleanVars.isAdult;
+  } else {
+    cleanVars.isAdult = false;
+  }
+
   const payload = { query: BROWSE_QUERY, variables: cleanVars };
   const headers = { "Content-Type": "application/json", "Accept": "application/json" };
 
@@ -481,7 +532,7 @@ export async function getBrowseAnime(variables) {
     const page = data?.data?.Page || data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Local proxy succeeded (AniList)");
-      const result = { media: cleanMediaList(page.media), pageInfo: page.pageInfo };
+      const result = { media: cleanMediaList(page.media, allowAdult), pageInfo: page.pageInfo };
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }
@@ -489,13 +540,37 @@ export async function getBrowseAnime(variables) {
     console.warn("[Browse] Local proxy failed:", err.message);
   }
 
+  // Helper function for Smart Search Augmentation
+  const applySmartSearch = async (media, pageInfo) => {
+    let resultMedia = cleanMediaList(media, allowAdult);
+    // SMART SEARCH: If text search returns few results, augment with Jikan's fuzzy search
+    if (variables.search && resultMedia.length < 10) {
+      try {
+        console.info("[Browse] Smart Search: Augmenting with Jikan for:", variables.search);
+        const jikanRes = await getBrowseAnimeJikanDirect(variables);
+        if (jikanRes?.media?.length > 0) {
+          const jikanClean = cleanMediaList(jikanRes.media, allowAdult);
+          const existingIds = new Set(resultMedia.map(m => m.id));
+          const extra = jikanClean.filter(m => !existingIds.has(m.id));
+          if (extra.length > 0) {
+            resultMedia = [...resultMedia, ...extra];
+            pageInfo.total = Math.max(pageInfo.total, resultMedia.length);
+          }
+        }
+      } catch (e) {
+        console.warn("[Browse] Smart Search augmentation failed:", e.message);
+      }
+    }
+    return { media: resultMedia, pageInfo };
+  };
+
   // 2. Direct AniList GraphQL call
   try {
     const { data } = await axios.post("https://graphql.anilist.co", payload, { headers, timeout: 12000 });
     const page = data?.data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Direct AniList succeeded");
-      const result = { media: cleanMediaList(page.media), pageInfo: page.pageInfo };
+      const result = await applySmartSearch(page.media, page.pageInfo);
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }
@@ -507,7 +582,7 @@ export async function getBrowseAnime(variables) {
   try {
     const proxyRes = await fetchFromAniList(BROWSE_QUERY, variables);
     if (proxyRes?.media?.length > 0) {
-      const result = { media: cleanMediaList(proxyRes.media), pageInfo: proxyRes.pageInfo };
+      const result = await applySmartSearch(proxyRes.media, proxyRes.pageInfo);
       cache.set(`browse_${varKey}`, result, CACHE_TTL.BROWSE);
       return result;
     }
@@ -521,7 +596,7 @@ export async function getBrowseAnime(variables) {
     try {
       const directRes = await getBrowseAnimeJikanDirect(variables);
       if (directRes?.media?.length > 0) {
-        const finalRes = { ...directRes, media: cleanMediaList(directRes.media), isJikanFallback: true };
+        const finalRes = { ...directRes, media: cleanMediaList(directRes.media, allowAdult), isJikanFallback: true };
         cache.set(`browse_${varKey}`, finalRes, CACHE_TTL.BROWSE);
         return finalRes;
       }
@@ -536,7 +611,7 @@ export async function getBrowseAnime(variables) {
 export const ANIME_QUERY = `
   query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus]) {
     Page(page: $page, perPage: 50) {
-      pageInfo { total hasNextPage }
+      pageInfo { total hasNextPage lastPage }
       media(type: ANIME, sort: $sort, status_in: $status_in, isAdult: false) {
         id
         title { romaji english native }
@@ -1184,6 +1259,92 @@ export async function getSecondaryEpisodeMeta(title, altTitle = "", kitsuId = ""
     return data;
   } catch (err) {
     console.error("Secondary metadata fetch failed:", err);
+    return {};
+  }
+}
+
+export async function getStreamingEpisodes(id) {
+  try {
+    const { data } = await smartRequest("get", `/api/episodes/${id}`);
+    return data;
+  } catch (err) {
+    console.error("Error fetching streaming episodes:", err);
+    return [];
+  }
+}
+
+// ------------------------------------------------------------------
+// NEW: Filler & Recap Episode Tracking (via Jikan V4 API)
+// ------------------------------------------------------------------
+export async function getFillerEpisodes(malId, title) {
+  if (!title && !malId) return {};
+
+  try {
+    // Attempt AnimeFillerList first if title is available
+    if (title) {
+      try {
+        const { data: aflData } = await smartRequest("get", "/api/afl/fillers", {
+          params: { title: title }
+        });
+        
+        if (aflData && Object.keys(aflData).length > 0) {
+          return aflData;
+        }
+      } catch (err) {
+        console.warn("AFL Fetch failed, falling back to Jikan:", err.message);
+      }
+    }
+    
+    // Fallback to Jikan using MAL ID if AFL failed or title wasn't provided
+    if (!malId) return {};
+    
+    const fillerMap = {};
+    const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
+      params: { path: `/v4/anime/${malId}/episodes?page=1` }
+    });
+    
+    const data = responseData?.data;
+    const pagination = responseData?.pagination;
+    
+    if (data && Array.isArray(data)) {
+      data.forEach(ep => {
+        fillerMap[ep.mal_id] = {
+          isFiller: ep.filler || false,
+          isRecap: ep.recap || false
+        };
+      });
+    }
+
+    const lastPage = pagination?.last_visible_page || 1;
+    
+    if (lastPage > 1) {
+      const maxPages = Math.min(lastPage, 15);
+      
+      // Fetch sequentially to avoid Jikan 429 rate limits
+      for (let p = 2; p <= maxPages; p++) {
+        try {
+          const res = await smartRequest("get", "/api/jikan/proxy", {
+            params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
+          });
+          const pageData = res.data?.data;
+          if (pageData) {
+            pageData.forEach(ep => {
+              if (ep.filler || ep.recap) {
+                fillerMap[ep.mal_id] = { isFiller: ep.filler, isRecap: ep.recap };
+              }
+            });
+          }
+          // Small delay to respect rate limit
+          await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+          console.error(`Jikan fallback failed on page ${p}:`, err.message);
+        }
+      }
+    }
+
+    return fillerMap;
+  } catch (err) {
+    console.error("Error fetching filler episodes:", err.message);
     return {};
   }
 }

@@ -5,9 +5,10 @@ import { useTranslation } from "react-i18next";
 import ScrollToTop from "./components/common/ScrollToTop";
 import PageLoader from "./components/common/PageLoader";
 import AdLoader from "./components/common/AdLoader";
+import ServerCostNotice from "./components/common/ServerCostNotice";
+import W2GNoticeBanner from "./components/common/W2GNoticeBanner";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
-
 // Eagerly loaded pages (critical path — must render instantly)
 import Portal from "./pages/Portal";
 import Home from "./pages/Home";
@@ -17,7 +18,7 @@ const Browse = lazy(() => import("./pages/Browse"));
 const Watch = lazy(() => import("./pages/Watch"));
 const Character = lazy(() => import("./pages/Character"));
 const Staff = lazy(() => import("./pages/Staff"));
-const Schedule = lazy(() => import("./pages/Schedule"));
+
 const DMCA = lazy(() => import("./pages/DMCA"));
 const NSFW = lazy(() => import("./pages/NSFW"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
@@ -91,7 +92,7 @@ function AppRoutes() {
   return (
     <>
       <AdLoader />
-      {!isPortalPage && !isNsfwPage && !isChatPage}
+      {!isPortalPage && !isNsfwPage && !isChatPage && <ServerCostNotice />}
       <ErrorBoundary FallbackComponent={ErrorFallback} resetKeys={[location.pathname]}>
         <Suspense fallback={<SuspenseLoader />}>
           <Routes>
@@ -100,9 +101,10 @@ function AppRoutes() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/nsfw/*" element={<NSFW />} />
             <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/watch/:id/:slug" element={<Watch />} />
             <Route path="/character/:id" element={<Character />} />
             <Route path="/staff/:id" element={<Staff />} />
-            <Route path="/schedule" element={<Schedule />} />
+
             <Route path="/dmca" element={<DMCA />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/watchlist" element={<Watchlist />} />

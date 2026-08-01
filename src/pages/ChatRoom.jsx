@@ -3,8 +3,91 @@ import { io } from 'socket.io-client';
 import { useAuth } from '../hooks/useAuth';
 import { CHAT_SERVER } from '../services/api';
 import Navbar from '../components/layout/Navbar';
-import { Send, UserCircle, LogIn, AlertCircle, Reply, X, MessageCircle, Users, Shield, Crown, Trash2 } from 'lucide-react';
+import { Send, UserCircle, LogIn, AlertCircle, Reply, X, MessageCircle, Users, Shield, Crown, Trash2, Image } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { GiphyFetch } from "@giphy/js-fetch-api";
+import { Grid } from "@giphy/react-components";
+
+const gf = new GiphyFetch(import.meta.env.VITE_GIPHY_API_KEY);
+
+const GifPicker = ({ onGifClick, onClose }) => {
+    const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const fetchGifs = async (offset) => {
+        const cacheKey = `giphy_cache_chat_${debouncedSearch || 'trending'}_${offset}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+            try { 
+                return JSON.parse(cached); 
+            } catch (e) { 
+                console.error("Failed to parse cached gifs:", e);
+                sessionStorage.removeItem(cacheKey);
+            }
+        }
+
+        const res = debouncedSearch 
+            ? await gf.search(debouncedSearch, { offset, limit: 10 }) 
+            : await gf.trending({ offset, limit: 10 });
+        
+        sessionStorage.setItem(cacheKey, JSON.stringify(res));
+        return res;
+    };
+
+    return (
+        <div className="absolute bottom-full left-0 mb-4 z-50 bg-[#161923] border border-white/10 rounded-xl shadow-2xl p-3 w-[260px] sm:w-[300px]">
+            <div className="fixed inset-0 z-[-1]" onClick={(e) => { e.stopPropagation(); onClose(); }}></div>
+            <div className="flex items-center justify-between mb-3 relative z-10">
+                <input 
+                    type="text" 
+                    placeholder="Search GIFs..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-[#12151C] text-white/90 text-sm px-3 py-2 rounded-lg border border-white/5 focus:outline-none focus:border-discord-500/50"
+                />
+            </div>
+            <div className="h-[250px] overflow-y-auto rounded-lg custom-scrollbar relative z-10">
+                <Grid 
+                    key={debouncedSearch}
+                    width={230} 
+                    columns={2} 
+                    fetchGifs={fetchGifs} 
+                    onGifClick={(gif, e) => { e.preventDefault(); onGifClick(gif); }} 
+                    hideAttribution 
+                    noLink
+                />
+            </div>
+        </div>
+    );
+};
+
+const isOnlyGif = (text) => {
+    if (!text) return false;
+    const trimmed = text.trim();
+    return /^(https:\/\/(?:[a-zA-Z0-9-]+\.)*(?:giphy\.com|tenor\.com)\/[^\s"'<>]+)$/i.test(trimmed);
+};
+
+const parseChatText = (text, isOnlyGifMatch) => {
+    if (!text) return "";
+    const imgClasses = isOnlyGifMatch 
+        ? "rounded-xl max-w-[280px] sm:max-w-[320px] md:max-w-[380px] w-auto max-h-[300px] object-contain border border-white/5 shadow-sm"
+        : "rounded-lg max-w-[200px] mt-2 mb-1 block border border-white/5";
+        
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/(https:\/\/(?:[a-zA-Z0-9-]+\.)*(?:giphy\.com|tenor\.com)\/[^\s"'<>]+)/ig, `<img src="$1" class="${imgClasses}" alt="GIF" />`)
+        .replace(/\n/g, '<br/>');
+};
+
 
 export default function ChatRoom() {
  const { user } = useAuth();
@@ -14,6 +97,7 @@ export default function ChatRoom() {
  const [error, setError] = useState(null);
  const [replyingTo, setReplyingTo] = useState(null);
  const [activeUsers, setActiveUsers] = useState(0);
+ const [showGifPicker, setShowGifPicker] = useState(false);
  
  const socketRef = useRef(null);
  const messagesEndRef = useRef(null);
@@ -173,6 +257,7 @@ export default function ChatRoom() {
  ) : (
  messages.map((msg, index) => {
  const isMe = user && msg.userId === (user.id || user._id);
+ const onlyGif = isOnlyGif(msg.text) && !msg.replyTo;
  
  if (msg.type === 'system') {
  return (
@@ -212,10 +297,10 @@ export default function ChatRoom() {
  <span className="text-[10px] text-white/30 font-medium tracking-wide">{formatTime(msg.createdAt)}</span>
  </div>
  
- <div className={`px-4 md:px-4 py-2 md:py-2.5 rounded-[18px] text-[14px] md:text-[14px] leading-relaxed whitespace-pre-wrap break-words shadow-sm ${
- isMe 
- ? 'bg-[#2a1618] text-white/95 rounded-br-[4px]' 
- : 'bg-[#222222] text-white/90 rounded-bl-[4px]'
+ <div className={`text-[14px] md:text-[14px] leading-relaxed whitespace-pre-wrap break-words ${
+ onlyGif 
+ ? '' 
+ : `px-4 md:px-4 py-2 md:py-2.5 rounded-[18px] shadow-sm ${isMe ? 'bg-[#2a1618] text-white/95 rounded-br-[4px]' : 'bg-[#222222] text-white/90 rounded-bl-[4px]'}`
  }`}>
  {msg.replyTo && (
  <div 
@@ -240,7 +325,7 @@ export default function ChatRoom() {
  </div>
  </div>
  )}
- {msg.text}
+ <span dangerouslySetInnerHTML={{ __html: parseChatText(msg.text, onlyGif) }} />
  </div>
  </div>
  
@@ -299,7 +384,26 @@ export default function ChatRoom() {
  )}
 
  {user ? (
- <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
+ <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3 items-end">
+ <div className="relative flex items-center justify-center shrink-0 mb-1 md:mb-1.5">
+     <button 
+         type="button"
+         onClick={() => setShowGifPicker(!showGifPicker)} 
+         className="text-white/40 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+         title="Send GIF"
+     >
+         <Image size={22} />
+     </button>
+     {showGifPicker && (
+         <GifPicker 
+             onGifClick={(gif) => {
+                 setInputText(prev => prev + (prev ? ' ' : '') + gif.images.fixed_height.url);
+                 setShowGifPicker(false);
+             }} 
+             onClose={() => setShowGifPicker(false)} 
+         />
+     )}
+ </div>
  <textarea
  value={inputText}
  onChange={(e) => setInputText(e.target.value)}

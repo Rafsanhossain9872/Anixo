@@ -1,50 +1,59 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Users, X, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, AlertTriangle, Clock } from 'lucide-react';
+import { isAggressiveAdsActive, AGGRESSIVE_ADS_END_TIME } from '../../utils/adsConfig';
 
 const W2GNoticeBanner = () => {
   const [dismissed, setDismissed] = useState(() => {
-    return sessionStorage.getItem('w2g_notice_dismissed') === 'true';
+    return sessionStorage.getItem('server_cost_homepage_notice_dismissed') === 'true';
   });
+
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+
+  useEffect(() => {
+    if (dismissed || timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(Math.max(0, AGGRESSIVE_ADS_END_TIME - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [dismissed, timeLeft]);
 
   const handleDismiss = () => {
     setDismissed(true);
-    sessionStorage.setItem('w2g_notice_dismissed', 'true');
+    sessionStorage.setItem('server_cost_homepage_notice_dismissed', 'true');
   };
 
-  if (dismissed) return null;
+  if (dismissed || !isAggressiveAdsActive() || timeLeft <= 0) return null;
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
   return (
-    <div className="max-w-[1720px] mx-auto px-2 md:px-4 mt-4">
-      <div className="relative flex items-center justify-between gap-4 py-3 px-4 rounded-xl bg-[#141028] border border-discord-400/20 shadow-lg">
+    <div className="max-w-[1720px] mx-auto px-2 md:px-4 mt-4 mb-2">
+      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-3 px-4 rounded-xl bg-[#141028] border border-red-500/20 shadow-lg pr-10 sm:pr-4">
         {/* Left: Text */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded bg-[#2b2d42] p-1">
-            <img src="https://anilist.co/img/icons/icon.svg" alt="AniList" className="w-full h-full object-contain" />
+        <div className="flex items-start sm:items-center gap-3 min-w-0 w-full">
+          <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded bg-red-500/10 p-1 mt-0.5 sm:mt-0">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
           </div>
-          <p className="text-sm text-gray-200 font-medium leading-snug">
-            <span className="font-bold text-white mr-1.5">
-              <span className="hidden sm:inline">System Update:</span>
-              <span className="sm:hidden">Update:</span>
-            </span>
-            <span className="opacity-90 hidden sm:inline">The AniList Sync issue is now resolved. You can safely connect your account from the Settings page.</span>
-            <span className="opacity-90 sm:hidden">AniList Sync is fixed!</span>
-          </p>
+          <div className="flex flex-col min-w-0">
+            <p className="text-[12px] sm:text-[14px] text-red-100/90 font-medium leading-relaxed sm:leading-snug">
+              <span className="text-red-400 font-bold uppercase tracking-widest text-[10px] sm:text-[11px] block sm:inline mb-0.5 sm:mb-0 sm:mr-2">Notice:</span>
+              To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the <span className="inline-block font-bold text-red-300 bg-red-500/10 px-1.5 py-0.5 mt-1 sm:mt-0 rounded uppercase border border-red-500/20 sm:ml-1 text-[10px] sm:text-[12px]">next 12 hours (~36 Episodes) only</span>.
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 sm:mt-1 text-red-400/80 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+              <Clock size={12} className="animate-pulse text-red-400" />
+              <span>Time Remaining:</span>
+              <span className="tabular-nums bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20 text-red-300">{String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}</span>
+            </div>
+          </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-          <Link
-            to="/settings"
-            className="flex items-center gap-2 px-2.5 sm:px-4 py-1.5 rounded-lg bg-discord-400/10 text-discord-400 text-xs font-bold uppercase tracking-wider hover:bg-discord-400 hover:text-white transition-colors"
-          >
-            <span className="hidden sm:inline">Settings</span>
-            <ArrowRight size={14} />
-          </Link>
-          
+        <div className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 flex items-center shrink-0">
           <button
             onClick={handleDismiss}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
             aria-label="Dismiss"
           >
             <X size={16} />

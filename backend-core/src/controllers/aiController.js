@@ -6,9 +6,9 @@ import { profanityDictionary } from '../utils/profanityDict.js';
 
 // AniList GraphQL query for searching anime
 const ANILIST_QUERY = `
-query ($search: String, $genre_in: [String], $genre_not_in: [String], $tag_in: [String], $tag_not_in: [String], $format_in: [MediaFormat], $status: MediaStatus, $season: MediaSeason, $sort: [MediaSort], $startDate_greater: FuzzyDateInt, $startDate_lesser: FuzzyDateInt, $averageScore_greater: Int, $popularity_lesser: Int, $page: Int, $perPage: Int) {
+query ($search: String, $id_not_in: [Int], $genre_in: [String], $genre_not_in: [String], $tag_in: [String], $tag_not_in: [String], $format_in: [MediaFormat], $status: MediaStatus, $season: MediaSeason, $sort: [MediaSort], $startDate_greater: FuzzyDateInt, $startDate_lesser: FuzzyDateInt, $averageScore_greater: Int, $popularity_lesser: Int, $page: Int, $perPage: Int) {
   Page(page: $page, perPage: $perPage) {
-    media(search: $search, genre_in: $genre_in, genre_not_in: $genre_not_in, tag_in: $tag_in, tag_not_in: $tag_not_in, format_in: $format_in, status: $status, season: $season, sort: $sort, startDate_greater: $startDate_greater, startDate_lesser: $startDate_lesser, averageScore_greater: $averageScore_greater, popularity_lesser: $popularity_lesser, type: ANIME, isAdult: false) {
+    media(search: $search, id_not_in: $id_not_in, genre_in: $genre_in, genre_not_in: $genre_not_in, tag_in: $tag_in, tag_not_in: $tag_not_in, format_in: $format_in, status: $status, season: $season, sort: $sort, startDate_greater: $startDate_greater, startDate_lesser: $startDate_lesser, averageScore_greater: $averageScore_greater, popularity_lesser: $popularity_lesser, type: ANIME, isAdult: false) {
       id
       title {
         romaji
@@ -37,45 +37,52 @@ query ($search: String, $genre_in: [String], $genre_not_in: [String], $tag_in: [
 `;
 
 export const getRecommendations = async (req, res) => {
-  try {
-    const { messages, persona } = req.body; // Expect an array of { role: 'user' | 'assistant', content: '...' }
+  // Setup SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
-    // 0. Auth Check
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+  const endStream = () => res.end();
+
+  try {
+    const { messages, persona = 'friendly', watchlist = [] } = req.body;
     let reqUser = null;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    
+    // Extract token to check user ban status if auth is passed
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      const token = req.headers.authorization.split(' ')[1];
       try {
-        const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         reqUser = await User.findById(decoded.id);
-
-        // Reset ban if expired
-        if (reqUser && reqUser.aiBanUntil && reqUser.aiBanUntil < new Date()) {
-          reqUser.aiBanUntil = null;
-          reqUser.aiInsultStrikes = 0;
-          await reqUser.save();
-        }
-
+        
         if (reqUser && reqUser.aiBanUntil && reqUser.aiBanUntil > new Date()) {
           const timeLeftMins = Math.ceil((reqUser.aiBanUntil - new Date()) / (1000 * 60));
-          return res.status(200).json({
+          sendEvent({
+            status: 'done',
             success: true,
             aiMessage: `You are temporarily blocked from using AniXo AI due to abusive behavior. Try again in ${timeLeftMins} minutes.`,
             recommendations: [],
             isBlocked: true
           });
+          return endStream();
         }
-      } catch (error) {
-        console.error("AI Auth Error:", error.message);
+      } catch {
+        // Ignore invalid tokens, just proceed as anonymous
       }
     }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json({ success: false, message: 'Messages array is required' });
+      sendEvent({ status: 'error', success: false, message: 'Messages array is required' });
+      return endStream();
     }
 
     const groqToken = process.env.GROQ_API_KEY;
     if (!groqToken) {
-      return res.status(500).json({ success: false, message: 'Groq API key not configured' });
+      sendEvent({ status: 'error', success: false, message: 'Groq API key not configured' });
+      return endStream();
     }
 
     // 1. Prepare Persona Prompt
@@ -106,6 +113,39 @@ export const getRecommendations = async (req, res) => {
     else if (currentMonth >= 5 && currentMonth <= 7) currentSeason = 'SUMMER';
     else if (currentMonth >= 8 && currentMonth <= 10) currentSeason = 'FALL';
 
+    // Parse Watchlist Context
+    let finalWatchlist = reqUser?.watchlist ? reqUser.watchlist.map(item => ({
+      id: parseInt(item.animeId) || item.animeId,
+      title: item.title,
+      status: item.status,
+      score: item.score
+    })) : watchlist;
+
+    let userContextString = "SYSTEM NOTE: The user's internal site watchlist is currently EMPTY. If the user asks you to check their watchlist or watch history, tell them that they haven't added any anime to their profile on this website yet! (Remind them they can add anime to their watchlist by clicking the 'Add to List' button on any anime page).";
+    let watchedIds = [];
+    if (finalWatchlist && Array.isArray(finalWatchlist) && finalWatchlist.length > 0) {
+      watchedIds = finalWatchlist
+        .filter(i => (i.status === 'Completed' || i.status === 'Watching') && i.id)
+        .map(i => i.id)
+        .slice(0, 50); // Limit to 50 to prevent AniList complexity limits
+        
+      const grouped = finalWatchlist.reduce((acc, item) => {
+        if (!acc[item.status]) acc[item.status] = [];
+        const scoreStr = item.score ? ` (Score: ${item.score}/10)` : '';
+        acc[item.status].push(`${item.title}${scoreStr}`);
+        return acc;
+      }, {});
+      
+      const parts = [];
+      if (grouped['Completed']?.length) parts.push(`Completed: ${grouped['Completed'].slice(0, 20).join(', ')}`);
+      if (grouped['Watching']?.length) parts.push(`Currently Watching: ${grouped['Watching'].slice(0, 10).join(', ')}`);
+      if (grouped['Planning']?.length) parts.push(`Planning to Watch: ${grouped['Planning'].slice(0, 10).join(', ')}`);
+      
+      if (parts.length > 0) {
+        userContextString = `USER'S WATCHLIST & PREFERENCES:\n${parts.join('\n')}\nCRITICAL INSTRUCTION: Use this watchlist to deeply personalize your recommendations. If they loved an anime (high score), recommend similar ones. DO NOT recommend anime they have already completed or are currently watching. Reference their watchlist naturally in conversation (e.g., "I see you rated X highly, so you'll love Y!").`;
+      }
+    }
+
     // 2. Prepare Prompt
     const systemInstruction = `You are an expert anime recommendation assistant named AniXo.
 Your goal is to converse naturally with the user, extract their anime preferences, and provide excellent recommendations.
@@ -116,6 +156,8 @@ SYSTEM CONTEXT:
 - Current Time of Day: ${timeOfDay}
 - Current Anime Season: ${currentSeason} ${currentYear}
 (If the user explicitly asks for the exact time, give them the 'Exact Current Local Time'. Otherwise, use the 'Time of Day' to judge them).
+
+${userContextString}
 
 PERSONA RULES: ${personaPrompt}
 
@@ -141,8 +183,9 @@ MOOD DETECTION: If the user EXPLICITLY asks for a recommendation but doesn't spe
 - Stressed / tension / dark mood → Psychological, Thriller
 - Lonely / akela → Slice of Life, Romance
 - Adventurous / kuch alag → Adventure, Fantasy
+- NO MOOD SPECIFIED: If they just say "suggest an anime" without any context, DO NOT ask follow-up questions. Set surpriseMe to true and recommend something random but highly rated!
 
-CHAT VS RECOMMENDATION RULE (CRITICAL): If the user is just chatting, arguing, talking about their day, or asking general questions, YOU MUST SET searchParams TO null. ONLY populate searchParams if the user EXPLICITLY asks for an anime recommendation (e.g., 'suggest me something', 'find me an anime', 'what should I watch'). Do NOT auto-recommend anime just because they mentioned a mood.
+CHAT VS RECOMMENDATION RULE (CRITICAL): If the user is just chatting, arguing, talking about their day, or asking general questions, YOU MUST SET searchParams TO null. ONLY populate searchParams if the user EXPLICITLY asks for an anime recommendation (e.g., 'suggest me something', 'find me an anime', 'what should I watch'). Do NOT auto-recommend anime just because they mentioned a mood. If they ask for a recommendation, YOU MUST POPULATE searchParams, NEVER ask them to clarify their mood.
 
 When the user EXPLICITLY asks for recommendations:
 - Extract the BEST AniList search parameters based on their request.
@@ -163,8 +206,10 @@ When the user EXPLICITLY asks for recommendations:
 You MUST reply with a single valid JSON object and nothing else. No markdown wrapping.
 JSON Schema:
 {
-  "explanation": "Your natural, highly personalized language response. Do NOT name specific anime titles here.",
+  "explanation": "Your natural, highly personalized language response. Do NOT name specific anime titles here unless doing a web search.",
   "userInsultedMe": false, // boolean, set to true ONLY if the user explicitly used strong profanity or clear insults against you. DO NOT set to true for innocent typos or normal chatting.
+  "needsWebSearch": false, // boolean. ONLY set to true if the user asks a FACTUAL question about anime news, release dates, watch orders, or trivia that you might not know perfectly. DO NOT use this for normal anime recommendations or casual chatting.
+  "searchQuery": "the exact search query for google", // string. Required if needsWebSearch is true.
   "searchParams": {
     "search": null,
     "genre_in": ["Action"] (optional, max 3),
@@ -190,18 +235,19 @@ ${profanityDictionary}
       { role: "system", content: systemInstruction },
       ...messages.slice(-15).map(msg => ({
         role: msg.role,
-        content: msg.content
+        content: msg.searchContext ? `[Past Search Context: ${msg.searchContext}]\n\n${msg.content}` : msg.content
       }))
     ];
 
-    let aiData;
-    try {
+    const callGroqWithFallback = async (messagesArray) => {
       const fallbackModels = [
         "llama-3.1-8b-instant",
         "llama-3.3-70b-versatile",
-        "qwen/qwen3-32b",
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "openai/gpt-oss-120b"
+        "openai/gpt-oss-120b",
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-20b",
+        "groq/compound",
+        "allam-2-7b"
       ];
 
       let response = null;
@@ -213,7 +259,7 @@ ${profanityDictionary}
             'https://api.groq.com/openai/v1/chat/completions',
             {
               model: model,
-              messages: groqMessages,
+              messages: messagesArray,
               temperature: 1.0,
               response_format: { type: "json_object" }
             },
@@ -227,9 +273,9 @@ ${profanityDictionary}
           );
           // If successful, break out of loop
           break;
-        } catch (error) {
-          lastApiError = error;
-          console.warn(`[Groq AI] Model ${model} failed, trying next...`);
+        } catch (modelErr) {
+          console.warn(`[Groq AI] Model ${model} failed: ${modelErr.response?.status} - ${modelErr.response?.data?.error?.message || modelErr.message}`);
+          lastApiError = modelErr;
         }
       }
 
@@ -245,7 +291,55 @@ ${profanityDictionary}
         content = jsonMatch[0];
       }
 
-      aiData = JSON.parse(content);
+      return JSON.parse(content);
+    };
+
+    let finalSearchContext = null;
+    let aiData;
+
+    try {
+      aiData = await callGroqWithFallback(groqMessages);
+
+      // --- TAVILY WEB SEARCH INTEGRATION (TWO-PASS) ---
+      if (aiData.needsWebSearch && aiData.searchQuery && process.env.TAVILY_API_KEY) {
+        console.log(`[AI Search] Triggered search for: "${aiData.searchQuery}"`);
+        
+        // STREAM STATUS TO FRONTEND!
+        sendEvent({
+          status: 'browsing',
+          query: aiData.searchQuery
+        });
+
+        try {
+          const tavilyRes = await axios.post('https://api.tavily.com/search', {
+            api_key: process.env.TAVILY_API_KEY,
+            query: aiData.searchQuery,
+            search_depth: "advanced",
+            include_answer: false,
+            max_results: 3
+          });
+          
+          if (tavilyRes.data && tavilyRes.data.results) {
+            const searchContext = tavilyRes.data.results.map(r => `Title: ${r.title}\nContent: ${r.content}`).join('\n\n');
+            finalSearchContext = searchContext; // Save for client memory
+            
+            // Append the search results and do a second pass. 
+            // Must be 'user' role because Groq JSON mode bugs out if the last message is 'system'.
+            groqMessages.push({
+              role: 'user',
+              content: `SYSTEM NOTE - WEB SEARCH RESULTS for "${aiData.searchQuery}":\n\n${searchContext}\n\nCRITICAL INSTRUCTION: Use the above real-time data to answer my question perfectly in your 'explanation' field. Keep your persona intact.`
+            });
+            
+            aiData = await callGroqWithFallback(groqMessages);
+          }
+        } catch (searchErr) {
+          console.error("[AI Search] Second pass or search failed:", searchErr.response?.data || searchErr.message);
+          // If search or second pass fails, it will fall back to the first pass aiData.
+          // Since the first pass aiData often just says "..." or is empty when triggering a search,
+          // we should replace it with a fallback message.
+          aiData.explanation = "I tried to search the web for that, but my brain is currently overloaded with traffic! Please try again in a minute.";
+        }
+      }
 
       // Check for insults and handle blocking
       if (reqUser && aiData.userInsultedMe) {
@@ -253,12 +347,14 @@ ${profanityDictionary}
         if (reqUser.aiInsultStrikes >= 6) {
           reqUser.aiBanUntil = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
           await reqUser.save();
-          return res.status(200).json({
+          sendEvent({
+            status: 'done',
             success: true,
             aiMessage: "That's it. 6 strikes. You have been temporarily blocked from using AniXo AI for 10 minutes.",
             recommendations: [],
             isBlocked: true
           });
+          return endStream();
         }
         await reqUser.save();
       }
@@ -266,26 +362,33 @@ ${profanityDictionary}
     } catch (apiError) {
       console.error("Groq API Error:", apiError.response?.data || apiError.message || apiError);
       // Graceful fallback
-      return res.status(200).json({
+      sendEvent({
+        status: 'done',
         success: true,
         aiMessage: "I'm currently experiencing high traffic or my servers are waking up. Please try again in a moment!",
         recommendations: []
       });
+      return endStream();
     }
 
     // 2. Fetch from AniList if parameters exist
     const sp = aiData.searchParams;
     let recommendations = [];
-    const hasSearchIntent = sp && (sp.search || (sp.genre_in?.length > 0) || (sp.tag_in?.length > 0) || sp.sort || sp.yearRange || sp.format_in || sp.genre_not_in?.length > 0);
+    const hasSearchIntent = sp && (sp.search || (sp.genre_in?.length > 0) || (sp.tag_in?.length > 0) || sp.sort || sp.yearRange || sp.format_in || sp.genre_not_in?.length > 0 || sp.surpriseMe);
+    
+    // Helper to enforce array type
+    const ensureArray = (val) => Array.isArray(val) ? val : (val ? [val] : undefined);
+    
     if (hasSearchIntent) {
       try {
         const variables = {
           search: sp.search || undefined,
-          genre_in: sp.genre_in?.length > 0 ? sp.genre_in : undefined,
-          genre_not_in: sp.genre_not_in?.length > 0 ? sp.genre_not_in : undefined,
-          tag_in: sp.tag_in?.length > 0 ? sp.tag_in : undefined,
-          tag_not_in: sp.tag_not_in?.length > 0 ? sp.tag_not_in : undefined,
-          format_in: sp.format_in?.length > 0 ? sp.format_in : undefined,
+          id_not_in: watchedIds.length > 0 ? watchedIds : undefined,
+          genre_in: ensureArray(sp.genre_in),
+          genre_not_in: ensureArray(sp.genre_not_in),
+          tag_in: ensureArray(sp.tag_in),
+          tag_not_in: ensureArray(sp.tag_not_in),
+          format_in: ensureArray(sp.format_in),
           status: sp.status || undefined,
           season: sp.season || undefined,
           startDate_greater: sp.yearRange?.start || undefined,
@@ -293,7 +396,7 @@ ${profanityDictionary}
           averageScore_greater: sp.minimumScore !== undefined ? sp.minimumScore : 60,
           popularity_lesser: sp.surpriseMe ? 100000 : undefined, // Hidden gems if surprise
           page: sp.surpriseMe ? Math.floor(Math.random() * 5) + 1 : 1, // Random page if surprise
-          sort: sp.surpriseMe ? ['SCORE_DESC'] : (sp.sort ? [sp.sort] : ['POPULARITY_DESC']),
+          sort: sp.surpriseMe ? ['SCORE_DESC'] : (sp.sort ? ensureArray(sp.sort) : ['POPULARITY_DESC']),
           perPage: Math.min(Math.max(sp.perPage || 6, 3), 12) // clamp between 3 and 12
         };
 
@@ -324,20 +427,32 @@ ${profanityDictionary}
         }
       } catch (aniError) {
         console.error("AniList API Error:", aniError.response?.data || aniError.message);
-        // We still return the AI message even if AniList fails
-        aiData.explanation = "I tried to find some recommendations, but the anime database is currently unavailable.";
+        const isRateLimit = aniError.response?.status === 429 || aniError.response?.data?.errors?.[0]?.status === 429;
+        
+        // We still return the AI message even if AniList fails!
+        // Don't overwrite the persona's hard work, just append a warning.
+        if (isRateLimit) {
+          aiData.explanation += "\n\n*(Note: The anime database is currently experiencing high traffic, so I couldn't load the visual cards right now!)*";
+        } else {
+          aiData.explanation += "\n\n*(Note: The anime database is currently unavailable.)*";
+        }
       }
     }
 
     // 3. Return combined response
-    res.status(200).json({
+    sendEvent({
+      status: 'done',
       success: true,
       aiMessage: aiData.explanation || "Here's what I found.",
-      recommendations
+      recommendations,
+      webSearchQuery: (aiData.needsWebSearch && aiData.searchQuery) ? aiData.searchQuery : null,
+      searchContext: finalSearchContext
     });
+    return endStream();
 
   } catch (error) {
     console.error("AI Recommendation Error:", error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    sendEvent({ status: 'error', success: false, message: 'Internal server error' });
+    return endStream();
   }
 };
