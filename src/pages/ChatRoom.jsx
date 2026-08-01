@@ -232,7 +232,7 @@ export default function ChatRoom() {
  <span className={`relative inline-flex rounded-full h-full w-full ${isConnected ? 'bg-green-500' : 'bg-discord-500'}`}></span>
  </span>
  </h1>
- <p className="text-white/40 text-[10px] md:text-[13px] mt-1 leading-snug">Real-time public chat room. Messages disappear after 5 days.</p>
+ <p className="text-white/40 text-[10px] md:text-[13px] mt-1 leading-snug">Real-time public chat room. Messages disappear after 14 days.</p>
  </div>
  <div className="flex items-center gap-2 shrink-0">
  <div className="text-[10px] md:text-xs font-semibold bg-discord-500/10 border border-discord-500/20 text-discord-400 px-2 py-1 md:px-3 md:py-1.5 rounded-full backdrop-blur-sm flex items-center gap-1 whitespace-nowrap">
