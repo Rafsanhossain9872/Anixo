@@ -798,7 +798,14 @@ def api_jikan_proxy():
     if not path.startswith("/v4/"):
         path = "/v4/" + path.lstrip("/")
 
+    # Prevent path traversal and SSRF via URL-encoded characters
+    if ".." in path or "%" in path:
+        return {"error": "Invalid Jikan path"}, 400
+    from urllib.parse import urlparse
     full_url = f"https://api.jikan.moe{path}"
+    parsed = urlparse(full_url)
+    if parsed.scheme != "https" or parsed.netloc != "api.jikan.moe":
+        return {"error": "Invalid Jikan path"}, 400
     
     # Preserve other query params
     params = request.args.to_dict()
@@ -810,7 +817,7 @@ def api_jikan_proxy():
     j_resp = None
     for attempt in range(3):
         try:
-            j_resp = requests.get(full_url, params=params, timeout=10)
+            j_resp = requests.get(full_url, params=params, timeout=10, allow_redirects=False)
             if j_resp.status_code == 200:
                 break
             if j_resp.status_code == 429:
