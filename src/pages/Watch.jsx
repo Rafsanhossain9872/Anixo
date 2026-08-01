@@ -1036,6 +1036,13 @@ export default function Watch({ isWatch2GetherMode }) {
               animeId={id}
               animeTitle={getTitle(anime.title)}
               episode={activeEpisode}
+              onTimestampClick={(seconds) => {
+                if (videoRef.current) {
+                  videoRef.current.seek(seconds);
+                  videoRef.current.play();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }}
               relations={relations}
               recommendations={recommendations}
             />
