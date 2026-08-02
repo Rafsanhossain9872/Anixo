@@ -14,10 +14,10 @@ const ProgressBar = ({ label, value, max, color = "#e50914" }) => {
     <div className="flex items-center gap-4">
       <span className="text-sm text-[#888] w-32 truncate">{label}</span>
       <div className="flex-1 h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
-        <div 
+        <div
           className="h-full rounded-full transition-all duration-700 relative"
-          style={{ 
-            width: `${percentage}%`, 
+          style={{
+            width: `${percentage}%`,
             background: `linear-gradient(90deg, ${color}, ${color}dd)`
           }}
         >
@@ -34,7 +34,7 @@ const SimpleDonut = ({ segments, size = 120 }) => {
   const radius = 35;
   const circumference = 2 * Math.PI * radius;
   const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
-  
+
   const processed = [];
   let currentOffset = 0;
   for (const seg of segments) {
@@ -42,6 +42,7 @@ const SimpleDonut = ({ segments, size = 120 }) => {
     processed.push({ ...seg, dash, offset: -currentOffset });
     currentOffset += dash;
   }
+
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -89,7 +90,7 @@ const STATUS_COLORS = {
   Paused: "#f59e0b",
 };
 
-const GENRE_COLORS = ["#e50914","#f97316","#eab308","#22c55e","#06b6d4","#8b5cf6","#ec4899","#14b8a6"];
+const GENRE_COLORS = ["#e50914", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#8b5cf6", "#ec4899", "#14b8a6"];
 
 // --- Animations ---
 const styles = `
@@ -310,208 +311,207 @@ export default function Stats() {
       <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
         <Navbar />
 
-      <div className="w-full pt-[80px] px-4 md:px-8 pb-16 max-w-[1200px] mx-auto flex-1">
+        <div className="w-full pt-[80px] px-4 md:px-8 pb-16 max-w-[1200px] mx-auto flex-1">
 
-        {/* Nav Tabs */}
-        <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-10 w-full max-w-4xl mx-auto px-1 sm:px-0">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${
-                  isActive 
-                    ? "bg-discord-600 text-white border-discord-600 shadow-lg" 
-                    : "bg-white/[0.02] border-white/15 text-white/30 hover:text-white hover:bg-white/[0.05] hover:border-white/25"
-                }`}
-              >
-                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
-                <span className="hidden md:block text-[12px] font-bold tracking-tight whitespace-nowrap">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Header */}
-        <div className="mb-10 text-center md:text-left">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Watch Statistics</h1>
-          <p className="text-sm text-[#666]">Your anime journey overview</p>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="w-10 h-10 border-2 border-[#333] border-t-discord-600 rounded-full animate-spin mb-4" />
-            <p className="text-[#666]">Crunching your data...</p>
+          {/* Nav Tabs */}
+          <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-10 w-full max-w-4xl mx-auto px-1 sm:px-0">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${isActive
+                      ? "bg-discord-600 text-white border-discord-600 shadow-lg"
+                      : "bg-white/[0.02] border-white/15 text-white/30 hover:text-white hover:bg-white/[0.05] hover:border-white/25"
+                    }`}
+                >
+                  <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
+                  <span className="hidden md:block text-[12px] font-bold tracking-tight whitespace-nowrap">{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
-        ) : totalInLibrary === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 bg-gradient-to-br from-[#111] to-[#0f0f0f] border border-white/10 rounded-3xl max-w-md mx-auto text-center">
-            <BarChart2 size={40} className="text-[#444] mb-4" />
-            <h3 className="text-lg font-medium text-white mb-2">No Data Yet</h3>
-            <p className="text-sm text-[#666] mb-6">Start watching and bookmarking anime to see your stats here!</p>
-            <Link to="/browse" className="px-6 py-2 bg-gradient-to-r from-discord-600 to-discord-700 text-white rounded-lg text-sm font-medium hover:from-discord-700 hover:to-discord-800 transition-all shadow-lg">Explore Anime</Link>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-8">
 
-            {/* Top Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              <StatCard
-                label="Watch Time"
-                value={totalDays > 0 ? `${totalDays}d ${totalHours % 24}h` : `${totalHours}h`}
-                sub={`${totalMinutes.toLocaleString()} minutes`}
-                icon={Clock}
-                color="#e50914"
-              />
-              <StatCard
-                label="Completed"
-                value={completedCount}
-                sub={`${totalInLibrary} total`}
-                color="#22c55e"
-              />
-              <StatCard
-                label="Average Score"
-                value={avgScore}
-                sub={`${scoredEntries.length} rated`}
-                color="#f59e0b"
-              />
-              <StatCard
-                label="Episodes Watched"
-                value={progress.reduce((s, p) => s + p.episode, 0).toLocaleString()}
-                color="#3b82f6"
-              />
+          {/* Header */}
+          <div className="mb-10 text-center md:text-left">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Watch Statistics</h1>
+            <p className="text-sm text-[#666]">Your anime journey overview</p>
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24">
+              <div className="w-10 h-10 border-2 border-[#333] border-t-discord-600 rounded-full animate-spin mb-4" />
+              <p className="text-[#666]">Crunching your data...</p>
             </div>
+          ) : totalInLibrary === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 bg-gradient-to-br from-[#111] to-[#0f0f0f] border border-white/10 rounded-3xl max-w-md mx-auto text-center">
+              <BarChart2 size={40} className="text-[#444] mb-4" />
+              <h3 className="text-lg font-medium text-white mb-2">No Data Yet</h3>
+              <p className="text-sm text-[#666] mb-6">Start watching and bookmarking anime to see your stats here!</p>
+              <Link to="/browse" className="px-6 py-2 bg-gradient-to-r from-discord-600 to-discord-700 text-white rounded-lg text-sm font-medium hover:from-discord-700 hover:to-discord-800 transition-all shadow-lg">Explore Anime</Link>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-8">
 
-            {/* Two Column Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Library Status */}
-              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-discord-600/10 to-transparent rounded-full blur-2xl" />
-                <div className="relative z-10">
-                  <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-discord-600 rounded-full animate-pulse" />
-                    Library Status
-                  </h3>
-                  <div className="flex items-center gap-8">
-                    <div className="relative shrink-0">
-                      <SimpleDonut segments={statusSegments} size={120} />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-bold text-white">{totalInLibrary}</span>
-                        <span className="text-xs text-[#666]">Total</span>
+              {/* Top Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                <StatCard
+                  label="Watch Time"
+                  value={totalDays > 0 ? `${totalDays}d ${totalHours % 24}h` : `${totalHours}h`}
+                  sub={`${totalMinutes.toLocaleString()} minutes`}
+                  icon={Clock}
+                  color="#e50914"
+                />
+                <StatCard
+                  label="Completed"
+                  value={completedCount}
+                  sub={`${totalInLibrary} total`}
+                  color="#22c55e"
+                />
+                <StatCard
+                  label="Average Score"
+                  value={avgScore}
+                  sub={`${scoredEntries.length} rated`}
+                  color="#f59e0b"
+                />
+                <StatCard
+                  label="Episodes Watched"
+                  value={progress.reduce((s, p) => s + p.episode, 0).toLocaleString()}
+                  color="#3b82f6"
+                />
+              </div>
+
+              {/* Two Column Section */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Library Status */}
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-discord-600/10 to-transparent rounded-full blur-2xl" />
+                  <div className="relative z-10">
+                    <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-discord-600 rounded-full animate-pulse" />
+                      Library Status
+                    </h3>
+                    <div className="flex items-center gap-8">
+                      <div className="relative shrink-0">
+                        <SimpleDonut segments={statusSegments} size={120} />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-3xl font-bold text-white">{totalInLibrary}</span>
+                          <span className="text-xs text-[#666]">Total</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-4 flex-1">
+                        {statusSegments.map((seg, i) => (
+                          <div key={i} className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full" style={{ background: seg.color }} />
+                              <span className="text-sm text-[#888]">{seg.label}</span>
+                            </div>
+                            <span className="text-sm text-white font-medium">{seg.value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-4 flex-1">
-                      {statusSegments.map((seg, i) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full" style={{ background: seg.color }} />
-                            <span className="text-sm text-[#888]">{seg.label}</span>
-                          </div>
-                          <span className="text-sm text-white font-medium">{seg.value}</span>
-                        </div>
-                      ))}
-                    </div>
+                  </div>
+                </div>
+
+                {/* Format Breakdown */}
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-600/10 to-transparent rounded-full blur-2xl" />
+                  <div className="relative z-10">
+                    <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse" />
+                      Formats
+                    </h3>
+                    {topFormats.length > 0 ? (
+                      <div className="flex flex-col gap-5">
+                        {topFormats.map(([label, value], i) => (
+                          <ProgressBar
+                            key={i}
+                            label={label}
+                            value={value}
+                            max={maxFormatValue}
+                            color={GENRE_COLORS[i % GENRE_COLORS.length]}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[#666] text-sm">No format data yet</p>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Format Breakdown */}
+              {/* Top Genres */}
               <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-600/10 to-transparent rounded-full blur-2xl" />
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-yellow-600/10 to-transparent rounded-full blur-2xl" />
                 <div className="relative z-10">
                   <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-pulse" />
-                    Formats
+                    <div className="w-2 h-2 bg-yellow-600 rounded-full animate-pulse" />
+                    Top Genres
                   </h3>
-                  {topFormats.length > 0 ? (
+                  {topGenres.length > 0 ? (
                     <div className="flex flex-col gap-5">
-                      {topFormats.map(([label, value], i) => (
-                        <ProgressBar 
-                          key={i} 
-                          label={label} 
-                          value={value} 
-                          max={maxFormatValue}
+                      {topGenres.map(([label, value], i) => (
+                        <ProgressBar
+                          key={i}
+                          label={label}
+                          value={value}
+                          max={maxGenreValue}
                           color={GENRE_COLORS[i % GENRE_COLORS.length]}
                         />
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[#666] text-sm">No format data yet</p>
+                    <p className="text-[#666] text-sm">No genre data yet</p>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Top Genres */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-yellow-600/10 to-transparent rounded-full blur-2xl" />
-              <div className="relative z-10">
-                <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-600 rounded-full animate-pulse" />
-                  Top Genres
-                </h3>
-                {topGenres.length > 0 ? (
-                  <div className="flex flex-col gap-5">
-                    {topGenres.map(([label, value], i) => (
-                      <ProgressBar 
-                        key={i} 
-                        label={label} 
-                        value={value} 
-                        max={maxGenreValue}
-                        color={GENRE_COLORS[i % GENRE_COLORS.length]}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[#666] text-sm">No genre data yet</p>
-                )}
-              </div>
-            </div>
-
-            {/* Top Studios */}
-            <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-600/10 to-transparent rounded-full blur-2xl" />
-              <div className="relative z-10">
-                <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
-                  Top Studios
-                </h3>
-                {topStudios.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {topStudios.map(([name, data], i) => (
-                      <div 
-                        key={i} 
-                        className="flex items-center gap-4 bg-gradient-to-r from-[#0a0a0a] to-[#111] p-5 rounded-xl border border-white/10 hover:border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
-                      >
-                        <span className="text-xl font-bold text-[#666] w-10">{i + 1}</span>
-                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#2a2a2a] flex-shrink-0 shadow-lg">
-                          {data.cover ? (
-                            <img src={data.cover} alt={name} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[#666] font-bold text-2xl bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]">
-                              {name.charAt(0)}
-                            </div>
-                          )}
+              {/* Top Studios */}
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-white/10 rounded-2xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-green-600/10 to-transparent rounded-full blur-2xl" />
+                <div className="relative z-10">
+                  <h3 className="text-base font-medium text-white mb-8 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
+                    Top Studios
+                  </h3>
+                  {topStudios.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {topStudios.map(([name, data], i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-4 bg-gradient-to-r from-[#0a0a0a] to-[#111] p-5 rounded-xl border border-white/10 hover:border-white/20 transition-all hover:scale-[1.02] cursor-pointer"
+                        >
+                          <span className="text-xl font-bold text-[#666] w-10">{i + 1}</span>
+                          <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#2a2a2a] flex-shrink-0 shadow-lg">
+                            {data.cover ? (
+                              <img src={data.cover} alt={name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[#666] font-bold text-2xl bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]">
+                                {name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-base text-white font-medium block truncate">{name}</span>
+                            <span className="text-sm text-[#666]">{data.count} anime</span>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-base text-white font-medium block truncate">{name}</span>
-                          <span className="text-sm text-[#666]">{data.count} anime</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[#666] text-sm">No studio data yet</p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[#666] text-sm">No studio data yet</p>
+                  )}
+                </div>
               </div>
+
             </div>
+          )}
+        </div>
 
-          </div>
-        )}
-      </div>
-
-      <Footer />
+        <Footer />
       </div>
     </>
   );
