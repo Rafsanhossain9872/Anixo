@@ -9,7 +9,7 @@ export const PYTHON_API_BACKUP = import.meta.env.VITE_PYTHON_API_BACKUP || "";
 
 
 export const ANILIST_URL = `${PYTHON_API}/api/anilist/proxy`;
-export const ANIXO_SERVER = PYTHON_API;
+export const TENZORA_SERVER = PYTHON_API;
 export const JIKAN_BASE_URL = import.meta.env.VITE_JIKAN_API || "https://api.jikan.moe/v4";
 
 export const CHAT_SERVER = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
@@ -39,7 +39,7 @@ const MemoryCache = new Map();
 const cache = {
   get: (key) => {
     try {
-      const cacheKey = `anixo_cache_${key}`;
+      const cacheKey = `tenzora_cache_${key}`;
 
       // 1. Check In-Memory Cache (Fastest)
       if (MemoryCache.has(cacheKey)) {
@@ -66,7 +66,7 @@ const cache = {
 
   set: (key, value, ttl) => {
     try {
-      const cacheKey = `anixo_cache_${key}`;
+      const cacheKey = `tenzora_cache_${key}`;
       const expiry = new Date().getTime() + ttl;
       const cacheData = { value, expiry };
 
@@ -87,7 +87,7 @@ const cache = {
     try {
       const now = new Date().getTime();
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('anixo_cache_')) {
+        if (key.startsWith('tenzora_cache_')) {
           const item = JSON.parse(localStorage.getItem(key));
           if (item.expiry < now) localStorage.removeItem(key);
         }
@@ -145,10 +145,10 @@ function mapJikanToAnilist(j) {
   };
 }
 
-async function fetchFromJikan(endpoint, params = {}) {
+async function fetchFromJikan(endpoint, params = {}, signal) {
   try {
     const query = new URLSearchParams({ sfw: true, ...params }).toString();
-    const { data } = await axios.get(`${JIKAN_BASE_URL}${endpoint}${query ? `?${query}` : ""}`);
+    const { data } = await axios.get(`${JIKAN_BASE_URL}${endpoint}${query ? `?${query}` : ""}`, { signal });
 
     return {
       media: cleanMediaList(data.data?.map(mapJikanToAnilist) || []),
@@ -159,6 +159,7 @@ async function fetchFromJikan(endpoint, params = {}) {
       }
     };
   } catch (err) {
+    if (axios.isCancel(err)) return { media: [], pageInfo: { total: 0 } };
     console.error("Jikan Fetch Error:", err.message);
     return { media: [], pageInfo: { total: 0 } };
   }
@@ -212,7 +213,7 @@ authApi.interceptors.request.use((config) => {
 // Fields that are used internally but are NOT valid AniList GraphQL variables
 const NON_GRAPHQL_FIELDS = new Set(["genres", "language"]);
 
-async function fetchFromAniList(query, variables = {}) {
+async function fetchFromAniList(query, variables = {}, signal) {
   try {
     // Clean up variables: strip non-GraphQL fields and empty values
     const cleanVariables = Object.fromEntries(
@@ -234,6 +235,7 @@ async function fetchFromAniList(query, variables = {}) {
         data: payload,
         headers,
         timeout: 10000,
+        signal,
       });
 
       if (data) {
@@ -263,6 +265,7 @@ async function fetchFromAniList(query, variables = {}) {
       const { data } = await axios.post("https://graphql.anilist.co", payload, {
         headers,
         timeout: 10000,
+        signal,
       });
 
       if (data) {
@@ -289,6 +292,7 @@ async function fetchFromAniList(query, variables = {}) {
 
     return { media: [], pageInfo: { total: 0 } };
   } catch (err) {
+    if (axios.isCancel(err)) return { media: [], pageInfo: { total: 0 } };
     console.error("AniList Fetch Error:", err.message);
     return { media: [], pageInfo: { total: 0 } };
   }
@@ -634,27 +638,60 @@ export const ANIME_QUERY = `
   }
 `;
 
-export async function getTrendingAnime(page = 1) {
+export async function getTrendingAnime(page = 1, signal) {
   const cacheKey = `trending_p${page}`;
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
     page,
-    sort: ["TRENDING_DESC"],
-    status_in: ["RELEASING", "FINISHED"]
-  });
+    sort: ["TRENDING_DESC", "POPULARITY_DESC"],
+    status_in: ["RELEASING"]
+  }, signal);
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING);
     return anilistRes;
   }
 
   console.warn("[Failover] AniList Trending failed, switching to Jikan...");
-  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 });
+  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 }, signal);
   return jikanRes;
 }
 
-export async function getPopularAnime(page = 1) {
+const TOP_MOVIES_QUERY = `
+  query ($page: Int) {
+    Page(page: $page, perPage: 10) {
+      media(type: ANIME, format: MOVIE, sort: [SCORE_DESC, POPULARITY_DESC], isAdult: false) {
+        id
+        title { romaji english native }
+        coverImage { extraLarge large medium }
+        format
+        seasonYear
+        episodes
+        averageScore
+      }
+    }
+  }
+`;
+
+export async function getTopMovies(page = 1) {
+  const cacheKey = `top_movies_p${page}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
+  try {
+    const anilistRes = await fetchFromAniList(TOP_MOVIES_QUERY, { page });
+    if (anilistRes?.media?.length > 0) {
+      cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING); // Share TTL with trending
+      return anilistRes;
+    }
+  } catch (error) {
+    console.error("Failed to fetch top movies from AniList:", error);
+  }
+  return null;
+}
+
+export async function getPopularAnime(page = 1, signal) {
   const cacheKey = `popular_p${page}`;
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
@@ -662,41 +699,61 @@ export async function getPopularAnime(page = 1) {
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
     page,
     sort: ["POPULARITY_DESC"],
-    status_in: ["RELEASING", "FINISHED"]
-  });
+    status_in: ["RELEASING", "FINISHED"] // Assuming we still want recent ones
+  }, signal);
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.POPULAR);
     return anilistRes;
   }
 
   console.warn("[Failover] AniList Popular failed, switching to Jikan...");
-  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "bypopularity", limit: 20 });
+  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "bypopularity", limit: 20 }, signal);
   return jikanRes;
 }
 
-export async function getNewReleases(page = 1) {
+export async function getUpcomingAnime(page = 1, signal) {
+  const cacheKey = `upcoming_p${page}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
     page,
     sort: ["TRENDING_DESC"],
+    status_in: ["NOT_YET_RELEASED"]
+  }, signal);
+  if (anilistRes?.media?.length > 0) {
+    cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING); // Share TTL with trending
+    return anilistRes;
+  }
+
+  console.warn("[Failover] AniList Upcoming failed, switching to Jikan...");
+  const jikanRes = await fetchFromJikan("/seasons/upcoming", { page, limit: 20 }, signal);
+  return jikanRes;
+}
+
+export async function getNewReleases(page = 1, signal) {
+  const anilistRes = await fetchFromAniList(ANIME_QUERY, {
+    page,
+    sort: ["START_DATE_DESC"],
     status_in: ["RELEASING"]
-  });
+  }, signal);
   if (anilistRes?.media?.length > 0) return anilistRes;
 
   console.warn("[Failover] AniList New Releases failed, switching to Jikan...");
   // Use 'airing' or 'upcoming' depending on context, but here we want things with episodes
-  return fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 });
+  return fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 }, signal);
 }
 
-export async function getJustCompletedAnime(page = 1) {
+export async function getJustCompletedAnime(page = 1, signal) {
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
     page,
-    sort: ["TRENDING_DESC"],
+    sort: ["END_DATE_DESC"],
     status_in: ["FINISHED"]
-  });
+  }, signal);
   if (anilistRes?.media?.length > 0) return anilistRes;
 
   console.warn("[Failover] AniList Just Completed failed, switching to Jikan...");
-  return fetchFromJikan("/top/anime", { page, limit: 20 });
+  return fetchFromJikan("/top/anime", { page, limit: 20 }, signal);
 }
 
 

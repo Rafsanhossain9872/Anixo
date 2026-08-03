@@ -386,7 +386,7 @@ export const forgotPassword = async (req, res) => {
 
     // Create reset URL
     // Strict frontend URL resolution to prevent Password Reset Poisoning (Host Header Injection)
-    const frontendUrl = process.env.FRONTEND_URL || 'https://anixo.online';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://tenzora.top';
     const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a put request to: \n\n ${resetUrl}`;
@@ -482,8 +482,8 @@ export const forgotPassword = async (req, res) => {
         <div class="email-container">
           <div class="header">
             <img 
-              src="${frontendUrl.includes('localhost') ? (process.env.SITE_URL || 'https://anixo.online') : frontendUrl}/logo.png" 
-              alt="AniXo" 
+              src="${frontendUrl.includes('localhost') ? (process.env.SITE_URL || 'https://tenzora.top') : frontendUrl}/logo.png" 
+              alt="TenZora" 
               height="150" 
               style="display: block; height: 150px; width: auto; margin: 0 auto;"
             >
@@ -491,7 +491,7 @@ export const forgotPassword = async (req, res) => {
           <div class="content">
             <h1 class="title">Password Recovery</h1>
             <p class="message">
-              We received a request to reset the password for your AniXo account. 
+              We received a request to reset the password for your TenZora account. 
               If this was you, click the button below to choose a new password.
             </p>
             <div class="btn-container">
@@ -506,7 +506,7 @@ export const forgotPassword = async (req, res) => {
               If you did not request this email, please ignore it or contact support if you have concerns. 
               Never share this link with anyone.
             </p>
-            <p class="copyright">&copy; 2026 ANIXO.ONLINE &bull; PREMIUM STREAMING</p>
+            <p class="copyright">&copy; 2026 TENZORA.ONLINE &bull; PREMIUM STREAMING</p>
           </div>
         </div>
       </body>
@@ -517,7 +517,7 @@ export const forgotPassword = async (req, res) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: 'AniXo - Password Reset Request',
+        subject: 'TenZora - Password Reset Request',
         message,
         html
       });
@@ -586,7 +586,7 @@ export const connectAnilist = async (req, res) => {
     const { token } = req.query;
     if (!token) return res.status(401).send('Unauthorized: No token provided');
 
-    // Verify AniXo Token
+    // Verify TenZora Token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
 
@@ -614,7 +614,7 @@ export const anilistCallback = async (req, res) => {
   const clientSecret = process.env.ANILIST_CLIENT_SECRET;
   const redirectUri = process.env.ANILIST_REDIRECT_URI;
 
-  const frontendUrl = process.env.FRONTEND_URL || 'https://anixo.online';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://tenzora.top';
 
   if (!code || !userId) {
     return res.redirect(`${frontendUrl}/settings?error=anilist_auth_failed`);

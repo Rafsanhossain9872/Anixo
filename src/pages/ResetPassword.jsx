@@ -18,7 +18,7 @@ export default function ResetPassword() {
   useEffect(() => {
     updateMetaTags({
       title: "Reset Password",
-      description: "Reset your AniXo account password.",
+      description: "Reset your TenZora account password.",
       url: `/reset-password/${token}`,
       noindex: true
     });

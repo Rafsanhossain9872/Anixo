@@ -966,9 +966,7 @@ export default function Watch({ isWatch2GetherMode }) {
 
             {/* Next Episode Banner */}
             {!isFocusMode && (
-              <div className="border-t border-white/15 bg-[#0d0d0d]/50">
-                <NextEpisodeBanner anime={anime} />
-              </div>
+              <NextEpisodeBanner anime={anime} />
             )}
           </div>
 

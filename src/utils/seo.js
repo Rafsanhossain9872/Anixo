@@ -12,7 +12,7 @@ export const updateMetaTags = ({
 }) => {
   // Update Title
   if (title) {
-    const fullTitle = `${title} - AniXo`;
+    const fullTitle = `${title} - TenZora`;
     document.title = fullTitle;
     document.querySelector('meta[name="title"]')?.setAttribute("content", fullTitle);
     document.querySelector('meta[property="og:title"]')?.setAttribute("content", fullTitle);
@@ -48,7 +48,7 @@ export const updateMetaTags = ({
 
   // Update URL
   if (url) {
-    const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL || "https://anixo.online";
+    const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL || "https://tenzora.top";
     const fullUrl = url.startsWith('http') ? url : `${siteUrl}${url}`;
     document.querySelector('meta[property="og:url"]')?.setAttribute("content", fullUrl);
     document.querySelector('meta[property="twitter:url"]')?.setAttribute("content", fullUrl);

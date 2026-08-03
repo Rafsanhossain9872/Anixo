@@ -87,7 +87,7 @@ export const initAllBots = async () => {
       user = new User({
         username: profile.username,
         displayName: profile.displayName,
-        email: `${profile.username}@anixo-bot.online`,
+        email: `${profile.username}@tenzora-bot.online`,
         password: `bot-${profile.username}-not-used`,
         role: 'user',
         avatar: profile.avatar,

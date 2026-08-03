@@ -48,7 +48,7 @@ export default function Footer() {
         { name: "Home", path: "/home" },
         { name: "Browse", path: "/browse" },
         { name: "Trending", path: "/browse?sort=TRENDING_DESC" },
-        { name: "Popular", path: "/browse?sort=POPULAR_DESC" },
+        { name: "Popular", path: "/browse?sort=POPULARITY_DESC" },
         { name: "New Releases", path: "/browse?sort=START_DATE_DESC" },
       ],
     },
@@ -92,7 +92,7 @@ export default function Footer() {
         {/* Professional Watermark Background */}
         <div className="absolute inset-0 hidden md:flex items-center justify-center overflow-hidden pointer-events-none select-none z-0">
           <span className="text-[250px] lg:text-[350px] font-black tracking-tight uppercase whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.02)' }}>
-            AniXo
+            TenZora
           </span>
         </div>
 
@@ -101,15 +101,15 @@ export default function Footer() {
           {/* SEO About Section */}
           <article className="mb-8 md:mb-14 pb-6 md:pb-10 border-b border-white/15">
             <h2 className="text-[12px] md:text-[16px] font-medium text-white/80 mb-2 md:mb-4 tracking-wide">
-              AniXo – Watch Free Anime Online in HD
+              TenZora – Watch Free Anime Online in HD
             </h2>
             <p className="text-[11px] md:text-[13px] text-white/50 leading-[1.7] md:leading-[1.8] max-w-[900px] font-normal">
-              AniXo is a free anime streaming site where you can watch subbed and dubbed anime online in high definition.
+              TenZora is a free anime streaming site where you can watch subbed and dubbed anime online in high definition.
               Enjoy the latest episodes of popular anime series like One Piece, Demon Slayer, Jujutsu Kaisen, Attack on Titan,
               My Hero Academia, Naruto Shippuden, Dragon Ball Super, and thousands more — all without ads or interruptions.
               Our library is updated daily with new releases, seasonal anime, movies, OVAs, and ONAs.
-              Whether you prefer English subtitles or dubbed audio, AniXo delivers a premium, buffer-free viewing experience
-              on desktop and mobile devices. Join millions of anime fans who trust AniXo as their go-to destination for anime streaming.
+              Whether you prefer English subtitles or dubbed audio, TenZora delivers a premium, buffer-free viewing experience
+              on desktop and mobile devices. Join millions of anime fans who trust TenZora as their go-to destination for anime streaming.
             </p>
           </article>
 
@@ -121,20 +121,20 @@ export default function Footer() {
                 to="/home"
                 onClick={() => window.scrollTo(0, 0)}
                 className="flex items-center shrink-0"
-                aria-label="AniXo Home"
+                aria-label="TenZora Home"
               >
                 <img
                   src="/logo.png"
-                  alt="AniXo - Free Anime Streaming"
+                  alt="TenZora - Free Anime Streaming"
                   className="h-[60px] md:h-[100px] object-contain hover:scale-105 transition"
                 />
               </Link>
 
               <div className="flex gap-3 md:gap-4 md:pt-2">
-                <a href="https://discord.com/users/@seiji0x" target="_blank" rel="noopener noreferrer" aria-label="Join AniXo Discord">
+                <a href="https://discord.com/users/@seiji0x" target="_blank" rel="noopener noreferrer" aria-label="Join TenZora Discord">
                   <MessageSquare className="text-white/20 hover:text-[#5865F2] transition cursor-pointer" size={18} />
                 </a>
-                <a href="https://reddit.com" target="_blank" rel="noopener noreferrer" aria-label="AniXo on Reddit">
+                <a href="https://reddit.com" target="_blank" rel="noopener noreferrer" aria-label="TenZora on Reddit">
                   <Heart className="text-white/20 hover:text-discord-600 transition cursor-pointer" size={18} />
                 </a>
               </div>
@@ -213,7 +213,7 @@ export default function Footer() {
                 {["Action", "Romance", "Comedy", "Fantasy", "Sci-Fi", "Slice of Life", "Horror", "Drama", "Mecha", "Sports", "Thriller", "Supernatural"].map((genre) => (
                   <Link
                     key={genre}
-                    to={`/browse?genres=${genre}`}
+                    to={`/browse?genre=${genre}`}
                     className="text-[10px] font-bold text-white/40 bg-white/[0.03] border border-white/15 px-2.5 md:px-3 py-1 md:py-1.5 rounded-[3px] hover:text-white hover:bg-white/[0.06] hover:border-white/10 transition-all whitespace-nowrap shrink-0 md:shrink"
                   >
                     {genre}
@@ -226,7 +226,7 @@ export default function Footer() {
           {/* Bottom Bar */}
           <div className="pt-6 md:pt-8 border-t border-white/15 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
             <div className="flex items-center gap-2 md:gap-4 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-white/40">
-              <span>&copy; {currentYear} AniXo</span>
+              <span>&copy; {currentYear} TenZora</span>
               <div className="w-1 h-1 bg-white/10 rounded-full hidden sm:block" />
               <span className="flex items-center gap-1 hidden sm:flex">
                 Made with <Heart size={10} className="text-discord-600" fill="currentColor" /> by the community
@@ -241,7 +241,7 @@ export default function Footer() {
             </div>
 
             <p className="text-[10px] md:text-[12px] text-white/40 text-center md:text-right max-w-lg italic select-none animate-[breath_4s_ease-in-out_infinite]">
-              Disclaimer: AniXo does not store any files on its server. All contents are provided by non-affiliated third parties.
+              Disclaimer: TenZora does not store any files on its server. All contents are provided by non-affiliated third parties.
             </p>
             <style>{`
             @keyframes breath {

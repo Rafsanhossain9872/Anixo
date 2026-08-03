@@ -4,7 +4,7 @@ import AnimeCard from "../common/AnimeCard";
 import SkeletonCard from "../common/SkeletonCard";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-export default function AnimeRow({ title, data, isLoading, limit = 6, tabs = [], activeTab = "", onTabChange, onRemove, isScrollable = false, viewAllLink = "", CardComponent = AnimeCard, headerAction }) {
+export default function AnimeRow({ title, subtitle, data, isLoading, limit = 6, tabs = [], activeTab = "", onTabChange, onRemove, isScrollable = false, viewAllLink = "", CardComponent = AnimeCard, headerAction }) {
   const Card = CardComponent;
   const hasData = data && data.length > 0;
   const scrollRef = useRef(null);
@@ -42,32 +42,32 @@ export default function AnimeRow({ title, data, isLoading, limit = 6, tabs = [],
       {/* Responsive Header (Centered on Mobile, Left on Desktop) */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col items-center md:items-start gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            {/* Vertical Accent Bar */}
-            <div className="w-[3.5px] h-6 bg-discord-600 rounded-full" />
-            <h2 className="text-xl md:text-2xl font-bold text-white uppercase leading-none tracking-tighter text-center md:text-left">
-              {title}
-            </h2>
-            {headerAction}
+          <div className="flex flex-col items-center md:items-start">
+            {subtitle && (
+              <p className="text-[13px] font-medium text-white/40 mb-1">{subtitle}</p>
+            )}
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl md:text-[22px] font-bold text-white leading-none tracking-tight text-center md:text-left">
+                {title}
+              </h2>
+              {headerAction}
+            </div>
           </div>
 
-          {/* Categories / Tabs (Responsive Alignment) */}
+          {/* Categories / Tabs */}
           {tabs && tabs.length > 0 && (
-            <div className="flex items-center justify-center md:justify-start gap-3 md:gap-5 overflow-x-auto scrollbar-hide py-1">
+            <div className="flex items-center gap-1 bg-[#1A1A1E] rounded-[6px] p-1 overflow-x-auto scrollbar-hide">
               {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => onTabChange?.(tab)}
-                  className={`text-[12px] md:text-[14px] font-bold transition-all whitespace-nowrap px-2 py-1 rounded relative ${
+                  className={`text-[12px] md:text-[13px] font-bold transition-colors whitespace-nowrap px-4 py-1.5 rounded-[4px] uppercase tracking-wider ${
                     activeTab === tab
-                      ? "text-white bg-white/10"
-                      : "text-[#999] hover:text-white"
+                      ? "text-white bg-[#303035]"
+                      : "text-[#888] hover:text-white"
                   }`}
                 >
                   {tab}
-                  {activeTab === tab && (
-                    <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-discord-600 rounded-full" />
-                  )}
                 </button>
               ))}
             </div>

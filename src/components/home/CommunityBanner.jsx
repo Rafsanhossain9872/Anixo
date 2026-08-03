@@ -81,7 +81,7 @@ const CommunityBanner = () => {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-white font-bold text-[16px] md:text-[19px] leading-tight tracking-tight">
-                  AniXo Community
+                  TenZora Community
                 </h3>
                 <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-[#5865F2]/20 to-purple-500/15 border border-[#5865F2]/25 text-[#8b9df8] text-[9px] md:text-[10px] font-bold uppercase tracking-widest">
                   New

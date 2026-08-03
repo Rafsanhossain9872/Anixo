@@ -4,8 +4,8 @@ import { Share2, Send, MessageCircle } from 'lucide-react';
 
 const ShareBanner = () => {
   const { t } = useTranslation();
-  const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL || 'https://anixo.online';
-  const rawMessage = 'Hey! I found this amazing site to watch anime for free in high quality. No ads, fast streaming, and it\'s totally free. Check out AniXo here:';
+  const siteUrl = window.location.origin || import.meta.env.VITE_SITE_URL || 'https://tenzora.top';
+  const rawMessage = 'Hey! I found this amazing site to watch anime for free in high quality. No ads, fast streaming, and it\'s totally free. Check out TenZora here:';
   const shareText = encodeURIComponent(rawMessage);
 
   const shareLinks = [

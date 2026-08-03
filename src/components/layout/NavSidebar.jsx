@@ -59,21 +59,21 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  if (!open) return null;
 
  return (
- <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm">
+ <div className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm">
  <div
  ref={panelRef}
- className="fixed left-0 top-0 h-full w-[280px] bg-black/90 backdrop-blur-xl border-r border-white/10 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300"
+ className="fixed left-0 top-0 h-full w-[280px] bg-[#0B0B0E] border-r border-white/[0.05] shadow-[20px_0_60px_rgba(0,0,0,0.8)] flex flex-col animate-in slide-in-from-left duration-300"
  >
  {/* Header with Close */}
  <div className="px-4 py-3 flex items-center justify-between">
  <div className="flex items-center gap-0">
- <img src="/logo.png" alt="AniXo" className="h-[98px] object-contain -ml-2" />
+ <img src="/logo.png" alt="TenZora" className="h-[98px] object-contain -ml-2" />
  </div>
- <button onClick={onClose} className="text-white/20 hover:text-white transition-colors p-1.5"><X size={18} /></button>
+ <button onClick={onClose} className="text-white/15 hover:text-white/70 transition-colors p-1.5"><X size={18} /></button>
  </div>
 
  {/* Triple Tab Controls */}
- <div className="flex border-b border-white/15 mx-4 mt-1">
+ <div className="flex border-b border-white/[0.06] mx-4 mt-1">
  {[
  { id: "menu", label: "Menu", icon: List },
  { id: "genre", label: "Genre", icon: LayoutGrid }
@@ -81,7 +81,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  <button
  key={tab.id}
  onClick={() => setActiveTab(tab.id)}
- className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${activeTab === tab.id ? "text-discord-500" : "text-white/40 hover:text-white/70"
+ className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${activeTab === tab.id ? "text-discord-400" : "text-white/30 hover:text-white/60"
  }`}
  >
  <tab.icon size={14} strokeWidth={activeTab === tab.id ? 3 : 2} />
@@ -89,7 +89,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  {tab.label}
  </span>
  {activeTab === tab.id && (
- <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-discord-600 " />
+ <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-discord-500 " />
  )}
  </button>
  ))}
@@ -102,17 +102,17 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  {activeTab === "menu" && (
  <div className="p-5 pb-20 space-y-8 animate-in fade-in duration-300">
  <section className="space-y-4">
- <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/20 ml-0.5">Discovery</h3>
+ <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/15 ml-0.5">Discovery</h3>
  <div className="flex flex-col gap-3">
  {types.map((type) => (
  <Link
  key={type.value}
  to={`/browse?format=${type.value}`}
  onClick={onClose}
- className="text-[16px] font-medium text-white/70 hover:text-discord-500 transition-all flex items-center justify-between group px-1"
+ className="text-[16px] font-medium text-white/60 hover:text-discord-400 transition-all flex items-center justify-between group px-1"
  >
  <span>{type.label}</span>
- <ChevronRight size={14} className="text-white/10 group-hover:text-discord-500 transition-colors" />
+ <ChevronRight size={14} className="text-white/[0.06] group-hover:text-discord-400 transition-colors" />
  </Link>
  ))}
  </div>
@@ -120,8 +120,8 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
 
 
 
- <section className="pt-5 border-t border-white/15 space-y-4">
- <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/20 ml-0.5">Quick Navigation</h3>
+ <section className="pt-5 border-t border-white/[0.06] space-y-4">
+ <h3 className="text-[8px] font-medium uppercase tracking-[0.3em] text-white/15 ml-0.5">Quick Navigation</h3>
  <div className="flex flex-col gap-2.5">
  {[
  { label: "Home", path: "/home" },
@@ -134,7 +134,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  key={link.path}
  to={link.path}
  onClick={onClose}
- className="text-[13px] font-medium text-white/40 hover:text-white transition-colors px-1"
+ className="text-[13px] font-medium text-white/30 hover:text-white/80 transition-colors px-1"
  >
  {link.label}
  </Link>
@@ -153,9 +153,9 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  key={genre}
  to={`/browse?genre=${genre}`}
  onClick={onClose}
- className="flex items-center gap-2 text-[#777] hover:text-white transition-all group py-0.5"
+ className="flex items-center gap-2 text-white/35 hover:text-white/80 transition-all group py-0.5"
  >
- <div className="w-[3px] h-[3px] bg-discord-600 rounded-full shrink-0 transition-all" />
+ <div className="w-[3px] h-[3px] bg-discord-500 rounded-full shrink-0 transition-all" />
  <span className="text-[12px] font-medium leading-tight truncate">{genre}</span>
  </Link>
  ))}

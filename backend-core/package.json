@@ -1,5 +1,5 @@
 {
-  "name": "anixo-backend-core",
+  "name": "tenzora-backend-core",
   "version": "1.0.0",
   "type": "module",
   "main": "src/server.js",

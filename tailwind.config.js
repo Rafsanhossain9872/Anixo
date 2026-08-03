@@ -6,18 +6,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        miruro: {
+          bg: '#0B0B0E',
+          surface: '#1A1A1E',
+          elevated: '#141418',
+        },
         discord: {
-          50: '#eef0ff',
-          100: '#e0e4ff',
-          200: '#c7cdff',
-          300: '#a5b0ff',
-          400: '#818eff',
-          500: '#5865F2',
-          600: '#4752C4',
-          700: '#3c45a5',
-          800: '#323986',
-          900: '#2c336b',
-          950: '#1b1f41',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c4b5fd',
+          400: '#a78bfa',
+          500: '#8B5CF6',
+          600: '#7C3AED',
+          700: '#6D28D9',
+          800: '#5B21B6',
+          900: '#4C1D95',
+          950: '#2e1065',
         }
       },
       fontWeight: {

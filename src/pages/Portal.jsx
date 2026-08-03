@@ -58,7 +58,7 @@ export default function Portal() {
 
               {/* Logo area */}
               <div className="mb-4 md:mb-8 flex items-center justify-center lg:justify-start gap-0">
-                <img src="/logo.png" alt="AniXo" className="h-[144px] md:h-[168px] object-contain" />
+                <img src="/logo.png" alt="TenZora" className="h-[144px] md:h-[168px] object-contain" />
               </div>
 
               <h1 className="text-xl md:text-[36px] font-bold text-white mb-4 md:mb-6 leading-[1.1] tracking-tight text-center lg:text-left">

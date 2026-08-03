@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { Link } from "react-router-dom";
-import { User, Clock, Heart, Settings as SettingsIcon, LogOut, Eye, Shield, Crown } from "lucide-react";
+import { User, Clock, Heart, Settings as SettingsIcon, LogOut, Eye, Shield, Crown, MessageSquare, Users, Flame, Globe } from "lucide-react";
 
 export default function AvatarDropdown() {
   const { user, logoutAuth } = useAuth();
@@ -35,7 +35,7 @@ export default function AvatarDropdown() {
 
       {isOpen && (
         <div
-          className="absolute top-[48px] right-0 bg-[#141414]/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] w-[240px] z-[200] animate-in fade-in slide-in-from-top-2 duration-200 border-t-[3px] border-discord-600 rounded-b-xl"
+          className="absolute top-[48px] right-0 bg-[#1A1A1E] shadow-[0_20px_50px_rgba(0,0,0,0.8)] w-[240px] z-[200] animate-in fade-in slide-in-from-top-2 duration-200 border border-white/[0.05] rounded-xl overflow-hidden"
         >
           <div className="p-4 border-b border-white/15">
             <p className="text-sm font-medium text-white truncate">{user.displayName || user.username}</p>
@@ -72,15 +72,44 @@ export default function AvatarDropdown() {
             <Link
               to="/watchlist"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all text-[13px] font-medium"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors duration-150 text-[13px] font-medium"
             >
               <Heart size={16} />
               <span>Bookmarks</span>
             </Link>
+            
+            <div className="h-[1px] bg-white/[0.05] my-1 mx-1" />
+            
+            <Link
+              to="/community"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors duration-150 text-[13px] font-medium"
+            >
+              <MessageSquare size={16} />
+              <span>Community</span>
+            </Link>
+            <Link
+              to="/watch2gether"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors duration-150 text-[13px] font-medium"
+            >
+              <Users size={16} />
+              <span>Watch Together</span>
+            </Link>
+            <Link
+              to="/nsfw"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-[#ff2a5f] hover:bg-[#ff2a5f]/10 transition-colors duration-150 text-[13px] font-medium"
+            >
+              <Flame size={16} />
+              <span>Hentai (18+)</span>
+            </Link>
+            
+            <div className="h-[1px] bg-white/[0.05] my-1 mx-1" />
             <Link
               to="/settings"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/5 transition-all text-[13px] font-medium"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/[0.04] transition-colors duration-150 text-[13px] font-medium"
             >
               <SettingsIcon size={16} />
               <div className="flex items-center gap-2">
@@ -94,13 +123,13 @@ export default function AvatarDropdown() {
             </Link>
           </div>
 
-          <div className="p-2 border-t border-white/15">
+          <div className="p-2 border-t border-white/[0.05]">
             <button
               onClick={() => {
                 logoutAuth();
                 setIsOpen(false);
               }}
-              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-discord-500 hover:bg-discord-500/10 transition-all text-[13px] font-bold"
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-discord-400 hover:text-white hover:bg-discord-600 transition-colors duration-150 text-[13px] font-bold"
             >
               <LogOut size={16} />
               <span>Sign Out</span>

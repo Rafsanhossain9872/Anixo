@@ -6,7 +6,7 @@ import Footer from "../components/layout/Footer";
 
 export default function DMCA() {
   useEffect(() => {
-    document.title = "DMCA Policy | AniXo";
+    document.title = "DMCA Policy | TenZora";
     window.scrollTo(0, 0);
   }, []);
 
@@ -18,20 +18,20 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            AniXo does not host, store, upload, cache, or distribute any video files, audio files, media content, or copyrighted material on its own servers or infrastructure.
-            All audiovisual content accessible through AniXo is sourced exclusively from third-party providers and external websites.
-            These third-party services are not owned, operated, controlled, or affiliated with AniXo in any capacity.
+            TenZora does not host, store, upload, cache, or distribute any video files, audio files, media content, or copyrighted material on its own servers or infrastructure.
+            All audiovisual content accessible through TenZora is sourced exclusively from third-party providers and external websites.
+            These third-party services are not owned, operated, controlled, or affiliated with TenZora in any capacity.
           </p>
           <p>
-            AniXo operates solely as a user interface and link-referral service, providing an organized index of embedded media players and hyperlinks
+            TenZora operates solely as a user interface and link-referral service, providing an organized index of embedded media players and hyperlinks
             that direct users to content hosted on external servers maintained by independent third parties.
-            AniXo exercises no editorial control over the content, accuracy, legality, or availability of the media accessible through these third-party sources.
+            TenZora exercises no editorial control over the content, accuracy, legality, or availability of the media accessible through these third-party sources.
           </p>
           <p>
-            Notwithstanding the foregoing, AniXo is committed to cooperating with copyright holders and their authorized representatives.
-            If you believe that any content accessible through AniXo infringes upon your intellectual property rights,
+            Notwithstanding the foregoing, TenZora is committed to cooperating with copyright holders and their authorized representatives.
+            If you believe that any content accessible through TenZora infringes upon your intellectual property rights,
             we encourage you to submit a DMCA takedown notice directly to our designated agent as described below.
-            Upon receipt of a valid and complete notice, AniXo will take prompt action to remove or disable access to the referenced material from its platform.
+            Upon receipt of a valid and complete notice, TenZora will take prompt action to remove or disable access to the referenced material from its platform.
           </p>
         </>
       ),
@@ -43,19 +43,19 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            AniXo respects the intellectual property rights of all parties and operates in compliance with the
+            TenZora respects the intellectual property rights of all parties and operates in compliance with the
             Digital Millennium Copyright Act (DMCA), codified at Title 17, United States Code, Section 512(c)(2),
             and other applicable international copyright frameworks.
           </p>
           <p>
             If you are a copyright owner — or an agent duly authorized to act on behalf of a copyright owner — and you believe in good faith
-            that content linked to, indexed by, or embedded on AniXo infringes upon your exclusive rights under copyright law,
-            you may submit a formal written DMCA takedown notification to AniXo's designated copyright agent.
+            that content linked to, indexed by, or embedded on TenZora infringes upon your exclusive rights under copyright law,
+            you may submit a formal written DMCA takedown notification to TenZora's designated copyright agent.
           </p>
           <p>
             Upon receipt of a notification that substantially complies with the requirements set forth below,
-            AniXo will act expeditiously to investigate the claim and, where appropriate,
-            remove or disable access to the allegedly infringing material. AniXo aims to process all substantively complete
+            TenZora will act expeditiously to investigate the claim and, where appropriate,
+            remove or disable access to the allegedly infringing material. TenZora aims to process all substantively complete
             and legally valid takedown requests within 24 to 72 business hours of receipt.
           </p>
         </>
@@ -69,14 +69,14 @@ export default function DMCA() {
         <>
           <p>
             Pursuant to 17 U.S.C. § 512(c)(3), a valid DMCA takedown notification must be a written communication
-            submitted to AniXo's designated agent and must include substantially the following:
+            submitted to TenZora's designated agent and must include substantially the following:
           </p>
           <ol className="list-decimal list-inside space-y-3 text-white/40 mt-4">
             <li>
               <span className="text-white/50">Identification of the copyrighted work</span> — A description of the copyrighted work that you claim has been infringed, or, if multiple copyrighted works are covered by a single notification, a representative list of such works.
             </li>
             <li>
-              <span className="text-white/50">Identification of the infringing material</span> — Identification of the material that is claimed to be infringing or to be the subject of infringing activity, including the specific URL(s) on AniXo where such material appears, with sufficient detail to permit AniXo to locate the material.
+              <span className="text-white/50">Identification of the infringing material</span> — Identification of the material that is claimed to be infringing or to be the subject of infringing activity, including the specific URL(s) on TenZora where such material appears, with sufficient detail to permit TenZora to locate the material.
             </li>
             <li>
               <span className="text-white/50">Contact information of the complainant</span> — Your full legal name, postal address, telephone number, and email address at which you may be contacted.
@@ -97,7 +97,7 @@ export default function DMCA() {
               <span>
                 Notice: Under Section 512(f) of the DMCA, any person who knowingly and materially misrepresents
                 that material or activity is infringing may be subject to liability for damages,
-                including costs and attorneys' fees incurred by the alleged infringer or by AniXo.
+                including costs and attorneys' fees incurred by the alleged infringer or by TenZora.
                 Please ensure that your claim is accurate and submitted in good faith before filing a takedown notice.
               </span>
             </p>
@@ -112,13 +112,13 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            AniXo has designated the following agent to receive notifications of claimed copyright infringement
+            TenZora has designated the following agent to receive notifications of claimed copyright infringement
             in accordance with the DMCA. All takedown notices, counter-notifications, and related correspondence
             should be directed to:
           </p>
           <div className="mt-4 p-5 bg-white/[0.02] border border-white/15 rounded-lg space-y-2">
-            <p><span className="text-white/50">Designated Agent:</span> AniXo Copyright Department</p>
-            <p><span className="text-white/50">Email:</span> dmca@anixo.online</p>
+            <p><span className="text-white/50">Designated Agent:</span> TenZora Copyright Department</p>
+            <p><span className="text-white/50">Email:</span> dmca@tenzora.top</p>
             <p><span className="text-white/50">Subject Line:</span> DMCA Takedown Notice — [Title of Content]</p>
           </div>
           <p className="mt-4">
@@ -136,7 +136,7 @@ export default function DMCA() {
         <>
           <p>
             If you believe that material you posted, linked, or made available was removed or disabled as a result of a mistake
-            or misidentification of the material, you may submit a written counter-notification to AniXo's designated agent
+            or misidentification of the material, you may submit a written counter-notification to TenZora's designated agent
             pursuant to 17 U.S.C. § 512(g).
           </p>
           <p>A valid counter-notification must include substantially the following:</p>
@@ -151,17 +151,17 @@ export default function DMCA() {
               <span className="text-white/50">Statement under penalty of perjury</span> — A statement, made under penalty of perjury, that you have a good faith belief that the material was removed or disabled as a result of mistake or misidentification of the material.
             </li>
             <li>
-              <span className="text-white/50">Consent to jurisdiction</span> — A statement that you consent to the jurisdiction of the Federal District Court for the judicial district in which your address is located (or, if your address is outside of the United States, any judicial district in which AniXo may be found), and that you will accept service of process from the person who provided the original notification or an agent of such person.
+              <span className="text-white/50">Consent to jurisdiction</span> — A statement that you consent to the jurisdiction of the Federal District Court for the judicial district in which your address is located (or, if your address is outside of the United States, any judicial district in which TenZora may be found), and that you will accept service of process from the person who provided the original notification or an agent of such person.
             </li>
             <li>
               <span className="text-white/50">Your signature</span> — Your physical or electronic signature.
             </li>
           </ol>
           <p className="mt-4">
-            Upon receipt of a valid counter-notification, AniXo will promptly forward a copy to the original complainant.
+            Upon receipt of a valid counter-notification, TenZora will promptly forward a copy to the original complainant.
             If the original complainant does not file a court action seeking to restrain the allegedly infringing activity
             within ten (10) to fourteen (14) business days of receiving the counter-notification,
-            AniXo may, at its sole discretion, restore access to the removed material.
+            TenZora may, at its sole discretion, restore access to the removed material.
           </p>
         </>
       ),
@@ -173,11 +173,11 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            In accordance with the DMCA and other applicable law, AniXo maintains a policy of terminating,
+            In accordance with the DMCA and other applicable law, TenZora maintains a policy of terminating,
             in appropriate circumstances, the accounts or access privileges of users who are deemed to be repeat infringers.
           </p>
           <p>
-            AniXo may also, at its sole discretion, limit access to the platform and/or permanently remove
+            TenZora may also, at its sole discretion, limit access to the platform and/or permanently remove
             any content associated with any user or third-party source that is determined to have repeatedly infringed
             the intellectual property rights of others, regardless of whether formal DMCA notifications have been submitted.
           </p>
@@ -191,17 +191,17 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            AniXo operates in good faith and takes reasonable measures to comply with all applicable copyright laws,
-            regulations, and industry best practices. AniXo endeavors to address all legitimate DMCA complaints promptly
+            TenZora operates in good faith and takes reasonable measures to comply with all applicable copyright laws,
+            regulations, and industry best practices. TenZora endeavors to address all legitimate DMCA complaints promptly
             and to cooperate with copyright holders in the protection of their intellectual property.
           </p>
           <p>
-            AniXo shall not be held liable for any content hosted by third-party services linked to or embedded within its platform.
+            TenZora shall not be held liable for any content hosted by third-party services linked to or embedded within its platform.
             The responsibility for the legality of content hosted on external servers rests solely with those third-party providers
             and the individuals who upload or distribute such content.
           </p>
           <p>
-            AniXo reserves the right to remove any content, disable any links, or restrict access to any portion of its platform
+            TenZora reserves the right to remove any content, disable any links, or restrict access to any portion of its platform
             at its sole discretion, with or without prior notice, for any reason — including, but not limited to,
             a good faith belief that such content or activity may violate applicable law or the rights of third parties.
           </p>
@@ -215,12 +215,12 @@ export default function DMCA() {
       content: (
         <>
           <p>
-            AniXo reserves the right to modify, amend, or update this DMCA Policy at any time, with or without prior notice.
+            TenZora reserves the right to modify, amend, or update this DMCA Policy at any time, with or without prior notice.
             Any changes will become effective immediately upon posting of the revised policy on this page.
             The "Last Updated" date at the top of this page will be revised accordingly.
           </p>
           <p>
-            Your continued use of AniXo following the posting of any changes constitutes your acceptance of and agreement
+            Your continued use of TenZora following the posting of any changes constitutes your acceptance of and agreement
             to be bound by the modified policy. You are encouraged to review this page periodically to stay informed of any updates.
           </p>
         </>
@@ -256,7 +256,7 @@ export default function DMCA() {
           </div>
 
           <p className="text-[14px] text-white/40 leading-relaxed max-w-[700px] font-normal">
-            AniXo is committed to respecting the intellectual property rights of content creators, copyright holders, and their authorized representatives.
+            TenZora is committed to respecting the intellectual property rights of content creators, copyright holders, and their authorized representatives.
             This page sets forth the policy and procedures for reporting copyright infringement in accordance with the Digital Millennium Copyright Act of 1998.
           </p>
         </div>
@@ -318,7 +318,7 @@ export default function DMCA() {
             <div className="pl-11">
               <p className="text-[13px] md:text-[14px] text-white/40 leading-[1.85] font-normal mb-6">
                 All DMCA-related correspondence — including takedown notices, counter-notifications, and general copyright inquiries —
-                must be submitted in writing to AniXo's designated copyright agent at the contact details provided below.
+                must be submitted in writing to TenZora's designated copyright agent at the contact details provided below.
               </p>
 
               <div className="p-6 bg-gradient-to-br from-white/[0.03] to-white/[0.01] border border-white/15 rounded-xl space-y-4">
@@ -326,8 +326,8 @@ export default function DMCA() {
                   <Mail size={18} className="text-discord-500/60" />
                   <div>
                     <p className="text-[10px] font-normal uppercase tracking-widest text-white/30 mb-1">Email</p>
-                    <a href="mailto:dmca@anixo.online" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
-                      dmca@anixo.online
+                    <a href="mailto:dmca@tenzora.top" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
+                      dmca@tenzora.top
                     </a>
                   </div>
                 </div>
@@ -352,8 +352,8 @@ export default function DMCA() {
         {/* Final Note */}
         <div className="mt-16 pt-8 border-t border-white/15 text-center">
           <p className="text-[11px] text-white/20 font-normal max-w-[650px] mx-auto leading-relaxed">
-            This DMCA Policy applies solely to the AniXo platform and its associated domains.
-            AniXo assumes no responsibility for the content, privacy policies, or practices of any third-party websites
+            This DMCA Policy applies solely to the TenZora platform and its associated domains.
+            TenZora assumes no responsibility for the content, privacy policies, or practices of any third-party websites
             linked to, indexed by, or embedded within its platform. All trademarks, service marks, and trade names
             referenced herein are the property of their respective owners.
           </p>

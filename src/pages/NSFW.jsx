@@ -520,7 +520,7 @@ function NSFW() {
  onClick={clearSearch}
  title="Go to Home"
  >
- AniXo 18+
+ TenZora 18+
  </h1>
  <button className="md:hidden text-gray-400 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}>
  <X className="w-6 h-6" />
@@ -532,7 +532,7 @@ function NSFW() {
  onClick={() => window.location.href = '/home'}
  className="w-full flex items-center justify-center gap-2 py-2 mb-6 rounded-[4px] bg-[#2a2a35]/30 hover:bg-[#ff2a5f]/20 text-gray-400 hover:text-[#ff2a5f] border border-[#2a2a35] hover:border-[#ff2a5f]/50 transition-all font-medium text-sm"
  >
- <ArrowLeft className="w-4 h-4" /> Back to AniXo
+ <ArrowLeft className="w-4 h-4" /> Back to TenZora
  </button>
  <div className="mb-6">
  <h2 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
@@ -599,7 +599,7 @@ function NSFW() {
  onClick={clearSearch}
  title="Go to Home"
  >
- AniXo 18+
+ TenZora 18+
  </h1>
  </div>
  </div>

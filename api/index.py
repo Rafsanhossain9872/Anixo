@@ -44,7 +44,7 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
-log = logging.getLogger("anixo")
+log = logging.getLogger("tenzora")
 log.setLevel(logging.INFO)
 _handler = logging.StreamHandler()
 _handler.setFormatter(ColoredFormatter("[%(asctime)s] %(levelname)s ⚡ %(message)s", datefmt="%H:%M:%S"))
@@ -121,10 +121,10 @@ http = HttpClient()
 app = Flask(__name__)
 # Prevent API theft by restricting CORS to allowed domains
 allowed_domains = [
-    "https://anixo.online",
-    "https://www.anixo.online",
-    "https://anixo.buzz",
-    "https://www.anixo.buzz",
+    "https://tenzora.top",
+    "https://www.tenzora.top",
+    "https://tenzora.buzz",
+    "https://www.tenzora.buzz",
     "http://localhost:5173",   # Local Vite frontend
     "http://127.0.0.1:5173",   # Local Vite (IP)
     "http://localhost:3000",   # Local alternative frontend
@@ -323,7 +323,7 @@ def _generate_sitemap_xml(base):
 def serve_sitemap():
     """Serve dynamic sitemap with 10-minute cache."""
     now = time.time()
-    host = request.host or "anixo.online"
+    host = request.host or "tenzora.top"
     # Clean host to prevent any weird headers
     host = re.sub(r'[^a-zA-Z0-9.:-]', '', host)
     
@@ -348,7 +348,7 @@ def serve_sitemap():
 @app.route("/robots.txt", methods=["GET"])
 def serve_robots():
     """Serve dynamic robots.txt pointing to the correct sitemap URL based on current host."""
-    host = request.host or "anixo.online"
+    host = request.host or "tenzora.top"
     host = re.sub(r'[^a-zA-Z0-9.:-]', '', host)
     scheme = request.headers.get("X-Forwarded-Proto", "https")
     base = f"{scheme}://{host}"
@@ -366,7 +366,7 @@ def serve_robots():
             pass
             
     if not content:
-        content = """# AniXo Robots.txt — Production SEO
+        content = """# TenZora Robots.txt — Production SEO
 User-agent: *
 Allow: /
 
@@ -382,7 +382,7 @@ Disallow: /import
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://anixo.online/sitemap.xml
+Sitemap: https://tenzora.top/sitemap.xml
 """
 
     content = re.sub(
@@ -409,7 +409,7 @@ Sitemap: https://anixo.online/sitemap.xml
 def index():
     return jsonify({
         "success": True,
-        "api": "AniXo Unified API",
+        "api": "TenZora Unified API",
         "status": "online",
         "version": "3.1.1",
         "engines": ["jikan"],
@@ -911,6 +911,6 @@ def get_afl_fillers():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
-    log.info(f"Anixo API starting on port {port}...")
+    log.info(f"Tenzora API starting on port {port}...")
     app.run(host="0.0.0.0", port=port, debug=False)
 

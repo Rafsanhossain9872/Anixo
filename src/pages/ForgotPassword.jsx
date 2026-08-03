@@ -14,7 +14,7 @@ export default function ForgotPassword() {
   useEffect(() => {
     updateMetaTags({
       title: "Forgot Password",
-      description: "Recover your AniXo account password.",
+      description: "Recover your TenZora account password.",
       url: "/forgot-password",
       noindex: true
     });

@@ -213,15 +213,15 @@ export function useStreamFetch({
           }
         }
 
-        // --- SERVER 6: ANIXO EMBED (iframe) ---
+        // --- SERVER 6: TENZORA EMBED (iframe) ---
         else if (activeServer === 6) {
           const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
-            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            url = `https://tenzora.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
             setStreamData({
-              server_name: "SERVER 6 (Anixo)",
+              server_name: "SERVER 6 (Tenzora)",
               lang: langParam,
             });
           } else {

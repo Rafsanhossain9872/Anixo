@@ -206,8 +206,8 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
   const [activeTab, setActiveTab] = useState("Day");
 
   return (
-    <section className="mt-12 max-w-[1720px] mx-auto px-2 md:px-4 w-full overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-20 items-start w-full">
+    <section className="mt-12 w-full overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start w-full">
 
         {/* ── LEFT: New Releases ── */}
         <div className="w-full">
@@ -219,7 +219,7 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
           <div className="w-full">
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => <SkeletonListItem key={i} />)
-              : newReleases.slice(0, 6).map((anime, i) => (
+              : newReleases?.slice(0, 6)?.map((anime, i) => (
                 <ListItem key={`nr-${anime.id}-${i}`} anime={anime} />
               ))
             }
@@ -263,12 +263,12 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
             ) : (
               <>
                 {mostViewed
-                  .slice(
+                  ?.slice(
                     activeTab === "Day" ? 0 : activeTab === "Week" ? 6 : 12,
                     activeTab === "Day" ? 6 : activeTab === "Week" ? 12 : 18
                   )
-                  .slice(0, 6)
-                  .map((anime, i) => (
+                  ?.slice(0, 6)
+                  ?.map((anime, i) => (
                     <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} />
                   ))}
               </>
@@ -286,7 +286,7 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
           <div className="w-full">
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => <SkeletonListItem key={i} />)
-              : justCompleted.slice(0, 6).map((anime, i) => (
+              : justCompleted?.slice(0, 6)?.map((anime, i) => (
                 <ListItem key={`jc-${anime.id}-${i}`} anime={anime} />
               ))
             }

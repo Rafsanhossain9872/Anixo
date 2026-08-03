@@ -1,4 +1,4 @@
-# AniXo Robots.txt — Production SEO
+# TenZora Robots.txt — Production SEO
 User-agent: *
 Allow: /
 
@@ -14,4 +14,4 @@ Disallow: /import
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://anixo.online/sitemap.xml
+Sitemap: https://tenzora.top/sitemap.xml

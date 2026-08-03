@@ -6,7 +6,7 @@ import Footer from "../components/layout/Footer";
 
 export default function TermsOfService() {
   useEffect(() => {
-    document.title = "Terms of Service | AniXo";
+    document.title = "Terms of Service | TenZora";
     window.scrollTo(0, 0);
   }, []);
 
@@ -18,14 +18,14 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            By accessing, browsing, or using the AniXo platform ("Service"), you acknowledge that you have read, understood,
+            By accessing, browsing, or using the TenZora platform ("Service"), you acknowledge that you have read, understood,
             and agree to be bound by these Terms of Service ("Terms"), along with our Privacy Policy and DMCA Policy,
             which are incorporated herein by reference. These Terms constitute a legally binding agreement between you
-            ("User," "you," or "your") and AniXo ("we," "us," or "our").
+            ("User," "you," or "your") and TenZora ("we," "us," or "our").
           </p>
           <p>
             If you do not agree to these Terms in their entirety, you must immediately discontinue use of the Service.
-            Your continued use of AniXo following any modifications to these Terms constitutes your acceptance of such changes.
+            Your continued use of TenZora following any modifications to these Terms constitutes your acceptance of such changes.
           </p>
           <p>
             We reserve the right to update, amend, or modify these Terms at any time without prior notice.
@@ -42,20 +42,20 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            AniXo is a free-to-use, web-based platform that provides users with an organized index of anime content
+            TenZora is a free-to-use, web-based platform that provides users with an organized index of anime content
             sourced from publicly available third-party providers. The Service functions solely as an aggregation
             and referral interface — it does not host, upload, store, cache, or distribute any video files, audio files,
             or copyrighted media on its own servers or infrastructure.
           </p>
           <p>
-            All audiovisual content accessible through AniXo is embedded via third-party players and hosted on external servers
-            operated by independent parties over whom AniXo exercises no ownership, control, or editorial oversight.
-            AniXo acts exclusively as an intermediary providing navigational convenience and does not claim any rights
+            All audiovisual content accessible through TenZora is embedded via third-party players and hosted on external servers
+            operated by independent parties over whom TenZora exercises no ownership, control, or editorial oversight.
+            TenZora acts exclusively as an intermediary providing navigational convenience and does not claim any rights
             to the content made accessible through its interface.
           </p>
           <p>
             The availability, quality, accuracy, and legality of content accessible through the Service is determined
-            entirely by the respective third-party providers. AniXo makes no guarantees regarding the continued
+            entirely by the respective third-party providers. TenZora makes no guarantees regarding the continued
             availability of any specific content or feature.
           </p>
         </>
@@ -68,7 +68,7 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            By using AniXo, you represent and warrant that you are at least thirteen (13) years of age,
+            By using TenZora, you represent and warrant that you are at least thirteen (13) years of age,
             or the minimum age required by the laws of your jurisdiction to enter into a binding agreement.
             If you are under the age of eighteen (18), you may only use the Service under the supervision
             of a parent or legal guardian who agrees to be bound by these Terms.
@@ -79,7 +79,7 @@ export default function TermsOfService() {
             applicable to your use of the Service.
           </p>
           <p>
-            AniXo reserves the right to refuse service, terminate accounts, or restrict access to any user
+            TenZora reserves the right to refuse service, terminate accounts, or restrict access to any user
             at its sole discretion, without obligation to provide a reason or prior notice.
           </p>
         </>
@@ -91,10 +91,10 @@ export default function TermsOfService() {
       title: "User Conduct & Acceptable Use",
       content: (
         <>
-          <p>You agree to use AniXo solely for lawful purposes and in a manner consistent with these Terms. You agree not to:</p>
+          <p>You agree to use TenZora solely for lawful purposes and in a manner consistent with these Terms. You agree not to:</p>
           <ol className="list-decimal list-inside space-y-2.5 text-white/40 mt-4">
             <li>
-              <span className="text-white/50">Reproduce, distribute, or publicly display</span> any content from AniXo without prior written authorization.
+              <span className="text-white/50">Reproduce, distribute, or publicly display</span> any content from TenZora without prior written authorization.
             </li>
             <li>
               <span className="text-white/50">Attempt to circumvent, disable, or interfere</span> with any security features, access controls, or technical measures of the Service.
@@ -116,7 +116,7 @@ export default function TermsOfService() {
             </li>
           </ol>
           <p className="mt-4">
-            AniXo reserves the right to investigate and take appropriate legal action against any user who violates these provisions,
+            TenZora reserves the right to investigate and take appropriate legal action against any user who violates these provisions,
             including, without limitation, terminating access and reporting such violations to relevant law enforcement authorities.
           </p>
         </>
@@ -129,14 +129,14 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            The AniXo name, logo, user interface design, original graphics, and proprietary software code
-            are the intellectual property of AniXo and are protected under applicable intellectual property laws.
-            You may not reproduce, modify, distribute, or create derivative works from any proprietary AniXo materials
+            The TenZora name, logo, user interface design, original graphics, and proprietary software code
+            are the intellectual property of TenZora and are protected under applicable intellectual property laws.
+            You may not reproduce, modify, distribute, or create derivative works from any proprietary TenZora materials
             without prior written authorization.
           </p>
           <p>
-            All anime titles, character names, artwork, trademarks, and other media content accessible through AniXo
-            are the property of their respective copyright holders and licensors. AniXo does not claim ownership
+            All anime titles, character names, artwork, trademarks, and other media content accessible through TenZora
+            are the property of their respective copyright holders and licensors. TenZora does not claim ownership
             of any third-party content made accessible through the Service.
           </p>
           <p>
@@ -153,33 +153,33 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            AniXo does not host, control, verify, endorse, or assume responsibility for any content, products,
+            TenZora does not host, control, verify, endorse, or assume responsibility for any content, products,
             or services provided by third-party sources accessible through the Service. All embedded media,
             streaming links, and external content are provided by independent third-party platforms.
-            AniXo exercises no ownership, control, supervision, or editorial involvement over any third-party content.
+            TenZora exercises no ownership, control, supervision, or editorial involvement over any third-party content.
           </p>
           <p>
-            You acknowledge and agree that your access to and use of any third-party content through AniXo
-            is entirely at your own risk. AniXo shall not be liable for any loss, damage, claim, or liability
+            You acknowledge and agree that your access to and use of any third-party content through TenZora
+            is entirely at your own risk. TenZora shall not be liable for any loss, damage, claim, or liability
             arising from your interaction with, reliance upon, or exposure to any third-party content,
             including but not limited to the accuracy, completeness, timeliness, legality, or quality thereof.
           </p>
           <p>
-            AniXo does not make any representations or warranties regarding the legality of any third-party content
+            TenZora does not make any representations or warranties regarding the legality of any third-party content
             accessible through the Service. Users are solely responsible for determining whether their use of any
             content complies with applicable laws in their respective jurisdictions.
           </p>
           <p>
-            AniXo does not guarantee that any third-party content will be free from errors, inaccuracies,
+            TenZora does not guarantee that any third-party content will be free from errors, inaccuracies,
             offensive material, or infringing content. Links to external websites and services do not constitute
-            an endorsement or recommendation by AniXo of those resources or their operators.
+            an endorsement or recommendation by TenZora of those resources or their operators.
           </p>
           <div className="mt-5 p-4 bg-discord-500/5 border border-discord-500/10 rounded-lg">
             <p className="text-[12px] text-discord-400/60 font-normal flex items-start gap-2">
               <AlertTriangle size={16} className="shrink-0 mt-0.5" />
               <span>
-                By using AniXo, you expressly acknowledge that any reliance on third-party content is solely at your own risk.
-                AniXo disclaims all liability for any harm resulting from third-party content, services, or actions.
+                By using TenZora, you expressly acknowledge that any reliance on third-party content is solely at your own risk.
+                TenZora disclaims all liability for any harm resulting from third-party content, services, or actions.
               </span>
             </p>
           </div>
@@ -193,18 +193,18 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            AniXo respects the intellectual property rights of others and operates in compliance with the
+            TenZora respects the intellectual property rights of others and operates in compliance with the
             Digital Millennium Copyright Act (DMCA), codified at Title 17, United States Code, Section 512.
             We respond promptly to valid copyright infringement notices submitted by copyright owners
             or their authorized representatives.
           </p>
           <p>
-            If you believe that content accessible through AniXo infringes upon your copyright,
+            If you believe that content accessible through TenZora infringes upon your copyright,
             please refer to our <Link to="/dmca" className="text-discord-500/70 hover:text-discord-400 transition">DMCA Policy</Link> page
             for detailed instructions on submitting a takedown notice, counter-notification, and other relevant procedures.
           </p>
           <p>
-            In accordance with the DMCA, AniXo maintains a policy of terminating, in appropriate circumstances,
+            In accordance with the DMCA, TenZora maintains a policy of terminating, in appropriate circumstances,
             the accounts or access privileges of users who are determined to be repeat infringers.
           </p>
         </>
@@ -218,11 +218,11 @@ export default function TermsOfService() {
         <>
           <p>
             You are solely responsible for your use of the Service and for ensuring that your use complies
-            with all applicable laws and regulations in your jurisdiction. AniXo does not monitor, control,
+            with all applicable laws and regulations in your jurisdiction. TenZora does not monitor, control,
             or assume responsibility for how users interact with the Service or the content accessible through it.
           </p>
           <p>
-            You agree to indemnify, defend, and hold harmless AniXo, its affiliates, officers, directors,
+            You agree to indemnify, defend, and hold harmless TenZora, its affiliates, officers, directors,
             agents, and employees from and against any and all claims, damages, obligations, losses, liabilities,
             costs, and expenses (including attorneys' fees) arising from or related to: (a) your use of the Service;
             (b) your violation of these Terms; (c) your violation of any third-party rights, including intellectual property rights;
@@ -241,21 +241,21 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            To the fullest extent permitted by applicable law, AniXo, its affiliates, officers, directors,
+            To the fullest extent permitted by applicable law, TenZora, its affiliates, officers, directors,
             employees, agents, and licensors shall not be liable for any indirect, incidental, special,
             consequential, punitive, or exemplary damages — including, but not limited to, damages for loss of profits,
             goodwill, use, data, or other intangible losses — arising out of or in connection with your use of,
             or inability to use, the Service, regardless of the theory of liability (contract, tort, strict liability, or otherwise),
-            even if AniXo has been advised of the possibility of such damages.
+            even if TenZora has been advised of the possibility of such damages.
           </p>
           <p>
-            In no event shall AniXo's total aggregate liability to you for all claims arising from or related to
-            the Service exceed the amount you have paid to AniXo (if any) in the twelve (12) months preceding the claim,
+            In no event shall TenZora's total aggregate liability to you for all claims arising from or related to
+            the Service exceed the amount you have paid to TenZora (if any) in the twelve (12) months preceding the claim,
             or one hundred U.S. dollars (USD $100.00), whichever is less.
           </p>
           <p>
             Some jurisdictions do not allow the exclusion or limitation of incidental or consequential damages.
-            In such jurisdictions, AniXo's liability shall be limited to the maximum extent permitted by law.
+            In such jurisdictions, TenZora's liability shall be limited to the maximum extent permitted by law.
           </p>
         </>
       ),
@@ -268,24 +268,24 @@ export default function TermsOfService() {
         <>
           <p>
             The Service is provided on an "AS IS" and "AS AVAILABLE" basis, without warranties of any kind,
-            whether express, implied, or statutory. AniXo expressly disclaims all warranties, including but not limited to
+            whether express, implied, or statutory. TenZora expressly disclaims all warranties, including but not limited to
             implied warranties of merchantability, fitness for a particular purpose, non-infringement,
             and any warranties arising from course of dealing, usage, or trade practice.
           </p>
           <p>
-            AniXo does not warrant that: (a) the Service will be uninterrupted, timely, secure, or error-free;
+            TenZora does not warrant that: (a) the Service will be uninterrupted, timely, secure, or error-free;
             (b) the results obtained from the Service will be accurate, reliable, or complete;
             (c) the quality of any content, information, or material obtained through the Service will meet your expectations;
             or (d) any errors in the Service will be corrected.
           </p>
           <p>
-            AniXo does not guarantee that the Service will be available at all times or free from interruptions,
+            TenZora does not guarantee that the Service will be available at all times or free from interruptions,
             delays, outages, or technical failures. Service availability may be affected by maintenance,
-            updates, third-party provider issues, or circumstances beyond AniXo's reasonable control.
+            updates, third-party provider issues, or circumstances beyond TenZora's reasonable control.
           </p>
           <p>
             Nothing on the Service constitutes legal, financial, or professional advice of any kind.
-            Any decisions made based on content or information accessed through AniXo are made at your sole discretion and risk.
+            Any decisions made based on content or information accessed through TenZora are made at your sole discretion and risk.
           </p>
           <p>
             You expressly understand and agree that your use of the Service is at your sole risk.
@@ -301,7 +301,7 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            AniXo reserves the right, at its sole discretion and without prior notice or liability, to restrict,
+            TenZora reserves the right, at its sole discretion and without prior notice or liability, to restrict,
             suspend, or terminate your access to all or any part of the Service for any reason,
             including but not limited to a breach of these Terms, suspected fraudulent or illegal activity,
             or extended periods of inactivity.
@@ -312,7 +312,7 @@ export default function TermsOfService() {
             ownership provisions, warranty disclaimers, indemnification obligations, and limitations of liability.
           </p>
           <p>
-            AniXo shall not be liable to you or any third party for any termination of your access to the Service.
+            TenZora shall not be liable to you or any third party for any termination of your access to the Service.
           </p>
         </>
       ),
@@ -324,9 +324,9 @@ export default function TermsOfService() {
       content: (
         <>
           <p>
-            AniXo reserves the right to modify, amend, or replace these Terms at any time, at its sole discretion.
+            TenZora reserves the right to modify, amend, or replace these Terms at any time, at its sole discretion.
             Material changes will be indicated by updating the "Last Updated" date at the top of this page.
-            What constitutes a material change will be determined at AniXo's sole discretion.
+            What constitutes a material change will be determined at TenZora's sole discretion.
           </p>
           <p>
             Your continued use of the Service following the posting of revised Terms constitutes your acceptance of
@@ -350,7 +350,7 @@ export default function TermsOfService() {
             These Terms shall be governed by and construed in accordance with applicable international and local laws,
             without regard to conflict of law principles. Jurisdiction and venue for any dispute, claim, or controversy
             arising out of or relating to these Terms or the use of the Service shall be determined based on applicable laws
-            and the operational base of AniXo.
+            and the operational base of TenZora.
           </p>
           <p>
             Any dispute shall be resolved through binding arbitration or in the courts of competent jurisdiction,
@@ -361,7 +361,7 @@ export default function TermsOfService() {
           </p>
           <p>
             If any provision of these Terms is found to be invalid or unenforceable by a court of competent jurisdiction,
-            the remaining provisions shall continue in full force and effect. The failure of AniXo to enforce
+            the remaining provisions shall continue in full force and effect. The failure of TenZora to enforce
             any right or provision of these Terms shall not constitute a waiver of such right or provision.
           </p>
         </>
@@ -397,7 +397,7 @@ export default function TermsOfService() {
           </div>
 
           <p className="text-[14px] text-white/40 leading-relaxed max-w-[700px] font-normal">
-            Please read these Terms of Service carefully before using the AniXo platform. By accessing or using our Service,
+            Please read these Terms of Service carefully before using the TenZora platform. By accessing or using our Service,
             you agree to be bound by these Terms. If you do not agree with any part of these Terms, you may not access the Service.
           </p>
         </div>
@@ -467,8 +467,8 @@ export default function TermsOfService() {
                   <Mail size={18} className="text-discord-500/60" />
                   <div>
                     <p className="text-[10px] font-normal uppercase tracking-widest text-white/30 mb-1">General Inquiries</p>
-                    <a href="mailto:contact@anixo.online" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
-                      contact@anixo.online
+                    <a href="mailto:contact@tenzora.top" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
+                      contact@tenzora.top
                     </a>
                   </div>
                 </div>
@@ -476,8 +476,8 @@ export default function TermsOfService() {
                   <Shield size={18} className="text-discord-500/60" />
                   <div>
                     <p className="text-[10px] font-normal uppercase tracking-widest text-white/30 mb-1">DMCA & Copyright</p>
-                    <a href="mailto:dmca@anixo.online" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
-                      dmca@anixo.online
+                    <a href="mailto:dmca@tenzora.top" className="text-[15px] font-normal text-white/70 hover:text-discord-500 transition">
+                      dmca@tenzora.top
                     </a>
                   </div>
                 </div>
@@ -494,8 +494,8 @@ export default function TermsOfService() {
         {/* Final Note */}
         <div className="mt-16 pt-8 border-t border-white/15 text-center">
           <p className="text-[11px] text-white/20 font-normal max-w-[650px] mx-auto leading-relaxed">
-            These Terms of Service apply solely to the AniXo platform and its associated domains.
-            AniXo assumes no responsibility for the content, privacy policies, or practices of any third-party websites
+            These Terms of Service apply solely to the TenZora platform and its associated domains.
+            TenZora assumes no responsibility for the content, privacy policies, or practices of any third-party websites
             linked to, indexed by, or embedded within its platform. All trademarks, service marks, and trade names
             referenced herein are the property of their respective owners.
           </p>

@@ -42,7 +42,11 @@ const OnlineUsers = () => {
 
   useEffect(() => {
     // Connect to online server
-    const socket = io(import.meta.env.VITE_ONLINE_SERVER_URL || 'http://localhost:7861');
+    const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const socketUrl = isLocal 
+      ? "http://localhost:7861" 
+      : (import.meta.env.VITE_ONLINE_SERVER_URL || window.location.origin);
+    const socket = io(socketUrl);
     socketRef.current = socket;
 
     socket.on('connect', () => {

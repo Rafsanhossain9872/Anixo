@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="public/logo.png" alt="AniXo Logo" width="200" />
+  <img src="public/logo.png" alt="TenZora Logo" width="200" />
 </p>
 
-# <p align="center">🎌 AniXo - The Next-Gen Anime Experience 🎌</p>
+# <p align="center">🎌 TenZora - The Next-Gen Anime Experience 🎌</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react" alt="React 19" />
@@ -34,9 +34,9 @@
 
 ## 🌌 Overview
 
-**AniXo** is a high-performance, premium anime streaming platform built for speed, aesthetics, and reliability. It bridges the gap between multiple metadata providers (AniList, MAL, Kitsu) and high-quality streaming sources to deliver a seamless, ad-free watching experience.
+**TenZora** is a high-performance, premium anime streaming platform built for speed, aesthetics, and reliability. It bridges the gap between multiple metadata providers (AniList, MAL, Kitsu) and high-quality streaming sources to deliver a seamless, ad-free watching experience.
 
-Unlike traditional platforms, AniXo features a **Hybrid Resilience Engine**—ensuring the platform remains functional even during major third-party API outages.
+Unlike traditional platforms, TenZora features a **Hybrid Resilience Engine**—ensuring the platform remains functional even during major third-party API outages.
 
 ---
 
@@ -45,7 +45,7 @@ Unlike traditional platforms, AniXo features a **Hybrid Resilience Engine**—en
 The system is split into three core layers designed for maximum scalability and zero downtime.
 
 ```text
-anixo/
+tenzora/
 ├── online-server/              # 🟢 Socket.IO Server (Online Users Count)
 │   ├── server.js               # Main Socket server
 │   └── package.json            # Dependencies
@@ -168,7 +168,7 @@ Key variables to set:
 - `JWT_SECRET`: A long random string for auth security.
 - `EMAIL_USER`: Your Gmail address (e.g., `user@gmail.com`).
 - `EMAIL_PASS`: Your 16-digit Gmail App Password.
-- `FRONTEND_URL`: Your frontend domain (e.g., `http://localhost:5173` or `https://anixo.online`).
+- `FRONTEND_URL`: Your frontend domain (e.g., `http://localhost:5173` or `https://tenzora.top`).
 
 ### 3. Frontend Installation (Root Directory)
 ```bash
@@ -195,7 +195,7 @@ npm run dev  # Starts the auth gateway on port 5001
 ---
 
 ## 🛡️ Security & Performance
-To ensure a premium and safe experience, AniXo implements:
+To ensure a premium and safe experience, TenZora implements:
 - **Rate Limiting:** Prevents API abuse and brute-force attacks via `express-rate-limit`.
 - **Security Headers:** Uses `helmet` to protect against common web vulnerabilities.
 - **JWT Authentication:** Secure stateless session management for user data.
@@ -234,7 +234,7 @@ npm run dev  # Runs on port 7861 by default
 
 ## 🗺️ Future Roadmap
 - [ ] **Sync with MAL/AniList:** Bi-directional sync for watchlist data.
-- [ ] **PWA Support:** Install AniXo as a native app on mobile and desktop.
+- [ ] **PWA Support:** Install TenZora as a native app on mobile and desktop.
 - [ ] **Advanced Player Skins:** Customizable themes for the streaming player.
 - [ ] **Community Forums:** Dedicated space for anime discussions.
 - [ ] **Recommendation AI:** Personalized suggestions based on watch history.
@@ -262,7 +262,7 @@ npm run dev  # Runs on port 7861 by default
 ---
 
 ## ⚖️ Legal & DMCA
-AniXo is a metadata aggregator and does not host any video files on its servers. All content is pulled from publicly available third-party providers. For removal requests, please refer to the DMCA page. This project is for educational purposes only.
+TenZora is a metadata aggregator and does not host any video files on its servers. All content is pulled from publicly available third-party providers. For removal requests, please refer to the DMCA page. This project is for educational purposes only.
 
 ---
 
@@ -278,5 +278,5 @@ We welcome contributions! Please fork the repo, create a feature branch, and sub
 
 <p align="center">
   Developed with ❤️ for the Anime Community.<br>
-  <i>For educational purposes only. Built by the AniXo Team.</i>
+  <i>For educational purposes only. Built by the TenZora Team.</i>
 </p>

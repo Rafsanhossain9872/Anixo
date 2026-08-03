@@ -81,7 +81,7 @@ export default function AnimeDetails() {
 
     const title = getTitle(anime.title) || "Anime Details";
     const coverImage = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
-    const descText = anime.description ? anime.description.replace(/<[^>]+>/g, '').substring(0, 160) : "View details for this anime on AniXo.";
+    const descText = anime.description ? anime.description.replace(/<[^>]+>/g, '').substring(0, 160) : "View details for this anime on TenZora.";
 
     updateMetaTags({
       title: title,
@@ -106,7 +106,7 @@ export default function AnimeDetails() {
     return () => {
       clearStructuredData();
       updateMetaTags({
-        title: "AniXo - Stream Anime Online",
+        title: "TenZora - Stream Anime Online",
         description: "The next-gen anime experience.",
         url: "/"
       });

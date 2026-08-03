@@ -87,7 +87,7 @@ export default function AnimeCard({ anime }) {
 
  {/* 18+ Badge */}
  {(anime.isAdult || anime.ageRating === "R" || anime.rating?.includes("18")) && (
- <div className="absolute top-1.5 right-1.5 z-40 bg-discord-600/90 text-white text-[10px] font-black px-1.5 py-[2px] rounded-[4px] shadow-lg flex items-center justify-center border border-white/10 tracking-widest">
+ <div className="absolute top-1.5 right-1.5 z-40 bg-[#ff2a5f] text-white text-[10px] font-black px-1.5 py-[2px] rounded-[4px] shadow-lg flex items-center justify-center tracking-widest">
  18+
  </div>
  )}
@@ -130,44 +130,51 @@ export default function AnimeCard({ anime }) {
  )}
 
  {/* Hover Play Icon Overlay */}
- <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-40 pointer-events-none">
- <div className="bg-white text-black p-3 rounded-2xl scale-75 group-hover:scale-100 transition-transform duration-500 shadow-2xl">
- <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+ <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-40 pointer-events-none">
+ <div className="text-white scale-75 group-hover:scale-100 transition-transform duration-500 drop-shadow-2xl">
+ <svg className="w-14 h-14" fill="currentColor" viewBox="0 0 24 24">
  <path d="M8 5v14l11-7z" />
  </svg>
  </div>
  </div>
  </div>
-
- {/* EP Badge (Universal style for both types) */}
- <div className="flex justify-center -mt-[14px] relative z-40">
- <div className="flex items-stretch bg-[#0a0a0a] rounded-[4px] border border-white/10 overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
- {anime.status === "NOT_YET_RELEASED" ? (
- <span className="text-[9px] font-black bg-[#222] text-white/50 px-3 py-1 uppercase tracking-tighter flex items-center justify-center">
- Not Yet Released
- </span>
- ) : (
- <>
- <span className="text-[9px] font-black bg-discord-600 text-white px-2 uppercase tracking-tighter flex items-center justify-center">EP</span>
- <div className="px-2 py-1 flex items-center gap-1.5">
- <span className="text-[11px] font-medium text-white">
- {anime.isProgress ? anime.episode : (releasedEpisodes || "0")}
- </span>
- {showTotal && (
- <span className="text-[10px] font-bold text-white/30">/ {totalEpisodes}</span>
- )}
- </div>
- </>
- )}
- </div>
- </div>
  </div>
 
- {/* Info Section - Identical for all cards */}
- <div className="w-full mt-3 text-center px-1">
- <h3 className="text-[13px] font-medium text-white/80 group-hover:text-white transition-colors line-clamp-2 leading-tight uppercase tracking-tight">
- {getTitle(anime.title)}
- </h3>
+ {/* Info Section - Miruro Style */}
+ <div className="w-full mt-3 text-left">
+   <div className="flex items-start gap-2">
+     <div className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0 mt-[6px]" />
+     <h3 className="text-[14px] font-bold text-white group-hover:text-discord-400 transition-colors line-clamp-2 leading-snug">
+       {getTitle(anime.title)}
+     </h3>
+   </div>
+   
+   <div className="flex items-center gap-3 mt-1.5 text-[11px] font-bold text-white/50 pl-4">
+     <span>{anime.format || "TV"}</span>
+     <span>{anime.seasonYear || anime.startDate?.year || "?"}</span>
+     {anime.episodes && (
+       <span className="flex items-center gap-1">
+         <svg className="w-3.5 h-3.5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+           <rect x="2" y="2" width="20" height="15" rx="2" ry="2" />
+           <path d="M17 2v15" />
+           <path d="M7 2v15" />
+           <path d="M2 7h20" />
+           <path d="M2 12h20" />
+           <path d="M8 22h8" />
+           <path d="M12 17v5" />
+         </svg>
+         {anime.episodes}
+       </span>
+     )}
+     {anime.averageScore && (
+       <span className="flex items-center gap-1">
+         <svg className="w-3.5 h-3.5 text-white/40" viewBox="0 0 24 24" fill="currentColor">
+           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+         </svg>
+         {anime.averageScore}
+       </span>
+     )}
+   </div>
  </div>
  </Link>
  );

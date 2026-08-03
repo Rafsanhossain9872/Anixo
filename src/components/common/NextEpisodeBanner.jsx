@@ -46,13 +46,15 @@ export default function NextEpisodeBanner({ anime }) {
   }) : "Release date unavailable";
 
   return (
-    <div className="mb-6 sm:mb-8 px-4 py-3 bg-white/5 rounded-[4px] text-[13px] sm:text-sm text-white/70 text-center">
-      <span className="font-semibold text-white">Episode {nextEpisode.episode}</span> is scheduled to release on <span className="text-white/90">{releaseDate}</span>
-      {timeLeft && (
-        <span className="text-discord-500 ml-1 font-mono tracking-tight">
-          (in {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s)
-        </span>
-      )}
+    <div className="w-full bg-[#1a1a2e] border border-white/5 rounded-md px-6 py-4 text-center mt-6">
+      <p className="text-[14px] font-bold text-white tracking-wide">
+        Episode <span className="text-discord-500">{nextEpisode.episode}</span> is scheduled to release on {releaseDate}
+        {timeLeft && (
+          <span className="text-discord-500 ml-2">
+            (in {timeLeft.days}d {String(timeLeft.hours).padStart(2, '0')}h {String(timeLeft.minutes).padStart(2, '0')}m {String(timeLeft.seconds).padStart(2, '0')}s)
+          </span>
+        )}
+      </p>
     </div>
   );
 }

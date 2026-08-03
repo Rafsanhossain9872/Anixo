@@ -1,4 +1,4 @@
-# AniXo - Online Users Server (Docker)
+# TenZora - Online Users Server (Docker)
 
 FROM node:20-alpine
 

@@ -22,7 +22,7 @@ export function useWatchSEO({ anime, activeEpisode, getTitle, id, isMal }) {
 
     const epTitle = `Episode ${activeEpisode}`;
     const pageTitle = `Watch ${title} ${epTitle} English Sub/Dub`;
-    const pageKeywords = `${title}, ${title} ${epTitle}, watch ${title} online, ${title} english sub, ${title} english dub, anixo, free anime streaming`;
+    const pageKeywords = `${title}, ${title} ${epTitle}, watch ${title} online, ${title} english sub, ${title} english dub, tenzora, free anime streaming`;
 
     // Update Meta Tags
     updateMetaTags({
@@ -50,14 +50,14 @@ export function useWatchSEO({ anime, activeEpisode, getTitle, id, isMal }) {
           name: title,
           image: coverImage,
           description: descText,
-          url: `${import.meta.env.VITE_SITE_URL || "https://anixo.online"}/watch/${id}`,
+          url: `${import.meta.env.VITE_SITE_URL || "https://tenzora.top"}/watch/${id}`,
         },
       },
       {
         "@context": "https://schema.org",
         "@type": "VideoObject",
         name: `${title} ${epTitle} Sub/Dub`,
-        description: `Stream ${title} ${epTitle} for free on Anixo.`,
+        description: `Stream ${title} ${epTitle} for free on Tenzora.`,
         thumbnailUrl: coverImage,
         uploadDate: new Date().toISOString(),
         contentUrl: window.location.href,
@@ -79,7 +79,7 @@ export function useWatchSEO({ anime, activeEpisode, getTitle, id, isMal }) {
       updateMetaTags({
         title: "Watch Free Anime Online, Stream Subbed & Dubbed HD",
         description:
-          "AniXo is the best website to watch anime online for free. Watch trending, popular, and new releases with SUB, DUB in HD quality. No Ads Guaranteed! WATCH NOW!",
+          "TenZora is the best website to watch anime online for free. Watch trending, popular, and new releases with SUB, DUB in HD quality. No Ads Guaranteed! WATCH NOW!",
         url: "/",
       });
     };

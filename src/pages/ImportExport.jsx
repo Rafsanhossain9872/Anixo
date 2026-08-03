@@ -251,7 +251,7 @@ export default function ImportExport() {
         } else {
           items = parseJsonFile(content);
           // Fallback if someone selected a txt file disguised as something else
-          if (items.length === 0 && content.includes("AniXo Watchlist Export")) {
+          if (items.length === 0 && content.includes("TenZora Watchlist Export")) {
             items = parseTextFile(content);
           }
         }
@@ -327,7 +327,7 @@ export default function ImportExport() {
     const list = globalWatchlist || [];
 
     if (exportFormat === "JSON") {
-      downloadFile(JSON.stringify(list, null, 2), "anixo-watchlist.json", "application/json");
+      downloadFile(JSON.stringify(list, null, 2), "tenzora-watchlist.json", "application/json");
     } else if (exportFormat === "TEXT") {
       const statusGroups = {};
       list.forEach(item => {
@@ -335,7 +335,7 @@ export default function ImportExport() {
         if (!statusGroups[s]) statusGroups[s] = [];
         statusGroups[s].push(item);
       });
-      let text = `AniXo Watchlist Export (${new Date().toLocaleDateString()})\n${"=".repeat(50)}\n\n`;
+      let text = `TenZora Watchlist Export (${new Date().toLocaleDateString()})\n${"=".repeat(50)}\n\n`;
       Object.entries(statusGroups).forEach(([status, items]) => {
         text += `── ${status} (${items.length}) ──\n`;
         items.forEach((item, i) => {
@@ -343,9 +343,9 @@ export default function ImportExport() {
         });
         text += "\n";
       });
-      downloadFile(text, "anixo-watchlist.txt", "text/plain");
+      downloadFile(text, "tenzora-watchlist.txt", "text/plain");
     } else if (exportFormat === "MAL XML") {
-      downloadFile(generateMALXml(list), "anixo-watchlist.xml", "application/xml");
+      downloadFile(generateMALXml(list), "tenzora-watchlist.xml", "application/xml");
     }
     setIsExporting(false);
   };

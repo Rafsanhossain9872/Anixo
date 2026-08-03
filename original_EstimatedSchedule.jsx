@@ -115,7 +115,7 @@ export default function EstimatedSchedule() {
  const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
  return (
- <section className="w-full mt-6 mb-6">
+ <section className="max-w-[1720px] mx-auto px-2 md:px-4 mt-6 mb-6">
  <div className="bg-[#111111] rounded-[6px] border border-white/15 overflow-hidden">
 
  {/* Header Area */}

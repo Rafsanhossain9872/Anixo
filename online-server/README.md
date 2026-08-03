@@ -1,5 +1,5 @@
 ---
-title: AniXo Online Users Server
+title: TenZora Online Users Server
 emoji: 🎌
 colorFrom: red
 colorTo: pink
@@ -8,7 +8,7 @@ pinned: false
 app_port: 7861
 ---
 
-# AniXo - Online Server
+# TenZora - Online Server
 
 This is a separate Socket.IO server for tracking online users (registered and guests).
 
