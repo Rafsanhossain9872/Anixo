@@ -46,17 +46,6 @@ export default function AdLoader() {
       document.head.appendChild(monetag);
     }
 
-    // Social Bar
-    if (isAdFreePage) {
-      const socialBarScript = document.getElementById("socialbar-global");
-      if (socialBarScript) socialBarScript.remove();
-    } else if (!document.getElementById("socialbar-global")) {
-      const socialBar = document.createElement("script");
-      socialBar.id = "socialbar-global";
-      socialBar.type = "text/javascript";
-      socialBar.src = "https://dependedunmoved.com/c0/3d/cf/c03dcff912dd20c262d81652c44afe27.js";
-      document.body.appendChild(socialBar);
-    }
   }, [location.pathname]);
 
   return null;
