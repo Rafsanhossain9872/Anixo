@@ -19,7 +19,8 @@ export default function AdLoader() {
     const isChatPage = location.pathname === "/chat";
     const isAdFreePage = isPortalPage || isCommunityPage || isChatPage;
 
-    // Popunder
+
+    // adst popunder
     if (isAdFreePage) {
       const popunderScript = document.getElementById("popunder-global");
       if (popunderScript) popunderScript.remove();
@@ -27,10 +28,7 @@ export default function AdLoader() {
       const popunder = document.createElement("script");
       popunder.id = "popunder-global";
 
-      const hostname = window.location.hostname;
-      popunder.src = hostname.includes("anixo.buzz")
-        ? "https://dependedunmoved.com/ec/2a/ef/ec2aef82b9deb69e372b3c911ce24252.js"
-        : "https://dependedunmoved.com/4f/1b/2f/4f1b2fdd5cf3e2306bcfee1c78e77468.js";
+      popunder.src = "https://dependedunmoved.com/4f/1b/2f/4f1b2fdd5cf3e2306bcfee1c78e77468.js";
 
       document.body.appendChild(popunder);
     }

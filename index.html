@@ -158,13 +158,9 @@
   <script type="module" src="/src/main.jsx"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
-    // Remove existing Service Workers completely
+    // Register Monetag Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for(let registration of registrations) {
-          registration.unregister();
-        }
-      });
+      navigator.serviceWorker.register('/sw.js');
     }
   </script>
 
