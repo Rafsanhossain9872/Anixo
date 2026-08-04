@@ -280,9 +280,9 @@ export default function VideoPlayerSection({
                         {!isIframe && videoSrc ? (
                             <div 
                                 className="w-full h-full" 
-                                onClickCapture={(e) => e.stopPropagation()} 
-                                onMouseDownCapture={(e) => e.stopPropagation()} 
-                                onTouchStartCapture={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()} 
+                                onMouseDown={(e) => e.stopPropagation()} 
+                                onTouchStart={(e) => e.stopPropagation()}
                             >
                             {videoType === 'hls' || videoSrc.includes('.m3u8') ? (
                                 <AnikoPlayer
