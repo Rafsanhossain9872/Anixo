@@ -39,7 +39,7 @@ const W2GNoticeBanner = () => {
           <div className="flex flex-col min-w-0">
             <p className="text-[12px] sm:text-[14px] text-red-100/90 font-medium leading-relaxed sm:leading-snug">
               <span className="text-red-400 font-bold uppercase tracking-widest text-[10px] sm:text-[11px] block sm:inline mb-0.5 sm:mb-0 sm:mr-2">Notice:</span>
-              To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the <span className="inline-block font-bold text-red-300 bg-red-500/10 px-1.5 py-0.5 mt-1 sm:mt-0 rounded uppercase border border-red-500/20 sm:ml-1 text-[10px] sm:text-[12px]">next 12 hours (~36 Episodes) only</span>.
+              To sustain our growing server costs and keep the platform free, we are temporarily increasing ad frequency for the <span className="inline-block font-bold text-red-300 bg-red-500/10 px-1.5 py-0.5 mt-1 sm:mt-0 rounded uppercase border border-red-500/20 sm:ml-1 text-[10px] sm:text-[12px]">next 24 hours (~72 Episodes) only</span>.
             </p>
             <div className="flex items-center gap-1.5 mt-2 sm:mt-1 text-red-400/80 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
               <Clock size={12} className="animate-pulse text-red-400" />
