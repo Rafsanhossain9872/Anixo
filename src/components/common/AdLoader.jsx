@@ -32,18 +32,16 @@ export default function AdLoader() {
       document.body.appendChild(popunder);
     }
 
-    // Monetag Multitag
+    // Popunder 2
     if (isAdFreePage) {
-      const monetagScript = document.getElementById("monetag-global");
-      if (monetagScript) monetagScript.remove();
-    } else if (!document.getElementById("monetag-global")) {
-      const monetag = document.createElement("script");
-      monetag.id = "monetag-global";
-      monetag.src = "https://quge5.com/88/tag.min.js";
-      monetag.setAttribute("data-zone", "266669");
-      monetag.async = true;
-      monetag.setAttribute("data-cfasync", "false");
-      document.head.appendChild(monetag);
+      const popunder2Script = document.getElementById("popunder2-global");
+      if (popunder2Script) popunder2Script.remove();
+    } else if (!document.getElementById("popunder2-global")) {
+      const popunder2 = document.createElement("script");
+      popunder2.id = "popunder2-global";
+      popunder2.dataset.zone = "11500897";
+      popunder2.src = "https://al5sm.com/tag.min.js";
+      document.body.appendChild(popunder2);
     }
 
   }, [location.pathname]);
