@@ -27,14 +27,22 @@ app.use(express.json());
 // Essential for Vercel/Proxies to get the real client IP
 app.set('trust proxy', 1);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  skip: (req) => process.env.NODE_ENV !== 'production' || req.ip === '::1' || req.ip === '127.0.0.1',
-  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+// Rate limiting (Deferred initialization to avoid Cloudflare global scope interval errors)
+let limiter;
+app.use('/api', (req, res, next) => {
+  if (process.env.CF_WORKER === 'true') {
+    return next(); // Cloudflare Edge handles rate limiting natively, skip node-based limiter
+  }
+  if (!limiter) {
+    limiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 100,
+      skip: (req) => process.env.NODE_ENV !== 'production' || req.ip === '::1' || req.ip === '127.0.0.1',
+      message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+    });
+  }
+  return limiter(req, res, next);
 });
-app.use('/api', limiter);
 
 // Routes
 app.use('/auth', authRoutes); // Temporarily removed authLimiter for testing
