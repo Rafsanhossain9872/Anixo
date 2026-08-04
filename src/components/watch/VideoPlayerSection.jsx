@@ -287,9 +287,9 @@ export default function VideoPlayerSection({
                                     currentStreamIndex={activeSubServer}
                                     onStreamChange={(index) => setActiveSubServer(index)}
                                     poster={
-                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
-                                        ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
-                                        : null
+                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
+                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
+                                            : null
                                     }
                                     subtitles={processedSubtitles}
                                     skipTimes={skipTimes}
@@ -315,9 +315,9 @@ export default function VideoPlayerSection({
                                     src={videoSrc}
                                     type={videoType}
                                     poster={
-                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large) 
-                                        ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}` 
-                                        : null
+                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
+                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
+                                            : null
                                     }
                                     subtitles={processedSubtitles}
                                     initialTime={initialTime}
@@ -348,6 +348,7 @@ export default function VideoPlayerSection({
                                 className={`w-full h-full border-0 transition-opacity duration-500 ${!iframeLoaded ? "opacity-0" : "opacity-100"
                                     }`}
                                 allowFullScreen
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                                 allowfullscreen="true"
                                 webkitallowfullscreen="true"
                                 mozallowfullscreen="true"
