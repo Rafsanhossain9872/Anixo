@@ -895,7 +895,6 @@ export default function Watch({ isWatch2GetherMode }) {
                 playerLang={playerLang}
                 initialTime={initialTime}
                 autoNext={autoNext}
-                autoPlay={autoPlay}
                 episodesList={episodesList}
                 setActiveEpisode={setActiveEpisode}
                 iframeRef={iframeRef}

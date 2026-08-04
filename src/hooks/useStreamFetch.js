@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * useStreamFetch
@@ -23,6 +23,13 @@ export function useStreamFetch({
   const [streamLoading, setStreamLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+
+  // Keep autoPlay/autoNext in refs so the fetch effect always reads latest values
+  // without triggering a re-fetch when they change
+  const autoPlayRef = useRef(autoPlay);
+  const autoNextRef = useRef(autoNext);
+  useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
+  useEffect(() => { autoNextRef.current = autoNext; }, [autoNext]);
 
   // Sync global page loader with iframe loading
   useEffect(() => {
@@ -197,11 +204,11 @@ export function useStreamFetch({
 
           if (anilistId) {
             const queryParams = [];
-            if (autoPlay) {
+            if (autoPlayRef.current) {
               queryParams.push("autoplay=true");
             }
             queryParams.push("autoSkip=false");
-            queryParams.push(`autoNext=${autoNext}`);
+            queryParams.push(`autoNext=${autoNextRef.current}`);
             queryParams.push("lang-type=false");
 
             if (initialTime && initialTime > 0) {
@@ -228,7 +235,7 @@ export function useStreamFetch({
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
-            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}?autoplay=${autoPlay ? '1' : '0'}&autonext=${autoNext ? '1' : '0'}`;
+            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}?autoplay=${autoPlayRef.current ? '1' : '0'}&autonext=${autoNextRef.current ? '1' : '0'}`;
             setStreamData({
               server_name: "SERVER 6 (Anixo)",
               lang: langParam,
@@ -243,7 +250,7 @@ export function useStreamFetch({
             // Inject Autoplay and premium params for Megaplay
             try {
               const urlObj = new URL(url);
-              if (autoPlay) {
+              if (autoPlayRef.current) {
                 urlObj.searchParams.set("autoplay", "1");
                 urlObj.searchParams.set("muted", "1");
               } else {
@@ -292,8 +299,6 @@ export function useStreamFetch({
     activeEpisode,
     playerLang,
     activeServer,
-    autoPlay,
-    autoNext,
     setPageLoading,
     isMal,
     initialTime,
