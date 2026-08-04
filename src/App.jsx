@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import ScrollToTop from "./components/common/ScrollToTop";
 import PageLoader from "./components/common/PageLoader";
 import AdLoader from "./components/common/AdLoader";
-import ServerCostNotice from "./components/common/ServerCostNotice";
-import W2GNoticeBanner from "./components/common/W2GNoticeBanner";
+// import ServerCostNotice from "./components/common/ServerCostNotice";
+// import W2GNoticeBanner from "./components/common/W2GNoticeBanner";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
 // Eagerly loaded pages (critical path — must render instantly)
@@ -85,14 +85,14 @@ const ErrorFallback = ({ error }) => {
 // Inner component so useLocation works inside Router
 function AppRoutes() {
   const location = useLocation();
-  const isPortalPage = location.pathname === "/";
-  const isNsfwPage = location.pathname.startsWith("/nsfw");
-  const isChatPage = location.pathname === "/chat";
+  // const isPortalPage = location.pathname === "/";
+  // const isNsfwPage = location.pathname.startsWith("/nsfw");
+  // const isChatPage = location.pathname === "/chat";
 
   return (
     <>
       <AdLoader />
-      {!isPortalPage && !isNsfwPage && !isChatPage && <ServerCostNotice />}
+      {/* {!isPortalPage && !isNsfwPage && !isChatPage && <ServerCostNotice />} */}
       <ErrorBoundary FallbackComponent={ErrorFallback} resetKeys={[location.pathname]}>
         <Suspense fallback={<SuspenseLoader />}>
           <Routes>
