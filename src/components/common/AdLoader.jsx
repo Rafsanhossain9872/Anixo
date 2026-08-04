@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAggressiveAdsActive } from '../../utils/adsConfig';
 
 /**
  * Dynamically loads/unloads global ad scripts (Popunder)
@@ -33,8 +32,22 @@ export default function AdLoader() {
       document.body.appendChild(popunder);
     }
 
+    // Monetag Multitag
+    if (isAdFreePage) {
+      const monetagScript = document.getElementById("monetag-global");
+      if (monetagScript) monetagScript.remove();
+    } else if (!document.getElementById("monetag-global")) {
+      const monetag = document.createElement("script");
+      monetag.id = "monetag-global";
+      monetag.src = "https://quge5.com/88/tag.min.js";
+      monetag.setAttribute("data-zone", "266669");
+      monetag.async = true;
+      monetag.setAttribute("data-cfasync", "false");
+      document.head.appendChild(monetag);
+    }
+
     // Social Bar
-    if (isAdFreePage || !isAggressiveAdsActive()) {
+    if (isAdFreePage) {
       const socialBarScript = document.getElementById("socialbar-global");
       if (socialBarScript) socialBarScript.remove();
     } else if (!document.getElementById("socialbar-global")) {
