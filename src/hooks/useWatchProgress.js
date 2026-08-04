@@ -9,6 +9,14 @@ import { updateProgress } from "../services/progressService";
  * - beforeunload save (tab close / navigation)
  * - Periodic save every 3 minutes
  */
+const resolveImage = (anime) => {
+  if (!anime) return null;
+  const img = anime.coverImage || anime.image;
+  if (!img) return anime.poster || null;
+  if (typeof img === "string") return img;
+  return img.extraLarge || img.large || img.medium || anime.poster || null;
+};
+
 export function useWatchProgress({
   user,
   anime,
@@ -52,7 +60,7 @@ export function useWatchProgress({
     const currTime = isSameEpisode ? existing.currentTime : 0;
     const duration = isSameEpisode ? existing.duration : null;
 
-    const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
+    const coverImg = resolveImage(anime);
 
     // Prevent overwriting higher progress with episode 1 on initial load
     const urlParams = new URLSearchParams(window.location.search);
@@ -141,7 +149,7 @@ export function useWatchProgress({
     const handleBeforeUnload = () => {
       if (!user || !anime || !id || lastCapturedTime.current <= 5) return;
 
-      const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
+      const coverImg = resolveImage(anime);
       const title =
         anime?.title?.english ||
         anime?.title?.romaji ||
@@ -191,7 +199,7 @@ export function useWatchProgress({
 
       lastIntervalSave.current = now;
 
-      const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
+      const coverImg = resolveImage(anime);
       const titleStr = getTitle(anime.title);
 
       const progressData = {

@@ -25,6 +25,8 @@ export default function EstimatedSchedule() {
  status: "ALL", // ALL, PAST, UPCOMING
  });
  const scrollRef = useRef(null);
+ const [tzName, setTzName] = useState('');
+ const [offsetStr, setOffsetStr] = useState('');
 
  const { getTitle } = useLanguage();
  const navigate = useNavigate();
@@ -61,6 +63,17 @@ export default function EstimatedSchedule() {
  }, 100);
  }
  }
+ }, []);
+
+ // Detect client timezone dynamically
+ useEffect(() => {
+  const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  setTzName(userTimeZone);
+  const offset = -(new Date().getTimezoneOffset());
+  const hrs = Math.floor(Math.abs(offset) / 60);
+  const mins = Math.abs(offset) % 60;
+  const gmtStr = `GMT${offset >= 0 ? '+' : '-'}${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+  setOffsetStr(gmtStr);
  }, []);
 
  // Use state to capture current time once at mount to keep render pure
@@ -107,12 +120,7 @@ export default function EstimatedSchedule() {
  const isToday = (d) => d.toDateString() === todayStr;
  const isSelected = (d) => d.toDateString() === selectedDate.toDateString();
 
- // Timezone string
- const offset = -(new Date().getTimezoneOffset());
- const offsetHrs = Math.floor(Math.abs(offset) / 60);
- const offsetMins = Math.abs(offset) % 60;
- const offsetStr = `GMT${offset >= 0 ? "+" : "-"}${String(offsetHrs).padStart(2, "0")}:${String(offsetMins).padStart(2, "0")}`;
- const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 
  return (
  <section className="w-full mt-6 mb-6">

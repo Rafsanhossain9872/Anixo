@@ -4,7 +4,7 @@ import AnimeCard from "../common/AnimeCard";
 import SkeletonCard from "../common/SkeletonCard";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
-export default function AnimeRow({ title, subtitle, data, isLoading, limit = 6, tabs = [], activeTab = "", onTabChange, onRemove, isScrollable = false, viewAllLink = "", CardComponent = AnimeCard, headerAction }) {
+export default function AnimeRow({ title, subtitle, data, isLoading, isFetching = false, limit = 6, tabs = [], activeTab = "", onTabChange, onRemove, isScrollable = false, viewAllLink = "", CardComponent = AnimeCard, headerAction }) {
   const Card = CardComponent;
   const hasData = data && data.length > 0;
   const scrollRef = useRef(null);
@@ -117,6 +117,12 @@ export default function AnimeRow({ title, subtitle, data, isLoading, limit = 6, 
 
       {/* Grid container or Scrollable Flexbox */}
       <div className="relative group/row">
+        {isFetching && (
+          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-[#050505]/40 backdrop-blur-[2px] rounded-xl transition-all duration-300">
+            <div className="w-10 h-10 border-4 border-discord-500 border-t-transparent rounded-full animate-spin shadow-xl shadow-black/50"></div>
+          </div>
+        )}
+        
         {/* Left Scroll Arrow (desktop only) */}
         {isScrollable && canScrollLeft && (
           <button

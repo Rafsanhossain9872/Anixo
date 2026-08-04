@@ -72,6 +72,13 @@ const cache = {
 
       // Update both layers
       MemoryCache.set(cacheKey, cacheData);
+      
+      // Strict LRU for MemoryCache to prevent RAM bloat
+      if (MemoryCache.size > 50) {
+        const firstKey = MemoryCache.keys().next().value;
+        MemoryCache.delete(firstKey);
+      }
+      
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
 
       // Cleanup older entries if localStorage gets full (simple pruning)
@@ -257,6 +264,9 @@ async function fetchFromAniList(query, variables = {}, signal) {
         }
       }
     } catch (err) {
+      if (err.response?.status === 400 && err.response?.data?.errors?.some(e => e.message?.includes("Page depth exceeds maximum allowed"))) {
+         return { media: [], pageInfo: { total: 0, hasNextPage: false } };
+      }
       console.warn("[AniList] Proxy failed, trying direct...", err.message);
     }
 
@@ -287,6 +297,9 @@ async function fetchFromAniList(query, variables = {}, signal) {
         }
       }
     } catch (err) {
+      if (err.response?.status === 400 && err.response?.data?.errors?.some(e => e.message?.includes("Page depth exceeds maximum allowed"))) {
+         return { media: [], pageInfo: { total: 0, hasNextPage: false } };
+      }
       console.warn("[AniList] Direct AniList failed:", err.message);
     }
 
@@ -499,7 +512,7 @@ export const BROWSE_QUERY = `
   }
 `;
 
-export async function getBrowseAnime(variables) {
+export async function getBrowseAnime(variables, signal) {
   // Apply formatting to search query if present
   if (variables.search) {
     variables.search = formatSearchQuery(variables.search);
@@ -532,7 +545,7 @@ export async function getBrowseAnime(variables) {
 
   // 1. Try local API proxy
   try {
-    const { data } = await axios.post("/api/anilist/proxy", payload, { headers, timeout: 12000 });
+    const { data } = await axios.post("/api/anilist/proxy", payload, { headers, timeout: 12000, signal });
     const page = data?.data?.Page || data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Local proxy succeeded (AniList)");
@@ -570,7 +583,7 @@ export async function getBrowseAnime(variables) {
 
   // 2. Direct AniList GraphQL call
   try {
-    const { data } = await axios.post("https://graphql.anilist.co", payload, { headers, timeout: 12000 });
+    const { data } = await axios.post("https://graphql.anilist.co", payload, { headers, timeout: 12000, signal });
     const page = data?.data?.Page;
     if (page?.media?.length > 0) {
       console.info("[Browse] ✓ Direct AniList succeeded");
@@ -614,7 +627,7 @@ export async function getBrowseAnime(variables) {
 
 export const ANIME_QUERY = `
   query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus]) {
-    Page(page: $page, perPage: 50) {
+    Page(page: $page, perPage: 24) {
       pageInfo { total hasNextPage lastPage }
       media(type: ANIME, sort: $sort, status_in: $status_in, isAdult: false) {
         id
@@ -644,17 +657,16 @@ export async function getTrendingAnime(page = 1, signal) {
   if (cachedData) return cachedData;
 
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
-    page,
-    sort: ["TRENDING_DESC", "POPULARITY_DESC"],
-    status_in: ["RELEASING"]
-  }, signal);
+      page,
+      sort: ["TRENDING_DESC", "POPULARITY_DESC"]
+    }, signal);
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING);
     return anilistRes;
   }
 
   console.warn("[Failover] AniList Trending failed, switching to Jikan...");
-  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 }, signal);
+  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "airing", limit: 24 }, signal);
   return jikanRes;
 }
 
@@ -697,17 +709,16 @@ export async function getPopularAnime(page = 1, signal) {
   if (cachedData) return cachedData;
 
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
-    page,
-    sort: ["POPULARITY_DESC"],
-    status_in: ["RELEASING", "FINISHED"] // Assuming we still want recent ones
-  }, signal);
+      page,
+      sort: ["POPULARITY_DESC"]
+    }, signal);
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.POPULAR);
     return anilistRes;
   }
 
   console.warn("[Failover] AniList Popular failed, switching to Jikan...");
-  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "bypopularity", limit: 20 }, signal);
+  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "bypopularity", limit: 24 }, signal);
   return jikanRes;
 }
 
@@ -727,33 +738,48 @@ export async function getUpcomingAnime(page = 1, signal) {
   }
 
   console.warn("[Failover] AniList Upcoming failed, switching to Jikan...");
-  const jikanRes = await fetchFromJikan("/seasons/upcoming", { page, limit: 20 }, signal);
+  const jikanRes = await fetchFromJikan("/seasons/upcoming", { page, limit: 24 }, signal);
   return jikanRes;
 }
 
 export async function getNewReleases(page = 1, signal) {
+  const cacheKey = `newReleases_p${page}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
-    page,
-    sort: ["START_DATE_DESC"],
-    status_in: ["RELEASING"]
-  }, signal);
-  if (anilistRes?.media?.length > 0) return anilistRes;
+      page,
+      sort: ["START_DATE_DESC"]
+    }, signal);
+  if (anilistRes?.media?.length > 0) {
+    cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING); // Similar TTL as trending
+    return anilistRes;
+  }
 
   console.warn("[Failover] AniList New Releases failed, switching to Jikan...");
   // Use 'airing' or 'upcoming' depending on context, but here we want things with episodes
-  return fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 }, signal);
+  const jikanRes = await fetchFromJikan("/top/anime", { page, filter: "airing", limit: 24 }, signal);
+  return jikanRes;
 }
 
 export async function getJustCompletedAnime(page = 1, signal) {
+  const cacheKey = `justCompleted_p${page}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
     page,
     sort: ["END_DATE_DESC"],
     status_in: ["FINISHED"]
   }, signal);
-  if (anilistRes?.media?.length > 0) return anilistRes;
+  if (anilistRes?.media?.length > 0) {
+    cache.set(cacheKey, anilistRes, CACHE_TTL.POPULAR);
+    return anilistRes;
+  }
 
   console.warn("[Failover] AniList Just Completed failed, switching to Jikan...");
-  return fetchFromJikan("/top/anime", { page, limit: 20 }, signal);
+  const jikanRes = await fetchFromJikan("/top/anime", { page, limit: 24 }, signal);
+  return jikanRes;
 }
 
 

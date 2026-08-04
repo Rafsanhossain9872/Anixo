@@ -322,12 +322,12 @@ export default function Navbar() {
                 {language}
               </button>
 
-              {/* Desktop AI Recommendations Icon */}
+              {/* AI Recommendations Icon */}
               <button
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent('open-ai-chat'));
                 }}
-                className="hidden md:flex w-auto px-3 h-[38px] gap-2 items-center justify-center rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors duration-150"
+                className="flex w-auto px-3 h-[38px] gap-2 items-center justify-center rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors duration-150"
                 title="AI Recommendations"
               >
                 <MessageSquare size={18} strokeWidth={2.5} />

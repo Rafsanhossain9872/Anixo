@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
-import { X, ChevronRight, LayoutGrid, List, Download } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { X, ChevronRight, LayoutGrid, List, Download, Shuffle, MessageSquare } from "lucide-react";
 import { ALL_GENRES } from "../../constants/genres";
 
 
 
 export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  const [activeTab, setActiveTab] = useState(initialTab);
+ const navigate = useNavigate();
 
  const [prevOpen, setPrevOpen] = useState(open);
  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
@@ -139,6 +140,36 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  {link.label}
  </Link>
  ))}
+ {/* Random Anime */}
+ <button
+   onClick={async () => {
+     try {
+       const { getTrendingAnime } = await import('../../services/api');
+       const { getWatchUrl } = await import('../../utils/url');
+       const res = await getTrendingAnime(1);
+       if (res?.media?.length) {
+         const randomAnime = res.media[Math.floor(Math.random() * res.media.length)];
+         navigate(getWatchUrl(randomAnime.id, randomAnime.title) + '?autoplay=1');
+       }
+     } catch (e) {
+       console.error("Failed to fetch random anime", e);
+     }
+     onClose();
+   }}
+   className="text-[13px] font-medium text-white/30 hover:text-white/80 transition-colors px-1 flex items-center gap-2 text-left"
+ >
+   <Shuffle size={14} className="shrink-0" /> Random Anime
+ </button>
+ {/* AI Recommendation */}
+ <button
+   onClick={() => {
+     window.dispatchEvent(new CustomEvent('open-ai-chat'));
+     onClose();
+   }}
+   className="text-[13px] font-medium text-white/30 hover:text-white/80 transition-colors px-1 flex items-center gap-2 text-left"
+ >
+   <MessageSquare size={14} className="shrink-0" /> AI Recommendation
+ </button>
  </div>
  </section>
  </div>

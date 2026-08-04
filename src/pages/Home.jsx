@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   getTrendingAnime,
@@ -61,6 +61,7 @@ function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
 export default function Home() {
   const { t } = useTranslation();
   const { globalProgress, setGlobalProgress, user } = useAuth();
+  const queryClient = useQueryClient();
   
   // Main Grid Tabs (NEWEST, POPULAR, TOP RATED)
   const [activeMainTab, setActiveMainTab] = useState("NEWEST");
@@ -94,37 +95,60 @@ export default function Home() {
     } catch (e) { console.warn("Cache write failed:", e); }
   };
 
-  const { data: trendingData, isLoading: loadingTrending } = useQuery({
+  useEffect(() => {
+    // Background Prefetching for the next page to ensure ZERO LATENCY
+    if (activeMainTab === "NEWEST") {
+      queryClient.prefetchQuery({
+        queryKey: ["newReleases", mainGridPage + 1],
+        queryFn: ({ signal }) => getNewReleases(mainGridPage + 1, signal),
+      });
+    } else if (activeMainTab === "POPULAR") {
+      queryClient.prefetchQuery({
+        queryKey: ["trending", mainGridPage + 1],
+        queryFn: ({ signal }) => getTrendingAnime(mainGridPage + 1, signal),
+      });
+    } else if (activeMainTab === "TOP RATED") {
+      queryClient.prefetchQuery({
+        queryKey: ["popular", mainGridPage + 1],
+        queryFn: ({ signal }) => getPopularAnime(mainGridPage + 1, signal),
+      });
+    }
+  }, [mainGridPage, activeMainTab, queryClient]);
+
+  const { data: trendingData, isLoading: loadingTrending, isFetching: fetchingTrending } = useQuery({
     queryKey: ["trending", mainGridPage],
     queryFn: async ({ signal }) => {
       const res = await getTrendingAnime(mainGridPage, signal);
       if (res?.media && mainGridPage === 1) setCache("trending", res);
       return res;
     },
-    placeholderData: getCached("trending"),
+    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("trending"),
     staleTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 2, // 2 minutes (prevents RAM bloat if user hits page 800)
   });
 
-  const { data: popularData, isLoading: loadingPopular } = useQuery({
+  const { data: popularData, isLoading: loadingPopular, isFetching: fetchingPopular } = useQuery({
     queryKey: ["popular", mainGridPage],
     queryFn: async ({ signal }) => {
       const res = await getPopularAnime(mainGridPage, signal);
       if (res?.media && mainGridPage === 1) setCache("popular", res);
       return res;
     },
-    placeholderData: getCached("popular"),
+    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("popular"),
     staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 2,
   });
 
-  const { data: newReleasesData, isLoading: loadingNew } = useQuery({
+  const { data: newReleasesData, isLoading: loadingNew, isFetching: fetchingNew } = useQuery({
     queryKey: ["newReleases", mainGridPage],
     queryFn: async ({ signal }) => {
       const res = await getNewReleases(mainGridPage, signal);
       if (res?.media && mainGridPage === 1) setCache("new", res);
       return res;
     },
-    placeholderData: getCached("new"),
+    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("new"),
     staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 2,
   });
 
   const { data: justCompletedData, isLoading: loadingJustCompleted } = useQuery({
@@ -161,22 +185,26 @@ export default function Home() {
   // Determine which data to show in the main grid based on the active tab
   let mainGridData = [];
   let mainGridLoading = false;
+  let mainGridFetching = false;
   let mainGridInfo = {};
   if (activeMainTab === "NEWEST") {
     mainGridData = newReleasesData?.media || [];
     mainGridInfo = newReleasesData?.pageInfo || {};
     mainGridLoading = loadingNew;
+    mainGridFetching = fetchingNew;
   } else if (activeMainTab === "POPULAR") {
     mainGridData = trendingData?.media || [];
     mainGridInfo = trendingData?.pageInfo || {};
     mainGridLoading = loadingTrending;
+    mainGridFetching = fetchingTrending;
   } else if (activeMainTab === "TOP RATED") {
     mainGridData = popularData?.media || [];
     mainGridInfo = popularData?.pageInfo || {};
     mainGridLoading = loadingPopular;
+    mainGridFetching = fetchingPopular;
   }
   
-  const mainGridTotalPages = mainGridInfo.lastPage || (mainGridInfo.total ? Math.ceil(mainGridInfo.total / cardsPerPage) : (mainGridInfo.hasNextPage ? mainGridPage + 1 : 1));
+  const mainGridTotalPages = mainGridInfo.lastPage || (mainGridInfo.total ? Math.ceil(mainGridInfo.total / cardsPerPage) : 1);
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden relative bg-[#0B0B0E]">
@@ -255,6 +283,7 @@ export default function Home() {
                 title=""
                 data={mainGridData}
                 isLoading={mainGridLoading}
+                isFetching={mainGridFetching}
                 limit={cardsPerPage}
                 tabs={["NEWEST", "POPULAR", "TOP RATED"]}
                 activeTab={activeMainTab}
@@ -267,6 +296,7 @@ export default function Home() {
                 <Pagination
                   currentPage={mainGridPage}
                   totalPages={mainGridTotalPages}
+                  hasNextPage={!!mainGridInfo?.hasNextPage}
                   onPageChange={(p) => {
                     setMainGridPage(p);
                     const el = document.getElementById("main-grid");

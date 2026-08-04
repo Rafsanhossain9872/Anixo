@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getBrowseAnime } from "../services/api";
 import Navbar from "../components/layout/Navbar";
@@ -36,7 +36,7 @@ export default function Browse() {
       genres: include,
       formats: formatParams,
       status: searchParams.get("status") || "",
-      sort: searchParams.get("sort") || "POPULARITY_DESC",
+      sort: searchParams.get("sort") || "START_DATE_DESC",
       year: searchParams.get("year") || "",
       season: searchParams.get("season") || "",
       country: searchParams.getAll("country"),
@@ -124,12 +124,12 @@ export default function Browse() {
 
   const { data: result = { media: [], pageInfo: { total: 0 } }, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["browse", queryData],
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const { vars } = queryData;
-      const res = await getBrowseAnime(vars);
+      const res = await getBrowseAnime(vars, signal);
       return res;
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
     staleTime: 1000 * 60 * 5,
   });
 

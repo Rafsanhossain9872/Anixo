@@ -35,11 +35,20 @@ export default function ProgressAnimeCard({ anime: progressItem }) {
     );
   }
 
+  // Resolve image URL from multiple possible shapes (object or string)
+  const resolveImage = (img) => {
+    if (!img) return null;
+    if (typeof img === 'string') return img;
+    return img.extraLarge || img.large || img.medium || null;
+  };
+
+  const fallbackCover = resolveImage(progressItem.coverImage) || resolveImage(progressItem.image) || progressItem.poster || '/fallback-image.png';
+
   const mergedAnime = {
     ...(animeData || {
       id: progressItem.id || progressItem.animeId,
       title: progressItem.title || { english: progressItem.title },
-      coverImage: progressItem.coverImage || { large: progressItem.coverImage },
+      coverImage: { large: fallbackCover, extraLarge: fallbackCover },
       format: 'TV',
     }),
     // Keep progress-specific fields
