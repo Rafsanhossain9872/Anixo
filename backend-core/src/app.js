@@ -21,10 +21,17 @@ const app = express();
 app.use(helmet({
   crossOriginResourcePolicy: false,
 }));
-app.use(cors({
-  origin: ['https://tenzora.top', 'http://localhost:5173'],
-  credentials: true
-}));
+const corsOptions = {
+  origin: ['https://tenzora.top', 'https://www.tenzora.top', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // EXPLICITLY handle preflight for all routes
+
 app.use(express.json());
 
 // Essential for Vercel/Proxies to get the real client IP
