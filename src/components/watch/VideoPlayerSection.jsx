@@ -278,7 +278,13 @@ export default function VideoPlayerSection({
                     {/* Server Rendering Logic */}
                     <div className="w-full h-full">
                         {!isIframe && videoSrc ? (
-                            videoType === 'hls' || videoSrc.includes('.m3u8') ? (
+                            <div 
+                                className="w-full h-full" 
+                                onClickCapture={(e) => e.stopPropagation()} 
+                                onMouseDownCapture={(e) => e.stopPropagation()} 
+                                onTouchStartCapture={(e) => e.stopPropagation()}
+                            >
+                            {videoType === 'hls' || videoSrc.includes('.m3u8') ? (
                                 <AnikoPlayer
                                     key={`anikoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
                                     src={videoSrc}
@@ -336,7 +342,8 @@ export default function VideoPlayerSection({
                                     onSeeked={onSeeked}
                                     disableControls={isWatch2GetherMode && !isW2GHost}
                                 />
-                            )
+                            )}
+                            </div>
                         ) : (
                             <iframe
                                 ref={iframeRef}
@@ -348,7 +355,6 @@ export default function VideoPlayerSection({
                                 className={`w-full h-full border-0 transition-opacity duration-500 ${!iframeLoaded ? "opacity-0" : "opacity-100"
                                     }`}
                                 allowFullScreen
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                                 allowfullscreen="true"
                                 webkitallowfullscreen="true"
                                 mozallowfullscreen="true"
