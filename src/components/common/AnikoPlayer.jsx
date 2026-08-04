@@ -18,6 +18,7 @@ const AnikoPlayer = React.forwardRef(({
   onPause,
   onSeeked,
   initialTime = 0,
+  autoPlay = true,
   className,
   skipTimes,
   disableControls = false,
@@ -1011,9 +1012,11 @@ const AnikoPlayer = React.forwardRef(({
             video.currentTime = initialTime;
           }
 
-          video.play().catch(() => {
-            console.log('Autoplay blocked, waiting for user interaction.');
-          });
+          if (autoPlay) {
+            video.play().catch(() => {
+              console.log('Autoplay blocked, waiting for user interaction.');
+            });
+          }
 
           callbacksRef.current.onReady?.();
         });
@@ -1059,7 +1062,7 @@ const AnikoPlayer = React.forwardRef(({
           addSubtitleTracks();
           buildSubMenu(subtitles);
           if (initialTime > 0) video.currentTime = initialTime;
-          video.play().catch(() => {});
+          if (autoPlay) video.play().catch(() => {});
           callbacksRef.current.onReady?.();
         }, { once: true });
         video.addEventListener('error', () => {
@@ -1073,7 +1076,7 @@ const AnikoPlayer = React.forwardRef(({
           addSubtitleTracks();
           buildSubMenu(subtitles);
           if (initialTime > 0) video.currentTime = initialTime;
-          video.play().catch(() => {});
+          if (autoPlay) video.play().catch(() => {});
           callbacksRef.current.onReady?.();
         }, { once: true });
       }
