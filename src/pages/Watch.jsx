@@ -615,7 +615,7 @@ export default function Watch({ isWatch2GetherMode }) {
   const {
     streamUrl, streamData, streamLoading, fetchError, iframeLoaded, setIframeLoaded
   } = useStreamFetch({
-    id, anime, activeEpisode, playerLang, activeServer, autoPlay,
+    id, anime, activeEpisode, playerLang, activeServer, autoPlay, autoNext,
     setPageLoading, isMal, initialTime, activeSubServer,
   });
 
@@ -895,6 +895,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 playerLang={playerLang}
                 initialTime={initialTime}
                 autoNext={autoNext}
+                autoPlay={autoPlay}
                 episodesList={episodesList}
                 setActiveEpisode={setActiveEpisode}
                 iframeRef={iframeRef}

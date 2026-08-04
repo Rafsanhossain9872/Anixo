@@ -13,6 +13,7 @@ export function useStreamFetch({
   playerLang,
   activeServer,
   autoPlay,
+  autoNext,
   setPageLoading,
   isMal,
   initialTime = 0,
@@ -200,7 +201,7 @@ export function useStreamFetch({
               queryParams.push("autoplay=true");
             }
             queryParams.push("autoSkip=false");
-            queryParams.push("autoNext=false");
+            queryParams.push(`autoNext=${autoNext}`);
             queryParams.push("lang-type=false");
 
             if (initialTime && initialTime > 0) {
@@ -227,7 +228,7 @@ export function useStreamFetch({
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
-            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}?autoplay=${autoPlay ? '1' : '0'}&autonext=${autoNext ? '1' : '0'}`;
             setStreamData({
               server_name: "SERVER 6 (Anixo)",
               lang: langParam,
@@ -292,6 +293,7 @@ export function useStreamFetch({
     playerLang,
     activeServer,
     autoPlay,
+    autoNext,
     setPageLoading,
     isMal,
     initialTime,

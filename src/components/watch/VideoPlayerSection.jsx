@@ -23,6 +23,7 @@ export default function VideoPlayerSection({
     playerLang,
     initialTime,
     autoNext,
+    autoPlay,
     episodesList,
     setActiveEpisode,
     iframeRef,
@@ -300,6 +301,7 @@ export default function VideoPlayerSection({
                                     subtitles={processedSubtitles}
                                     skipTimes={skipTimes}
                                     initialTime={initialTime}
+                                    autoPlay={autoPlay}
                                     onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
                                     onEnded={() => {
                                         if (autoNext && activeEpisode < episodesList.length) {
