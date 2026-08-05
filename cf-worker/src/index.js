@@ -7,20 +7,11 @@ const handler = serverless(app);
 
 export default {
   async fetch(request, env, ctx) {
-    // 1. Map Cloudflare environment variables to Node's process.env
-    // This allows the Express app to seamlessly read secrets like MONGO_URI
-    if (!process.env) {
-      globalThis.process = { env: {} };
-    }
-    for (const key in env) {
-      process.env[key] = env[key];
-    }
+    // 1. Inject Cloudflare env directly into the request
+    // Express routes can access it via req.env
+    request.env = env;
 
-    // 2. Ensure database is connected before processing the request
-    // connectDB handles connection caching internally
-    await connectDB();
-
-    // 3. Pass the standard Web Request into the serverless wrapper
+    // 2. Pass the standard Web Request into the serverless wrapper
     return handler(request, ctx);
   },
 };
