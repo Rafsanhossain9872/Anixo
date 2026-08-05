@@ -32,17 +32,9 @@ export default function AdLoader() {
       document.body.appendChild(popunder);
     }
 
-    // Popunder 2
-    if (isAdFreePage) {
-      const popunder2Script = document.getElementById("popunder2-global");
-      if (popunder2Script) popunder2Script.remove();
-    } else if (!document.getElementById("popunder2-global")) {
-      const popunder2 = document.createElement("script");
-      popunder2.id = "popunder2-global";
-      popunder2.dataset.zone = "11500897";
-      popunder2.src = "https://al5sm.com/tag.min.js";
-      document.body.appendChild(popunder2);
-    }
+    // Popunder 2 (Monetag Disabled)
+    const popunder2Script = document.getElementById("popunder2-global");
+    if (popunder2Script) popunder2Script.remove();
 
   }, [location.pathname]);
 

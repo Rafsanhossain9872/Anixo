@@ -278,71 +278,71 @@ export default function VideoPlayerSection({
                     {/* Server Rendering Logic */}
                     <div className="w-full h-full">
                         {!isIframe && videoSrc ? (
-                            <div 
-                                className="w-full h-full" 
-                                onClick={(e) => e.stopPropagation()} 
-                                onMouseDown={(e) => e.stopPropagation()} 
+                            <div
+                                className="w-full h-full"
+                                onClick={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
                                 onTouchStart={(e) => e.stopPropagation()}
                             >
-                            {videoType === 'hls' || videoSrc.includes('.m3u8') ? (
-                                <AnikoPlayer
-                                    key={`anikoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
-                                    src={videoSrc}
-                                    type={videoType}
-                                    availableStreams={streamData?.all_streams || []}
-                                    currentStreamIndex={activeSubServer}
-                                    onStreamChange={(index) => setActiveSubServer(index)}
-                                    poster={
-                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
-                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
-                                            : null
-                                    }
-                                    subtitles={processedSubtitles}
-                                    skipTimes={skipTimes}
-                                    initialTime={initialTime}
-                                    onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                                    onEnded={() => {
-                                        if (autoNext && activeEpisode < episodesList.length) {
-                                            const nextEp = episodesList.find(
-                                                (e) => e.number === activeEpisode + 1
-                                            );
-                                            if (nextEp) setActiveEpisode(nextEp.number);
+                                {videoType === 'hls' || videoSrc.includes('.m3u8') ? (
+                                    <AnikoPlayer
+                                        key={`anikoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
+                                        src={videoSrc}
+                                        type={videoType}
+                                        availableStreams={streamData?.all_streams || []}
+                                        currentStreamIndex={activeSubServer}
+                                        onStreamChange={(index) => setActiveSubServer(index)}
+                                        poster={
+                                            (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
+                                                ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
+                                                : null
                                         }
-                                    }}
-                                    ref={videoRef}
-                                    onPlay={onPlay}
-                                    onPause={onPause}
-                                    onSeeked={onSeeked}
-                                    disableControls={isWatch2GetherMode && !isW2GHost}
-                                />
-                            ) : (
-                                <VideoPlayer
-                                    key={`videoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
-                                    src={videoSrc}
-                                    type={videoType}
-                                    poster={
-                                        (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
-                                            ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
-                                            : null
-                                    }
-                                    subtitles={processedSubtitles}
-                                    initialTime={initialTime}
-                                    onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
-                                    onEnded={() => {
-                                        if (autoNext && activeEpisode < episodesList.length) {
-                                            const nextEp = episodesList.find(
-                                                (e) => e.number === activeEpisode + 1
-                                            );
-                                            if (nextEp) setActiveEpisode(nextEp.number);
+                                        subtitles={processedSubtitles}
+                                        skipTimes={skipTimes}
+                                        initialTime={initialTime}
+                                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                                        onEnded={() => {
+                                            if (autoNext && activeEpisode < episodesList.length) {
+                                                const nextEp = episodesList.find(
+                                                    (e) => e.number === activeEpisode + 1
+                                                );
+                                                if (nextEp) setActiveEpisode(nextEp.number);
+                                            }
+                                        }}
+                                        ref={videoRef}
+                                        onPlay={onPlay}
+                                        onPause={onPause}
+                                        onSeeked={onSeeked}
+                                        disableControls={isWatch2GetherMode && !isW2GHost}
+                                    />
+                                ) : (
+                                    <VideoPlayer
+                                        key={`videoplayer-${activeServer}-${activeEpisode}-${activeSubServer}`}
+                                        src={videoSrc}
+                                        type={videoType}
+                                        poster={
+                                            (anime?.coverImage?.extraLarge || anime?.coverImage?.large)
+                                                ? `https://wsrv.nl/?url=${encodeURIComponent(anime?.coverImage?.extraLarge || anime?.coverImage?.large)}`
+                                                : null
                                         }
-                                    }}
-                                    ref={videoRef}
-                                    onPlay={onPlay}
-                                    onPause={onPause}
-                                    onSeeked={onSeeked}
-                                    disableControls={isWatch2GetherMode && !isW2GHost}
-                                />
-                            )}
+                                        subtitles={processedSubtitles}
+                                        initialTime={initialTime}
+                                        onReady={() => setTimeout(() => setIframeLoaded(true), 0)}
+                                        onEnded={() => {
+                                            if (autoNext && activeEpisode < episodesList.length) {
+                                                const nextEp = episodesList.find(
+                                                    (e) => e.number === activeEpisode + 1
+                                                );
+                                                if (nextEp) setActiveEpisode(nextEp.number);
+                                            }
+                                        }}
+                                        ref={videoRef}
+                                        onPlay={onPlay}
+                                        onPause={onPause}
+                                        onSeeked={onSeeked}
+                                        disableControls={isWatch2GetherMode && !isW2GHost}
+                                    />
+                                )}
                             </div>
                         ) : (
                             <iframe
