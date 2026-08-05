@@ -16,6 +16,16 @@ import process from 'node:process';
 
 const app = express();
 
+// Cloudflare nodejs_compat strict stream polyfill
+app.use((req, res, next) => {
+    if (typeof res._write !== 'function') {
+        res._write = function (chunk, encoding, callback) {
+            if (typeof callback === 'function') callback();
+        };
+    }
+    next();
+});
+
 app.use((req, res, next) => {
     const allowedOrigins = ['https://tenzora.top', 'https://www.tenzora.top', 'http://localhost:5173'];
     const origin = req.headers.origin;
