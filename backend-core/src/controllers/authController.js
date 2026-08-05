@@ -7,7 +7,6 @@ import axios from 'axios';
 import crypto from 'crypto';
 import process from 'node:process';
 import sendEmail from '../utils/sendEmail.js';
-import { OAuth2Client } from 'google-auth-library';
 
 // Helper function to update user in online server
 const updateUserInOnlineServer = async (userData) => {
@@ -163,19 +162,20 @@ export const googleLogin = async (req, res) => {
       return res.status(500).json({ success: false, message: 'Google Client ID not configured on server' });
     }
 
-    const client = new OAuth2Client(clientId);
-
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: clientId,
-    });
-
-    const payload = ticket.getPayload();
-    if (!payload || !payload.email) {
-      return res.status(400).json({ success: false, message: 'Invalid Google token payload' });
+    const googleResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${token}`);
+    
+    if (!googleResponse.ok) {
+        return res.status(400).json({ success: false, message: 'Invalid Google token' });
     }
 
-    const { email, name, picture } = payload;
+    const payload = await googleResponse.json();
+    
+    // Note: Ensure the variable `clientId` matches your actual Google Client ID variable in the file
+    if (payload.aud !== process.env.VITE_GOOGLE_CLIENT_ID && payload.aud !== process.env.GOOGLE_CLIENT_ID) {
+        return res.status(401).json({ success: false, message: 'Token audience mismatch' });
+    }
+
+    const { email, name, picture, sub } = payload;
     let user = await User.findOne({ email });
 
     if (!user) {
