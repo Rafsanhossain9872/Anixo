@@ -1,11 +1,11 @@
 import serverless from 'serverless-http';
-import app from '../../backend-core/src/app.js'; // Adjust path if needed
+import app from '../../backend-core/src/app.js'; // Verify and adjust this import path to match your repo structure!
 
 const handler = serverless(app);
 
 export default {
     async fetch(request, env, ctx) {
-        // 1. CORS Preflight Bypass
+        // 1. Perfect CORS Preflight Bypass
         if (request.method === 'OPTIONS') {
             const requestedHeaders = request.headers.get('Access-Control-Request-Headers') || 'Content-Type, Authorization, x-api, Accept, X-Requested-With';
             return new Response(null, {
@@ -19,21 +19,30 @@ export default {
             });
         }
 
-        // 2. The Proxy Shield (Fixes the 'elb' undefined crash & read-only violations)
+        // 2. The Proxy Shield (Critical Fix for 'elb', 'sourceIp', and read-only crashes)
         const proxiedRequest = new Proxy(request, {
             get(target, prop) {
-                if (prop === 'requestContext') return {}; // Fixes the AWS ALB 'elb' crash
-                if (prop === 'env') return env; // Safe environment injection for Express
+                if (prop === 'requestContext') {
+                    // Feed dummy AWS API Gateway data to serverless-http to prevent cleanup crash
+                    return {
+                        elb: {},
+                        identity: {
+                            sourceIp: target.headers.get('cf-connecting-ip') || '127.0.0.1'
+                        }
+                    };
+                }
+                if (prop === 'env') return env; // Safe env injection
                 
                 const value = Reflect.get(target, prop);
                 return typeof value === 'function' ? value.bind(target) : value;
             },
             set(target, prop, value) {
-                return true; // Silently absorb forbidden assignments (like request.body = ...)
+                // Silently absorb read-only violations (like request.body = ...)
+                return true; 
             }
         });
 
-        // 3. Execute with shielded request
+        // 3. Execute request safely
         return await handler(proxiedRequest, ctx);
     }
 };
