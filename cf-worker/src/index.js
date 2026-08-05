@@ -3,11 +3,7 @@ import app from '../../backend-core/src/app.js';
 import connectDB from '../../backend-core/src/config/db.js';
 
 // Initialize the serverless wrapper
-const handler = serverless(app, {
-  request(req, event, context) {
-    req.env = context.env;
-  }
-});
+const handler = serverless(app);
 
 export default {
   async fetch(request, env, ctx) {
@@ -24,10 +20,9 @@ export default {
        });
     }
 
-    // Pass env via context to prevent mutating the immutable native Request object
+    // Pass env via context/request extensions allowed by serverless-http, not by mutating standard Request properties.
     ctx.env = env;
-
-    // Pass the standard Web Request into the serverless wrapper
-    return handler(request, ctx);
+    
+    return await handler(request, ctx);
   },
 };
