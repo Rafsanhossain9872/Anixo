@@ -1,16 +1,20 @@
 import serverless from 'serverless-http';
-import app from '../../backend-core/src/app.js'; // Adjust path if needed!
+import app from '../../backend-core/src/app.js'; // Adjust path if necessary!
 
-// --- THE FOOLPROOF STREAM FIX ---
-// Patching the Express response prototype directly.
-// This ensures _write is globally available before any routes are executed,
-// bypassing any middleware stack ordering issues that caused the previous crash.
-if (app && app.response) {
-    app.response._write = function (chunk, encoding, callback) {
-        // Satisfy Cloudflare's strict Writable nodejs_compat contract
-        if (typeof callback === 'function') callback();
-    };
-}
+// --- THE ULTIMATE STREAM INTERCEPTOR ---
+// serverless-http creates a mock ServerResponse that fails to implement _write().
+// By intercepting app.handle, we catch the raw response object at the exact millisecond 
+// it is handed from serverless-http to Express, guaranteeing the polyfill is applied.
+const originalHandle = app.handle.bind(app);
+app.handle = function(req, res, callback) {
+    if (typeof res._write !== 'function') {
+        res._write = function(chunk, encoding, cb) {
+            // Satisfy the strict Cloudflare nodejs_compat Writable contract
+            if (typeof cb === 'function') cb();
+        };
+    }
+    return originalHandle(req, res, callback);
+};
 
 const handler = serverless(app);
 
@@ -30,7 +34,7 @@ export default {
             });
         }
 
-        // 2. The UPGRADED Proxy Shield (Fixes 'elb' and 'sourceIp' crashes)
+        // 2. The Upgraded Proxy Shield (Fixes 'elb' and 'sourceIp' crashes)
         const proxiedRequest = new Proxy(request, {
             get(target, prop) {
                 if (prop === 'requestContext') {
@@ -48,11 +52,12 @@ export default {
                 return typeof value === 'function' ? value.bind(target) : value;
             },
             set(target, prop, value) {
-                return true; // Absorb read-only violations silently
+                // Silently absorb read-only violations
+                return true; 
             }
         });
 
-        // 3. Execute
+        // 3. Execute request safely
         return await handler(proxiedRequest, ctx);
     }
 };
