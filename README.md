@@ -233,11 +233,11 @@ npm run dev  # Runs on port 7861 by default
 ---
 
 ## 🗺️ Future Roadmap
-- [ ] **Sync with MAL/AniList:** Bi-directional sync for watchlist data.
+- [✓] **Sync with MAL/AniList:** Bi-directional sync for watchlist data.
 - [ ] **PWA Support:** Install TenZora as a native app on mobile and desktop.
 - [ ] **Advanced Player Skins:** Customizable themes for the streaming player.
-- [ ] **Community Forums:** Dedicated space for anime discussions.
-- [ ] **Recommendation AI:** Personalized suggestions based on watch history.
+- [✓] **Community Forums:** Dedicated space for anime discussions.
+- [✓] **Recommendation AI:** Personalized suggestions based on watch history.
 - [ ] **Social Features:** Friend lists and activity feeds.
 
 ---
