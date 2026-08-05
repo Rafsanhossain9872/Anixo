@@ -9,13 +9,16 @@ export default {
   async fetch(request, env, ctx) {
     // Immediate bypass for OPTIONS preflight requests to avoid native Request body mutation by serverless-http
     if (request.method === 'OPTIONS') {
+       const requestedHeaders = request.headers.get('Access-Control-Request-Headers') || 'Content-Type, Authorization, X-Requested-With, Accept, x-api';
+       
        return new Response(null, {
            status: 200,
            headers: {
                'Access-Control-Allow-Origin': request.headers.get('Origin') || '*',
                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-               'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
-               'Access-Control-Allow-Credentials': 'true'
+               'Access-Control-Allow-Headers': requestedHeaders,
+               'Access-Control-Allow-Credentials': 'true',
+               'Access-Control-Max-Age': '86400' // Cache preflight for 24 hours to reduce latency
            }
        });
     }
