@@ -1,6 +1,6 @@
 import { Writable } from 'node:stream';
 import serverless from 'serverless-http';
-import app from '../../backend-core/src/app.js'; // Adjust path if necessary
+// ⚠️ DO NOT statically import app.js here. It must be dynamically imported below.
 
 // 1. THE CORE STREAM PATCH
 if (Writable && Writable.prototype && typeof Writable.prototype._write !== 'function') {
@@ -9,9 +9,9 @@ if (Writable && Writable.prototype && typeof Writable.prototype._write !== 'func
     };
 }
 
-const handler = serverless(app);
+let handler; // Globally cache the serverless handler for performance across hot requests
 
-// Helper function to add CORS headers to a response
+// Helper to append CORS natively to all responses
 function addCorsHeaders(response, origin) {
     const corsHeaders = new Headers(response.headers);
     corsHeaders.set('Access-Control-Allow-Origin', origin || '*');
@@ -36,7 +36,16 @@ export default {
         }
         Object.assign(globalThis.process.env, env);
 
-        // 3. OPTIONS PREFLIGHT BYPASS
+        // 3. LAZY LOAD EXPRESS APP (THE MAGIC FIX)
+        // Dynamically import the app ONLY AFTER process.env is injected.
+        // This guarantees Mongoose and Google OAuth controllers have their keys.
+        if (!handler) {
+            const appModule = await import('../../backend-core/src/app.js'); // Verify path!
+            const app = appModule.default || appModule;
+            handler = serverless(app);
+        }
+
+        // 4. OPTIONS PREFLIGHT BYPASS
         if (request.method === 'OPTIONS') {
             return new Response(null, {
                 status: 200,
@@ -49,7 +58,7 @@ export default {
             });
         }
 
-        // 4. THE PROXY SHIELD
+        // 5. THE PROXY SHIELD
         const proxiedRequest = new Proxy(request, {
             get(target, prop) {
                 if (prop === 'requestContext') {
@@ -63,12 +72,11 @@ export default {
             set() { return true; } 
         });
 
-        // 5. EXECUTE EXPRESS APP AND APPEND CORS HEADERS
+        // 6. EXECUTE REQUEST
         try {
             const response = await handler(proxiedRequest, ctx);
             return addCorsHeaders(response, origin);
         } catch (error) {
-            // Ensure error responses also have CORS headers
             const errorResponse = new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
                 status: 500,
                 headers: { 'Content-Type': 'application/json' }
