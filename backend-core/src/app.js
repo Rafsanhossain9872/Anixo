@@ -13,6 +13,7 @@ import communityRoutes from './routes/communityRoutes.js';
 import aiBotRoutes from './routes/aiBotRoutes.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import process from 'node:process';
+import connectDB from './config/db.js';
 
 const app = express();
 
@@ -34,6 +35,16 @@ app.use((req, res, next) => {
         return res.sendStatus(200);
     }
     next();
+});
+
+// Initialize DB on every request (re-uses cached connection in serverless)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB(req.env || process.env);
+        next();
+    } catch (err) {
+        next(err);
+    }
 });
 
 // Security Middlewares

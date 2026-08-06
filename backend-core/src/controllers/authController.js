@@ -9,27 +9,7 @@ import process from 'node:process';
 import sendEmail from '../utils/sendEmail.js';
 import bcrypt from 'bcryptjs';
 
-const dataApiRequest = async (action, env, body) => {
-  const response = await fetch(`${env.ATLAS_API_ENDPOINT}/action/${action}`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Request-Headers': '*',
-        'api-key': env.ATLAS_API_KEY
-    },
-    body: JSON.stringify({
-        dataSource: "Cluster0",
-        database: env.ATLAS_DATABASE || "anixo",
-        collection: "users",
-        ...body
-    })
-  });
-  if (!response.ok) {
-     const text = await response.text();
-     throw new Error(`Data API Error: ${response.statusText} - ${text}`);
-  }
-  return response.json();
-};
+// Data API Removed for Standard Mongoose Driver
 
 // Helper function to update user in online server
 const updateUserInOnlineServer = async (userData) => {
@@ -47,8 +27,9 @@ const updateUserInOnlineServer = async (userData) => {
 
 
 // Generate JWT Token
-const generateToken = (id, env) => {
-  return jwt.sign({ id }, env.JWT_SECRET, {
+const generateToken = (id, env = {}) => {
+  const secret = env.JWT_SECRET || process.env.JWT_SECRET;
+  return jwt.sign({ id }, secret, {
     expiresIn: '7d',
   });
 };
@@ -74,8 +55,8 @@ export const register = async (req, res) => {
     }
 
     // Check if email already exists
-    const findRes = await dataApiRequest('findOne', req.env, { filter: { email } });
-    if (findRes.document) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       res.status(400);
       throw new Error('User with this email already exists');
     }
@@ -99,20 +80,20 @@ export const register = async (req, res) => {
       updatedAt: now
     };
 
-    const insertRes = await dataApiRequest('insertOne', req.env, { document: newUser });
-    if (insertRes.insertedId) {
+    const createdUser = await User.create(newUser);
+    if (createdUser) {
       res.status(201).json({
         success: true,
         message: 'User registered successfully',
-        token: generateToken(insertRes.insertedId, req.env),
+        token: generateToken(createdUser._id, req.env),
         user: {
-          id: insertRes.insertedId,
-          username: newUser.username,
-          profileId: newUser.profileId,
-          email: newUser.email,
-          role: newUser.role,
-          avatar: newUser.avatar,
-          displayName: newUser.displayName
+          id: createdUser._id,
+          username: createdUser.username,
+          profileId: createdUser.profileId,
+          email: createdUser.email,
+          role: createdUser.role,
+          avatar: createdUser.avatar,
+          displayName: createdUser.displayName
         }
       });
     } else {
@@ -136,12 +117,10 @@ export const login = async (req, res) => {
     }
 
     // Check for user email
-    const findRes = await dataApiRequest('findOne', req.env, { filter: { email } });
-    let user = findRes.document;
+    let user = await User.findOne({ email });
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      let needsUpdate = false;
-      const updates = { lastActive: { $date: new Date().toISOString() } };
+      user.lastActive = new Date();
 
       // Generate profileId if it's missing
       if (!user.profileId) {
@@ -149,18 +128,13 @@ export const login = async (req, res) => {
         let isUnique = false;
         while (!isUnique) {
           generatedId = crypto.randomBytes(4).toString('hex');
-          const checkId = await dataApiRequest('findOne', req.env, { filter: { profileId: generatedId } });
-          isUnique = !checkId.document;
+          const checkId = await User.findOne({ profileId: generatedId });
+          isUnique = !checkId;
         }
         user.profileId = generatedId;
-        updates.profileId = generatedId;
-        needsUpdate = true;
       }
 
-      await dataApiRequest('updateOne', req.env, { 
-          filter: { _id: user._id },
-          update: { $set: updates }
-      });
+      await user.save();
 
       res.json({
         success: true,
@@ -194,7 +168,7 @@ export const googleLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Google token is missing' });
     }
 
-    const clientId = req.env.GOOGLE_CLIENT_ID;
+    const clientId = req.env?.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
       return res.status(500).json({ success: false, message: 'Google Client ID not configured on server' });
     }
@@ -207,15 +181,13 @@ export const googleLogin = async (req, res) => {
 
     const payload = await googleResponse.json();
     
-    if (payload.aud !== req.env.VITE_GOOGLE_CLIENT_ID && payload.aud !== req.env.GOOGLE_CLIENT_ID) {
+    const validAuds = [req.env?.VITE_GOOGLE_CLIENT_ID, req.env?.GOOGLE_CLIENT_ID, process.env.VITE_GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_ID].filter(Boolean);
+    if (!validAuds.includes(payload.aud)) {
         return res.status(401).json({ success: false, message: 'Token audience mismatch' });
     }
 
     const { email, name, picture, sub } = payload;
-    const findRes = await dataApiRequest('findOne', req.env, { filter: { email } });
-    let user = findRes.document;
-
-    const now = { $date: new Date().toISOString() };
+    let user = await User.findOne({ email });
 
     if (!user) {
       const generatedPassword = crypto.randomBytes(16).toString('hex');
@@ -228,8 +200,8 @@ export const googleLogin = async (req, res) => {
       let counter = 1;
 
       while (true) {
-        const checkUsername = await dataApiRequest('findOne', req.env, { filter: { username } });
-        if (checkUsername.document) {
+        const checkUsername = await User.findOne({ username });
+        if (checkUsername) {
           username = `${baseUsername}${counter}`;
           counter++;
         } else {
@@ -237,7 +209,7 @@ export const googleLogin = async (req, res) => {
         }
       }
 
-      user = {
+      user = await User.create({
         username,
         profileId,
         email,
@@ -245,18 +217,12 @@ export const googleLogin = async (req, res) => {
         displayName: name || username,
         avatar: picture || '',
         role: 'user',
-        lastActive: now,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      const insertRes = await dataApiRequest('insertOne', req.env, { document: user });
-      user._id = insertRes.insertedId;
+        lastActive: new Date()
+      });
     } else {
-      let updates = { lastActive: now };
+      user.lastActive = new Date();
       
       if (!user.avatar && picture) {
-        updates.avatar = picture;
         user.avatar = picture;
       }
 
@@ -265,17 +231,13 @@ export const googleLogin = async (req, res) => {
         let isUnique = false;
         while (!isUnique) {
           generatedId = crypto.randomBytes(4).toString('hex');
-          const checkId = await dataApiRequest('findOne', req.env, { filter: { profileId: generatedId } });
-          isUnique = !checkId.document;
+          const checkId = await User.findOne({ profileId: generatedId });
+          isUnique = !checkId;
         }
-        updates.profileId = generatedId;
         user.profileId = generatedId;
       }
 
-      await dataApiRequest('updateOne', req.env, { 
-          filter: { _id: user._id },
-          update: { $set: updates }
-      });
+      await user.save();
     }
 
     res.json({
