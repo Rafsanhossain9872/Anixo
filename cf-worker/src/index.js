@@ -1,18 +1,15 @@
-import http from 'http';
+import { Writable } from 'node:stream';
 import serverless from 'serverless-http';
-import app from '../../backend-core/src/app.js'; // Adjust path
+import app from '../../backend-core/src/app.js'; // Adjust path if necessary!
 
-// --- THE ULTIMATE CORE STREAM PATCH ---
-// serverless-http uses Node's http.ServerResponse under the hood.
-// Cloudflare strictly requires _write on all Writable streams.
-// By patching the core prototype, EVERY mock response created by serverless-http
-// will inherently satisfy the Cloudflare stream contract.
-if (http.ServerResponse && http.ServerResponse.prototype) {
-    if (typeof http.ServerResponse.prototype._write !== 'function') {
-        http.ServerResponse.prototype._write = function(chunk, encoding, callback) {
-            if (typeof callback === 'function') callback();
-        };
-    }
+// --- THE CORE NODE.JS STREAM PATCH (USER'S GENIUS IDEA) ---
+// By importing the actual core `node:stream` API and patching the base Writable prototype,
+// we ensure that ANY stream created by serverless-http inherently possesses the _write method.
+// This completely satisfies Cloudflare's strict stream implementation.
+if (Writable && Writable.prototype && typeof Writable.prototype._write !== 'function') {
+    Writable.prototype._write = function (chunk, encoding, callback) {
+        if (typeof callback === 'function') callback();
+    };
 }
 
 const handler = serverless(app);
@@ -33,21 +30,30 @@ export default {
             });
         }
 
-        // 2. The Upgraded Proxy Shield (Fixes AWS 'elb' and 'sourceIp' crashes)
+        // 2. The Upgraded Proxy Shield (Fixes 'elb' and 'sourceIp' crashes)
         const proxiedRequest = new Proxy(request, {
             get(target, prop) {
                 if (prop === 'requestContext') {
-                    return { elb: {}, identity: { sourceIp: target.headers.get('cf-connecting-ip') || '127.0.0.1' } };
+                    // Mock AWS API Gateway context
+                    return {
+                        elb: {},
+                        identity: {
+                            sourceIp: target.headers.get('cf-connecting-ip') || '127.0.0.1'
+                        }
+                    };
                 }
                 if (prop === 'env') return env;
                 
                 const value = Reflect.get(target, prop);
                 return typeof value === 'function' ? value.bind(target) : value;
             },
-            set() { return true; } // Absorb read-only violations
+            set(target, prop, value) {
+                // Silently absorb read-only violations
+                return true; 
+            }
         });
 
-        // 3. Execute request
+        // 3. Execute request safely
         return await handler(proxiedRequest, ctx);
     }
 };
