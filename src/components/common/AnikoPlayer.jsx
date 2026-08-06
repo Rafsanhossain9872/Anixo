@@ -145,6 +145,7 @@ const AnikoPlayer = React.forwardRef(({
     let _currentSpeed = 1;
     let currentQualityLevel = -1;
     let activeSubTrack = -1;
+    let savedSubLang = localStorage.getItem('aniko_sub_lang');
     let isAutoSkip = localStorage.getItem('aniko_autoskip') === 'true';
     let subColor = localStorage.getItem('aniko_sub_color') || '#ffffff';
     let subBg = localStorage.getItem('aniko_sub_bg') || 'rgba(0, 0, 0, 0.75)';
@@ -879,6 +880,7 @@ const AnikoPlayer = React.forwardRef(({
       offBtn.textContent = 'Off';
       offBtn.addEventListener('click', () => {
         setSubTrack(-1);
+        localStorage.setItem('aniko_sub_lang', 'Off');
         closeAllMenus();
       });
       subOptions.appendChild(offBtn);
@@ -889,6 +891,8 @@ const AnikoPlayer = React.forwardRef(({
         btn.textContent = sub.label || sub.lang || sub.language || `Track ${i + 1}`;
         btn.addEventListener('click', () => {
           setSubTrack(i);
+          const lbl = sub.label || sub.lang || sub.language || `Track ${i + 1}`;
+          localStorage.setItem('aniko_sub_lang', lbl);
           closeAllMenus();
         });
         subOptions.appendChild(btn);
@@ -1029,6 +1033,7 @@ const AnikoPlayer = React.forwardRef(({
 
       let englishIndex = -1;
       let defaultIndex = -1;
+      let matchIndex = -1;
 
       subtitles.forEach((sub, i) => {
         const track = document.createElement('track');
@@ -1039,13 +1044,18 @@ const AnikoPlayer = React.forwardRef(({
         const isEng = track.label.toLowerCase().includes('english') || track.label.toLowerCase().includes('eng') || track.srclang.toLowerCase() === 'en';
         if (isEng && englishIndex === -1) englishIndex = i;
         if (sub.default || sub.isDefault) defaultIndex = i;
+        if (savedSubLang && track.label === savedSubLang) matchIndex = i;
 
         track.src = sub.url || sub.file;
         video.appendChild(track);
       });
 
       if (activeSubTrack === -1 || activeSubTrack >= subtitles.length) {
-        if (englishIndex !== -1) {
+        if (savedSubLang === 'Off') {
+          activeSubTrack = -1;
+        } else if (matchIndex !== -1) {
+          activeSubTrack = matchIndex;
+        } else if (englishIndex !== -1) {
           activeSubTrack = englishIndex;
         } else if (defaultIndex !== -1) {
           activeSubTrack = defaultIndex;
@@ -1114,6 +1124,7 @@ const AnikoPlayer = React.forwardRef(({
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
           hideLoading();
+
           buildQualityMenu(data.levels);
           addSubtitleTracks();
           buildSubMenu(subtitles);
