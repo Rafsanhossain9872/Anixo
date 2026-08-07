@@ -65,7 +65,7 @@ export default function Watch({ isWatch2GetherMode }) {
     }
   }, [location.hash]);
   const { openSmartLink } = useAdsterraSmartLink();
-  const queryParams = new URLSearchParams(location.search);
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isMal = queryParams.get("mal") === "true";
   const initialEp = parseInt(queryParams.get("ep")) || 1;
   const initialTime = parseFloat(queryParams.get("t")) || 0;
@@ -119,7 +119,7 @@ export default function Watch({ isWatch2GetherMode }) {
       // You can uncomment the line below to enable
       // openSmartLink();
     }
-  }, [activeEpisode, navigate, location.pathname, openSmartLink, location.search]);
+  }, [activeEpisode, navigate, location.pathname, openSmartLink, location.search, queryParams]);
 
   const [episodeLayout, setEpisodeLayout] = useState("grid"); // "grid" | "list"
   const [playerLang, setPlayerLang] = useState("sub");
@@ -150,6 +150,7 @@ export default function Watch({ isWatch2GetherMode }) {
   const [hasSub, setHasSub] = useState(false); // Strict: Hide until verified
   const [hasDub, setHasDub] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isTheaterMode, setIsTheaterMode] = useState(() => getSafeStorage("theaterMode", false));
   const [activeSubServer, setActiveSubServer] = useState(0);
   const [showSubServers, setShowSubServers] = useState(false);
   const [hideFillerEpisodes, setHideFillerEpisodes] = useState(() => getSafeStorage("hideFiller", false));
@@ -194,11 +195,58 @@ export default function Watch({ isWatch2GetherMode }) {
   const [wtTypingUsers, setWtTypingUsers] = useState([]);
   const wtRoomParam = isWatch2GetherMode ? new URLSearchParams(location.search).get("room") : null;
 
+  // Resume Prompt State
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [resumeData, setResumeData] = useState(null);
+
+  useEffect(() => {
+    if (globalProgress && id && !isWatch2GetherMode) {
+      const saved = globalProgress.find(p => p.animeId === String(id) && p.episode === activeEpisode);
+      // Only prompt if watched more than 30 seconds
+      if (saved && saved.currentTime > 30) {
+        setTimeout(() => {
+          setResumeData(saved);
+          setShowResumePrompt(true);
+        }, 0);
+        const timer = setTimeout(() => setShowResumePrompt(false), 10000);
+        return () => clearTimeout(timer);
+      } else {
+        setTimeout(() => {
+          setShowResumePrompt(false);
+        }, 0);
+      }
+    }
+  }, [globalProgress, id, activeEpisode, isWatch2GetherMode]);
+
+  const formatTime = (seconds) => {
+    if (!seconds) return "0:00";
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleResume = () => {
+    if (resumeData) {
+      if (videoRef.current) {
+        videoRef.current.seek(resumeData.currentTime);
+        videoRef.current.play();
+      } else {
+        const newParams = new URLSearchParams(queryParams.toString());
+        newParams.set("t", resumeData.currentTime);
+        navigate({ search: newParams.toString() }, { replace: true });
+      }
+    }
+    setShowResumePrompt(false);
+  };
+
   // AniSkip integration (extracted to custom hook) — called after useQuery below
 
   // Sync settings to localStorage
   useEffect(() => localStorage.setItem("autoNext", JSON.stringify(autoNext)), [autoNext]);
   useEffect(() => localStorage.setItem("autoPlay", JSON.stringify(autoPlay)), [autoPlay]);
+  useEffect(() => localStorage.setItem("theaterMode", JSON.stringify(isTheaterMode)), [isTheaterMode]);
 
 
   useEffect(() => {
@@ -760,7 +808,26 @@ export default function Watch({ isWatch2GetherMode }) {
   const submitReport = async () => {
     console.info(`[Report] Submitting report for Anime ID: ${id}, Episode: ${activeEpisode}`, reportDetails);
 
-    // Simulate API call
+    const webhookUrl = import.meta.env.VITE_REPORT_WEBHOOK;
+    if (webhookUrl) {
+      try {
+        await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            embeds: [{
+              title: `🚩 Report: ${getTitle(anime.title)}`,
+              description: `**Episode:** ${activeEpisode}\n**Server:** ${activeServer}\n**Issues:** ${reportDetails.issues.join(', ')}\n**Details:** ${reportDetails.other || 'None'}`,
+              color: 0xff4444,
+              timestamp: new Date().toISOString()
+            }]
+          })
+        });
+      } catch (err) {
+        console.error("Failed to send report", err);
+      }
+    }
+
     setReportSuccess(true);
     setShowReportModal(false);
     setReportDetails({ issues: [], other: "" });
@@ -850,10 +917,10 @@ export default function Watch({ isWatch2GetherMode }) {
       <main className={`${isFocusMode ? 'pt-0' : 'pt-[60px]'} max-w-[1720px] mx-auto px-2 lg:px-4 transition-all duration-500`}>
 
         {/* Main Media Grid */}
-        <div className={`flex flex-col lg:grid lg:gap-6 ${isFocusMode ? 'lg:grid-cols-1' : 'lg:grid-cols-4'} transition-all duration-500 mt-4`}>
+        <div className={`flex flex-col lg:grid lg:gap-6 ${isFocusMode ? 'lg:grid-cols-1' : isTheaterMode ? 'lg:grid-cols-1' : 'lg:grid-cols-4'} transition-all duration-500 mt-4`}>
 
           {/* LEFT COLUMN: Player + Controls */}
-          <div className={`${isFocusMode ? 'lg:col-span-1 fixed inset-0 z-40 flex flex-col items-center justify-center p-4 lg:p-12 pointer-events-none' : 'lg:col-span-3'}`}>
+          <div className={`${isFocusMode ? 'lg:col-span-1 fixed inset-0 z-40 flex flex-col items-center justify-center p-4 lg:p-12 pointer-events-none' : isTheaterMode ? 'lg:col-span-1' : 'lg:col-span-3'}`}>
 
             {/* Breadcrumbs */}
             {!isFocusMode && (
@@ -947,6 +1014,7 @@ export default function Watch({ isWatch2GetherMode }) {
             {/* Player Toolbar + Server Selector */}
             <PlayerToolbar
               isFocusMode={isFocusMode} setIsFocusMode={setIsFocusMode}
+              isTheaterMode={isTheaterMode} setIsTheaterMode={setIsTheaterMode}
               autoNext={autoNext} setAutoNext={setAutoNext}
               autoPlay={autoPlay} setAutoPlay={setAutoPlay}
               activeEpisode={activeEpisode} episodesList={episodesList}
@@ -973,7 +1041,7 @@ export default function Watch({ isWatch2GetherMode }) {
           </div>
 
           {/* RIGHT COLUMN: Episodes Sidebar & Watch Together */}
-          {!isFocusMode && (
+          {!isFocusMode && !isTheaterMode && (
             <div className="lg:col-span-1 flex flex-col gap-6">
               {wtRoom && (
                 <WatchTogetherSidebar
@@ -1086,6 +1154,32 @@ export default function Watch({ isWatch2GetherMode }) {
           <div>
             <p className="text-[14px] font-bold text-white leading-tight">{t('watch.thankYou')}</p>
             <p className="text-[11px] text-white/50 font-medium uppercase tracking-widest mt-1">{t('watch.reportSuccess')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Resume Prompt Toast */}
+      {showResumePrompt && resumeData && (
+        <div className="fixed bottom-10 left-10 z-[100] flex flex-col gap-3 bg-[#0a0a0a]/90 backdrop-blur-xl border border-discord-500/30 text-white px-5 py-4 rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-left duration-500 max-w-sm">
+          <div>
+            <p className="text-[14px] font-bold text-white leading-tight">Resume Episode {activeEpisode}?</p>
+            <p className="text-[12px] text-white/60 font-medium mt-1">
+              You left off at <span className="text-discord-400 font-bold">{formatTime(resumeData.currentTime)}</span>
+            </p>
+          </div>
+          <div className="flex gap-2 w-full mt-1">
+            <button
+              onClick={handleResume}
+              className="flex-1 bg-discord-600 hover:bg-discord-700 text-white text-[11px] font-bold uppercase tracking-wider py-2 rounded-sm transition-colors"
+            >
+              Resume
+            </button>
+            <button
+              onClick={() => setShowResumePrompt(false)}
+              className="flex-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider py-2 rounded-sm transition-colors"
+            >
+              Start Over
+            </button>
           </div>
         </div>
       )}

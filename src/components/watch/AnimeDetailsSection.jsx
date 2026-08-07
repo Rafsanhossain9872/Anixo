@@ -115,19 +115,26 @@ export default function AnimeDetailsSection({
             </div>
           </div>
 
-          {/* Download (Server 4 specific) */}
-          {activeServer === 4 && streamUrl && (
+          {/* Download Button (All Servers) */}
+          {streamUrl && (
             <button
               onClick={() => {
-                const downloadUrl = streamUrl.includes('#')
-                  ? streamUrl.replace('#', '&download=1#')
-                  : `${streamUrl}&download=1`;
-                window.open(downloadUrl, '_blank');
+                if (activeServer === 4) {
+                  const downloadUrl = streamUrl.includes('#')
+                    ? streamUrl.replace('#', '&download=1#')
+                    : `${streamUrl}&download=1`;
+                  window.open(downloadUrl, '_blank');
+                } else {
+                  window.open(streamUrl, '_blank');
+                }
               }}
               className="flex items-center gap-1.5 text-white/60 hover:text-green-500 transition-all mb-4"
+              title="Download / Open External Stream"
             >
               <Download size={15} />
-              <span className="text-[9px] font-bold uppercase tracking-wider hidden sm:inline">{t('details.download')}</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider hidden sm:inline">
+                {activeServer === 4 ? t('details.download') : 'Download / External'}
+              </span>
             </button>
           )}
 

@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -5,6 +6,9 @@ import { getWatchUrl } from "../../utils/url";
 
 export default function SeasonsSection({ stableSeasons, getTitle }) {
  const { t } = useTranslation();
+ const scrollRef = useRef(null);
+ const scroll = (dir) => scrollRef.current?.scrollBy({ left: dir * 250, behavior: 'smooth' });
+
  if (!stableSeasons || stableSeasons.length === 0) return null;
 
  return (
@@ -14,16 +18,16 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  {t('seasons.title')}
  </h2>
  <div className="flex items-center gap-2">
- <button className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all">
+ <button onClick={() => scroll(-1)} className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all">
  <ChevronLeft size={20} />
  </button>
- <button className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all">
+ <button onClick={() => scroll(1)} className="p-2 rounded-full bg-white/5 text-white/40 hover:bg-white/10 hover:text-white transition-all">
  <ChevronRight size={20} />
  </button>
  </div>
  </header>
 
- <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide px-6">
+ <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide px-6">
  {stableSeasons.map((item) => (
  <Link
  key={item.id}

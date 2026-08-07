@@ -1,12 +1,13 @@
 import { useRef, useEffect } from "react";
 import {
   Moon, FastForward, PlayCircle, SkipForward, SkipBack,
-  Heart, Flag, MessageSquare, Mic, Users, Clock
+  Heart, Flag, MessageSquare, Mic, Users, Clock, Monitor
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function PlayerToolbar({
   isFocusMode, setIsFocusMode,
+  isTheaterMode, setIsTheaterMode,
   autoNext, setAutoNext,
   autoPlay, setAutoPlay,
   activeEpisode, episodesList,
@@ -38,26 +39,40 @@ export default function PlayerToolbar({
     <>
       {/* Action Toolbar */}
       <section
-        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-wrap lg:flex-nowrap items-center justify-between gap-y-4 gap-x-2 sm:gap-4 lg:gap-6 select-none"
+        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-col xl:flex-row flex-wrap items-center justify-between gap-y-4 gap-x-4 select-none"
       >
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4 lg:gap-6">
-          <button
-            onClick={() => setIsFocusMode(!isFocusMode)}
-            className={`flex items-center gap-1 sm:gap-2 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
-            title={t('player.focus')}
-          >
-            <Moon size={15} className="sm:w-4 sm:h-4" fill={isFocusMode ? "currentColor" : "none"} />
-            <span className="hidden sm:inline text-[12px] font-medium">{t('player.focus')}</span>
-          </button>
+        {/* Primary Controls */}
+        <div className="flex items-center justify-between w-full xl:w-auto xl:justify-start gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setIsFocusMode(!isFocusMode)}
+              className={`flex items-center gap-1 sm:gap-2 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+              title={t('player.focus')}
+            >
+              <Moon size={15} className="w-4 h-4" fill={isFocusMode ? "currentColor" : "none"} />
+              <span className="hidden md:inline text-[12px] font-medium">{t('player.focus')}</span>
+            </button>
 
-          <div className={`flex items-center gap-4 sm:gap-6 lg:gap-10 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+            <button
+              onClick={() => setIsTheaterMode(!isTheaterMode)}
+              className={`flex items-center gap-1 sm:gap-2 transition-all ${isTheaterMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+              title="Theater Mode"
+            >
+              <Monitor size={15} className="w-4 h-4" />
+              <span className="hidden md:inline text-[12px] font-medium">Theater</span>
+            </button>
+          </div>
+
+          <div className="w-px h-5 bg-white/10 hidden sm:block"></div>
+
+          <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
             <button
               onClick={() => setAutoNext(!autoNext)}
               className="flex items-center gap-1 sm:gap-2 group transition-all"
               title={t('player.autoNext')}
             >
-              <FastForward size={15} className={`sm:w-4 sm:h-4 transition-all ${autoNext ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
-              <span className={`hidden sm:inline text-[12px] font-medium ${autoNext ? 'text-white' : 'text-white/70'}`}>{t('player.autoNext')}</span>
+              <FastForward size={15} className={`w-4 h-4 transition-all ${autoNext ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
+              <span className={`hidden md:inline text-[12px] font-medium ${autoNext ? 'text-white' : 'text-white/70'}`}>{t('player.autoNext')}</span>
             </button>
 
             <button
@@ -65,31 +80,36 @@ export default function PlayerToolbar({
               className="flex items-center gap-1 sm:gap-2 group transition-all"
               title={t('player.autoPlay')}
             >
-              <PlayCircle size={15} className={`sm:w-4 sm:h-4 transition-all ${autoPlay ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
-              <span className={`hidden sm:inline text-[12px] font-medium ${autoPlay ? 'text-white' : 'text-white/70'}`}>{t('player.autoPlay')}</span>
+              <PlayCircle size={15} className={`w-4 h-4 transition-all ${autoPlay ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
+              <span className={`hidden md:inline text-[12px] font-medium ${autoPlay ? 'text-white' : 'text-white/70'}`}>{t('player.autoPlay')}</span>
+            </button>
+          </div>
+
+          <div className="w-px h-5 bg-white/10 hidden sm:block"></div>
+
+          <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+            <button
+              onClick={goPrevEpisode}
+              className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
+              title={t('player.prev')}
+            >
+              <SkipBack size={15} className="w-4 h-4" fill="currentColor" />
+              <span className="hidden md:inline text-[12px] font-medium">{t('player.prev')}</span>
+            </button>
+            <button
+              onClick={goNextEpisode}
+              className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode >= episodesList.length ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
+              title={t('player.next')}
+            >
+              <SkipForward size={15} className="w-4 h-4" fill="currentColor" />
+              <span className="hidden md:inline text-[12px] font-medium">{t('player.next')}</span>
             </button>
           </div>
         </div>
 
-        <div className={`flex items-center gap-3 sm:gap-4 lg:gap-6 ml-auto sm:ml-0 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
-          <button
-            onClick={goPrevEpisode}
-            className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
-            title={t('player.prev')}
-          >
-            <SkipBack size={15} className="sm:w-4 sm:h-4" fill="currentColor" />
-            <span className="hidden sm:inline text-[12px] font-medium">{t('player.prev')}</span>
-          </button>
-          <button
-            onClick={goNextEpisode}
-            className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode >= episodesList.length ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
-            title={t('player.next')}
-          >
-            <SkipForward size={15} className="sm:w-4 sm:h-4" fill="currentColor" />
-            <span className="hidden sm:inline text-[12px] font-medium">{t('player.next')}</span>
-          </button>
-
-          {!isFocusMode && (
+        {/* Secondary Controls */}
+        <div className={`flex items-center justify-between w-full xl:w-auto xl:justify-end gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+          {!isFocusMode && !isTheaterMode && (
             <>
               <div className="relative" ref={watchlistRef}>
                 <button
@@ -100,7 +120,7 @@ export default function PlayerToolbar({
                   {isWatchlistLoading ? (
                     <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Heart size={13} className="sm:w-4 sm:h-4" fill={isBookmarked ? "currentColor" : "none"} />
+                    <Heart size={14} className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} />
                   )}
                   <span className="hidden sm:inline text-[12px] font-medium">
                     {isWatchlistLoading ? 'Saving...' : 'Bookmark'}
@@ -146,13 +166,12 @@ export default function PlayerToolbar({
 
               <button
                 onClick={handleReport}
-                className={`flex items-center gap-2 sm:gap-3 transition-all ${reportSuccess ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
+                className={`flex items-center gap-1.5 sm:gap-2 transition-all ${reportSuccess ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
               >
-                <Flag size={14} className="sm:w-5 sm:h-5" />
+                <Flag size={14} className="w-4 h-4" />
                 <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">{t('player.report')}</span>
               </button>
 
-              {/* Anaixo.buzz Embeds Link */}
               <a
                 href="https://anixo.buzz"
                 target="_blank"
@@ -163,7 +182,6 @@ export default function PlayerToolbar({
                 <span className="text-[15px] sm:text-[17px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
               </a>
 
-              {/* Watch Together Button */}
               {!wtRoom && handleCreateWtRoom && (
                 <div className="flex items-center bg-discord-500/10 rounded-full border border-discord-500/20 overflow-hidden">
                   <button
@@ -171,7 +189,7 @@ export default function PlayerToolbar({
                     className="flex items-center justify-center transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
                     title="Start Watch Together Now"
                   >
-                    <Users size={14} className="sm:w-4 sm:h-4" />
+                    <Users size={14} className="w-4 h-4" />
                   </button>
                   {handleScheduleWtRoom && (
                     <>
@@ -181,7 +199,7 @@ export default function PlayerToolbar({
                         className="px-2.5 sm:px-3 py-1.5 text-white/60 hover:text-discord-500 hover:bg-discord-500/20 transition-all"
                         title="Schedule for Later"
                       >
-                        <Clock size={14} className="sm:w-4 sm:h-4" />
+                        <Clock size={14} className="w-4 h-4" />
                       </button>
                     </>
                   )}
