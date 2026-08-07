@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 @theme {
   --color-discord-50: #eef0ff;
   --color-discord-100: #e0e4ff;
