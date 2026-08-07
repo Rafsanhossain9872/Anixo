@@ -190,12 +190,12 @@ async function smartRequest(method, path, options = {}) {
 }
 
 export const backendApi = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API || "https://api.tenzora.top",
+  baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com",
 });
 
 // Auth-specific API instance — same-origin, proxied by Cloudflare Pages Functions.
 export const authApi = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API || "https://api.tenzora.top",
+  baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com",
 });
 
 backendApi.interceptors.request.use((config) => {
