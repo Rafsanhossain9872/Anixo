@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { ChevronLeft, ChevronRight, Clock, CheckCircle2, Bell, List as ListIcon, LayoutGrid, Filter, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AnimeCard from "../common/AnimeCard";
+import { Search } from "lucide-react";
 
 // Helper for random border colors based on ID
 const borderColors = [
@@ -24,6 +25,7 @@ export default function EstimatedSchedule() {
  format: "ALL", // ALL, TV, MOVIE, OVA, ONA
  status: "ALL", // ALL, PAST, UPCOMING
  });
+ const [searchQuery, setSearchQuery] = useState("");
  const scrollRef = useRef(null);
  const [tzName, setTzName] = useState('');
  const [offsetStr, setOffsetStr] = useState('');
@@ -105,10 +107,15 @@ export default function EstimatedSchedule() {
  if (format !== filters.format) return false;
  }
 
+ if (searchQuery.trim()) {
+  const title = getTitle(s.media?.title).toLowerCase();
+  if (!title.includes(searchQuery.toLowerCase().trim())) return false;
+ }
+
  return true;
  })
  .sort((a, b) => a.airingAt - b.airingAt);
- }, [scheduleData, selectedDate, filters]);
+ }, [scheduleData, selectedDate, filters, searchQuery, getTitle]);
 
  const formatTime = (ts) => {
  return new Date(ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
@@ -169,7 +176,18 @@ export default function EstimatedSchedule() {
  <div className="fixed inset-0 z-40" onClick={() => setFilterShow(false)} />
  <div className="absolute top-full right-0 mt-2 w-[220px] bg-[#16171b] border border-white/10 rounded-[6px] shadow-2xl p-4 flex flex-col gap-4 z-50 origin-top-right animate-in fade-in zoom-in-95 duration-200">
  <div>
- <div className="text-[10px] font-bold text-[#666] uppercase tracking-wider mb-2 flex items-center justify-between">
+  <div className="relative mb-4">
+   <input
+    type="text"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    placeholder="Search Title..."
+    className="w-full bg-[#111111] border border-white/10 rounded-[3px] px-2.5 py-1.5 text-[10px] text-white placeholder-white/30 focus:outline-none focus:border-[#ff4d2e]"
+   />
+   <Search size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40" />
+  </div>
+  <div className="h-[1px] bg-white/5 w-full mb-4" />
+  <div className="text-[10px] font-bold text-[#666] uppercase tracking-wider mb-2 flex items-center justify-between">
  Show Format
  {filters.format !== "ALL" && (
  <button onClick={() => setFilters(p => ({ ...p, format: "ALL" }))} className="text-[#ff4d2e] hover:underline">Reset</button>

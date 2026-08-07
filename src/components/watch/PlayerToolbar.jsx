@@ -1,12 +1,13 @@
 import { useRef, useEffect } from "react";
 import {
   Moon, FastForward, PlayCircle, SkipForward, SkipBack,
-  Heart, Flag, MessageSquare, Mic, Users, Clock
+  Heart, Flag, MessageSquare, Mic, Users, Clock, Monitor
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function PlayerToolbar({
   isFocusMode, setIsFocusMode,
+  isTheaterMode, setIsTheaterMode,
   autoNext, setAutoNext,
   autoPlay, setAutoPlay,
   activeEpisode, episodesList,
@@ -48,6 +49,15 @@ export default function PlayerToolbar({
           >
             <Moon size={16} fill={isFocusMode ? "currentColor" : "none"} />
             <span className="text-[13px] font-semibold tracking-wide">{t('player.focus')}</span>
+          </button>
+
+          <button
+            onClick={() => setIsTheaterMode(!isTheaterMode)}
+            className={`flex items-center gap-2 transition-all ${isTheaterMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+            title="Theater Mode"
+          >
+            <Monitor size={16} />
+            <span className="text-[13px] font-semibold tracking-wide">Theater</span>
           </button>
 
           <div className={`flex items-center gap-6 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
