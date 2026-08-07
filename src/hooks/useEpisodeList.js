@@ -67,10 +67,14 @@ export function useEpisodeList({ anime, malEpisodes, activeEpisode, setActiveEpi
     // Filter out filler episodes if the toggle is ON
     if (hideFillerEpisodes && fillerData) {
       result = result.filter(ep => {
-        const isFiller = fillerData[ep]?.isFiller;
+        const epData = fillerData[ep];
+        if (!epData) return true;
         // Don't hide the episode if the user is currently watching it
         if (ep === activeEpisode) return true;
-        return !isFiller;
+        
+        // Only hide Pure Filler or Recap (NOT Mixed Canon)
+        const isPureFiller = (epData.isFiller || epData.isRecap) && !epData.isMixed;
+        return !isPureFiller;
       });
     }
 
