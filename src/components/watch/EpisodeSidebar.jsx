@@ -35,12 +35,12 @@ export default function EpisodeSidebar({
       return tmdbEp.title.en;
     }
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     
-    const providerEp = anime?.episodes?.find(e => e.number === ep);
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
     
     return epData?.title
       || aniListEp?.title?.replace(/^Episode \d+\s*-\s*/i, '')
@@ -52,12 +52,12 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.image) return tmdbEp.image;
     
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     if (aniListEp?.thumbnail) return aniListEp.thumbnail;
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.images?.jpg?.image_url) return epData.images.jpg.image_url;
     
     return anime?.coverImage?.large || anime?.coverImage?.medium;
@@ -67,10 +67,10 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.overview) return tmdbEp.overview;
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.synopsis) return epData.synopsis;
     
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     if (aniListEp?.description) return aniListEp.description;
@@ -79,7 +79,7 @@ export default function EpisodeSidebar({
   };
 
   const getEpDate = (ep) => {
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.aired) {
       try {
         return new Date(epData.aired).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
