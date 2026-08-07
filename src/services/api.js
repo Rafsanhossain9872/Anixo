@@ -1382,9 +1382,17 @@ export async function getFillerEpisodes(malId, title) {
     if (!malId) return {};
     
     const fillerMap = {};
-    const { data: responseData } = await smartRequest("get", "/api/jikan/proxy", {
-      params: { path: `/v4/anime/${malId}/episodes?page=1` }
-    });
+    let responseData = null;
+    try {
+      const res = await smartRequest("get", "/api/jikan/proxy", {
+        params: { path: `/v4/anime/${malId}/episodes?page=1` }
+      });
+      responseData = res.data;
+    } catch (err) {
+      console.warn("Jikan proxy failed, using direct public Jikan API:", err.message);
+      const res = await axios.get(`${JIKAN_BASE_URL}/anime/${malId}/episodes?page=1`);
+      responseData = res.data;
+    }
     
     const data = responseData?.data;
     const pagination = responseData?.pagination;
@@ -1406,10 +1414,16 @@ export async function getFillerEpisodes(malId, title) {
       // Fetch sequentially to avoid Jikan 429 rate limits
       for (let p = 2; p <= maxPages; p++) {
         try {
-          const res = await smartRequest("get", "/api/jikan/proxy", {
-            params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
-          });
-          const pageData = res.data?.data;
+          let pageData = null;
+          try {
+            const res = await smartRequest("get", "/api/jikan/proxy", {
+              params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
+            });
+            pageData = res.data?.data;
+          } catch (err) {
+            const res = await axios.get(`${JIKAN_BASE_URL}/anime/${malId}/episodes?page=${p}`);
+            pageData = res.data?.data;
+          }
           if (pageData) {
             pageData.forEach(ep => {
               if (ep.filler || ep.recap) {
@@ -1438,8 +1452,14 @@ export async function getMalSyncMapping(malId) {
     const { data } = await smartRequest("get", `/api/malsync/${malId}`);
     return data;
   } catch (err) {
-    console.error("MalSync mapping failed:", err);
-    return null;
+    console.warn("MalSync proxy failed, using direct public API:", err.message);
+    try {
+      const { data } = await axios.get(`https://api.malsync.moe/mal/anime/${malId}`);
+      return data;
+    } catch (fallbackErr) {
+      console.error("MalSync fallback failed:", fallbackErr.message);
+      return null;
+    }
   }
 }
 
