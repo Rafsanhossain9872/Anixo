@@ -219,7 +219,7 @@ export function useStreamFetch({
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
-            url = `https://tenzora.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
             setStreamData({
               server_name: "SERVER 6 (Tenzora)",
               lang: langParam,

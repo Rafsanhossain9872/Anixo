@@ -154,7 +154,7 @@ export default function PlayerToolbar({
 
               {/* Anaixo.buzz Embeds Link */}
               <a
-                href="https://tenzora.buzz"
+                href="https://anixo.buzz"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center text-white/70 hover:text-discord-500 transition-all group"

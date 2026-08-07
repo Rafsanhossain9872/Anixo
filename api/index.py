@@ -123,8 +123,8 @@ app = Flask(__name__)
 allowed_domains = [
     "https://tenzora.top",
     "https://www.tenzora.top",
-    "https://tenzora.buzz",
-    "https://www.tenzora.buzz",
+    "https://anixo.buzz",
+    "https://www.anixo.buzz",
     "http://localhost:5173",   # Local Vite frontend
     "http://127.0.0.1:5173",   # Local Vite (IP)
     "http://localhost:3000",   # Local alternative frontend
