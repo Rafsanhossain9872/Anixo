@@ -95,7 +95,7 @@ export default function EpisodeSidebar({
   return (
     <aside className="lg:col-span-1 space-y-4 pt-4 lg:pt-0 animate-in fade-in slide-in-from-right duration-500 flex flex-col">
       <div
-        className="bg-[#0d0d0d] border border-white/15 overflow-hidden flex flex-col h-full lg:max-h-[600px] xl:max-h-[650px]"
+        className="bg-[#0d0d0d] border border-white/15 overflow-hidden flex flex-col h-[500px] md:h-[600px] lg:h-full lg:max-h-[600px] xl:max-h-[650px]"
         style={{ clipPath: 'polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px)' }}
       >
         {/* Header */}
