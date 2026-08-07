@@ -39,6 +39,18 @@ export default function EpisodeSidebar({
       || `Episode ${ep}`;
   };
 
+  const getEpThumb = (ep) => {
+    const aniListEp = anime?.streamingEpisodes?.find(
+      se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
+    ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
+    if (aniListEp?.thumbnail) return aniListEp.thumbnail;
+    
+    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    if (epData?.images?.jpg?.image_url) return epData.images.jpg.image_url;
+    
+    return anime?.coverImage?.large || anime?.coverImage?.medium;
+  };
+
   const isW2GNonHost = wtRoom && !wtRoom.isHost;
 
   return (
@@ -161,7 +173,7 @@ export default function EpisodeSidebar({
                     onClick={() => setActiveEpisode(ep)}
                     disabled={isW2GNonHost}
                     title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : isMixed ? "Mixed Canon/Filler" : ""}
-                    className={`w-full text-left flex flex-col gap-1 px-4 py-3 text-[12px] font-medium transition-all rounded-[2px] border relative overflow-hidden ${
+                    className={`w-full text-left flex flex-col gap-1 p-1.5 pr-3 text-[12px] font-medium transition-all rounded-[2px] border relative overflow-hidden ${
                       activeEpisode === ep
                         ? "bg-discord-600/10 text-discord-500 border-discord-500 shadow-lg"
                         : isW2GNonHost
@@ -173,19 +185,27 @@ export default function EpisodeSidebar({
                               : "bg-[#161616] text-white/70 border-white/15 hover:bg-[#202020] hover:text-white"
                     }`}
                   >
-                    {isFiller && <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/50" />}
-                    {isMixed && <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-500/50" />}
-                    <div className="flex items-start justify-between gap-3 w-full pl-1">
-                      <div className="flex items-start gap-3">
-                        <span className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-40 shrink-0 mt-[2px]">{t('sidebar.ep')}{String(ep).padStart(2, '0')}</span>
-                        <span className="line-clamp-2 leading-tight flex-1">{getEpTitle(ep)}</span>
+                    {isFiller && <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/50 z-10" />}
+                    {isMixed && <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-500/50 z-10" />}
+                    <div className="flex w-full items-center">
+                      <img
+                        src={getEpThumb(ep)}
+                        alt=""
+                        loading="lazy"
+                        className="w-[80px] h-[45px] object-cover shrink-0 bg-white/5 mr-3 rounded-[2px]"
+                      />
+                      <div className="flex items-start justify-between gap-3 w-full pl-1">
+                        <div className="flex items-start gap-3">
+                          <span className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-40 shrink-0 mt-[2px]">{t('sidebar.ep')}{String(ep).padStart(2, '0')}</span>
+                          <span className="line-clamp-2 leading-tight flex-1">{getEpTitle(ep)}</span>
+                        </div>
+                        {isFiller && (
+                          <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 shrink-0">Filler</span>
+                        )}
+                        {isMixed && (
+                          <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-500 shrink-0">Mixed</span>
+                        )}
                       </div>
-                      {isFiller && (
-                        <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 shrink-0">Filler</span>
-                      )}
-                      {isMixed && (
-                        <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-500 shrink-0">Mixed</span>
-                      )}
                     </div>
                   </button>
                 );

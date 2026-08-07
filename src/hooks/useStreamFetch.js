@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 /**
  * useStreamFetch
@@ -13,6 +13,7 @@ export function useStreamFetch({
   playerLang,
   activeServer,
   autoPlay,
+  autoNext,
   setPageLoading,
   isMal,
   initialTime = 0,
@@ -22,6 +23,13 @@ export function useStreamFetch({
   const [streamLoading, setStreamLoading] = useState(true);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+
+  // Keep autoPlay/autoNext in refs so the fetch effect always reads latest values
+  // without triggering a re-fetch when they change
+  const autoPlayRef = useRef(autoPlay);
+  const autoNextRef = useRef(autoNext);
+  useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
+  useEffect(() => { autoNextRef.current = autoNext; }, [autoNext]);
 
   // Sync global page loader with iframe loading
   useEffect(() => {
@@ -90,6 +98,16 @@ export function useStreamFetch({
              if (data && data.streams && data.streams.length > 0) {
                  const hlsStream = data.streams.find(s => s.type === "hls" || s.url.includes('.m3u8')) || data.streams[0];
                  
+                 // Build skipTimes in the format AnikoPlayer expects: { op: [start, end], ed: [start, end] }
+                 const apiSkipTimes = {};
+                 if (data.intro && data.intro.end > 0) {
+                   apiSkipTimes.op = [data.intro.start, data.intro.end];
+                 }
+                 if (data.outro && data.outro.end > 0) {
+                   apiSkipTimes.ed = [data.outro.start, data.outro.end];
+                 }
+                 const hasSkipData = Object.keys(apiSkipTimes).length > 0;
+
                  // Instead of an iframe URL, we inject the sources and subtitles directly into streamData
                  setStreamData({
                      server_name: "SERVER 1 (Aniko)",
@@ -97,10 +115,8 @@ export function useStreamFetch({
                      sources: [{ url: hlsStream.url, type: 'hls' }],
                      subtitles: data.subtitles || [],
                      all_streams: data.streams,
-                     skipTimes: {
-                         op: data.intro && data.intro.end > 0 ? { interval: { startTime: data.intro.start, endTime: data.intro.end }, skipType: 'op' } : null,
-                         ed: data.outro && data.outro.end > 0 ? { interval: { startTime: data.outro.start, endTime: data.outro.end }, skipType: 'ed' } : null,
-                     }
+                     // Only set skipTimes if API returned valid data, otherwise leave undefined so AniSkip fallback works
+                     ...(hasSkipData ? { skipTimes: apiSkipTimes } : {}),
                  });
                  url = hlsStream.url;
              } else {
@@ -188,11 +204,11 @@ export function useStreamFetch({
 
           if (anilistId) {
             const queryParams = [];
-            if (autoPlay) {
+            if (autoPlayRef.current) {
               queryParams.push("autoplay=true");
             }
             queryParams.push("autoSkip=false");
-            queryParams.push("autoNext=false");
+            queryParams.push(`autoNext=${autoNextRef.current}`);
             queryParams.push("lang-type=false");
 
             if (initialTime && initialTime > 0) {
@@ -219,7 +235,7 @@ export function useStreamFetch({
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
-            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}`;
+            url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}?autoplay=${autoPlayRef.current ? '1' : '0'}&autonext=${autoNextRef.current ? '1' : '0'}`;
             setStreamData({
               server_name: "SERVER 6 (Tenzora)",
               lang: langParam,
@@ -234,7 +250,7 @@ export function useStreamFetch({
             // Inject Autoplay and premium params for Megaplay
             try {
               const urlObj = new URL(url);
-              if (autoPlay) {
+              if (autoPlayRef.current) {
                 urlObj.searchParams.set("autoplay", "1");
                 urlObj.searchParams.set("muted", "1");
               } else {
@@ -283,7 +299,6 @@ export function useStreamFetch({
     activeEpisode,
     playerLang,
     activeServer,
-    autoPlay,
     setPageLoading,
     isMal,
     initialTime,

@@ -126,6 +126,15 @@ const AnikoPlayer = React.forwardRef(({
     const subSettingsOptions = $('ap-sub-settings-options');
     const btnRewind = $('ap-btn-rewind');
     const btnForward = $('ap-btn-forward');
+    const btnOpenVolBoost = $('ap-btn-open-volboost');
+    const panelVolBoost = $('ap-panel-volboost');
+    const btnBackVolBoost = $('ap-btn-back-volboost');
+    const valVolBoost = $('ap-val-volboost');
+    const volBoostSlider = $('ap-volboost-slider');
+    const volBoostValue = $('ap-volboost-value');
+    const volBoostFill = $('ap-volboost-fill');
+    const volBoostPresets = root.querySelectorAll('.ap-volboost-preset');
+    const previewText = $('ap-ss-preview-text');
 
     // ─── State ──────────────────────────────────────────────
     let hls = null;
@@ -136,10 +145,62 @@ const AnikoPlayer = React.forwardRef(({
     let _currentSpeed = 1;
     let currentQualityLevel = -1;
     let activeSubTrack = -1;
+    let savedSubLang = localStorage.getItem('aniko_sub_lang');
     let isAutoSkip = localStorage.getItem('aniko_autoskip') === 'true';
     let subColor = localStorage.getItem('aniko_sub_color') || '#ffffff';
     let subBg = localStorage.getItem('aniko_sub_bg') || 'rgba(0, 0, 0, 0.75)';
     let subSize = localStorage.getItem('aniko_sub_size') || 'clamp(10px, 2.5vw, 18px)';
+    let subFont = localStorage.getItem('aniko_sub_font') || "'Inter', sans-serif";
+    let subShadow = localStorage.getItem('aniko_sub_shadow') || 'none';
+
+    // ─── Volume Enhancement (Web Audio API) ──────────────────
+    let audioCtx = null;
+    let gainNode = null;
+    let mediaSourceNode = null;
+    let currentBoost = parseFloat(localStorage.getItem('aniko_vol_boost')) || 100;
+
+    function initAudioContext() {
+      if (audioCtx) return; // Already initialized
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        mediaSourceNode = audioCtx.createMediaElementSource(video);
+        gainNode = audioCtx.createGain();
+        mediaSourceNode.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        applyVolumeBoost(currentBoost);
+      } catch (err) {
+        console.warn('[AnikoPlayer] Failed to init AudioContext for volume boost:', err);
+      }
+    }
+
+    function applyVolumeBoost(pct) {
+      currentBoost = pct;
+      if (gainNode) {
+        gainNode.gain.value = pct / 100;
+      }
+      localStorage.setItem('aniko_vol_boost', String(pct));
+
+      // Update UI elements
+      if (volBoostSlider) volBoostSlider.value = pct;
+      if (volBoostValue) volBoostValue.textContent = pct + '%';
+      if (volBoostFill) volBoostFill.style.width = ((pct - 100) / 500) * 100 + '%';
+      if (valVolBoost) valVolBoost.textContent = pct <= 100 ? 'Off' : pct + '%';
+
+      // Update preset button active states
+      volBoostPresets?.forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.val) === pct);
+      });
+    }
+
+    // Initialize audio context on first user interaction with volume boost
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        initAudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
 
     // Event listener cleanup tracker
     const listeners = [];
@@ -153,11 +214,23 @@ const AnikoPlayer = React.forwardRef(({
       root.style.setProperty('--sub-color', subColor);
       root.style.setProperty('--sub-bg', subBg);
       root.style.setProperty('--sub-size', subSize);
+      root.style.setProperty('--sub-font', subFont);
+      root.style.setProperty('--sub-shadow', subShadow);
 
       if (subSettingsOptions) {
         subSettingsOptions.querySelectorAll('.sub-opt-color').forEach(b => b.classList.toggle('active', b.dataset.val === subColor));
         subSettingsOptions.querySelectorAll('.sub-opt-bg').forEach(b => b.classList.toggle('active', b.dataset.val === subBg));
         subSettingsOptions.querySelectorAll('.sub-opt-size').forEach(b => b.classList.toggle('active', b.dataset.val === subSize));
+        subSettingsOptions.querySelectorAll('.sub-opt-font').forEach(b => b.classList.toggle('active', b.dataset.val === subFont));
+        subSettingsOptions.querySelectorAll('.sub-opt-shadow').forEach(b => b.classList.toggle('active', b.dataset.val === subShadow));
+      }
+
+      if (previewText) {
+        previewText.style.color = subColor;
+        previewText.style.background = subBg;
+        previewText.style.fontSize = subSize;
+        previewText.style.fontFamily = subFont;
+        previewText.style.textShadow = subShadow;
       }
     }
     applySubtitleSettings();
@@ -580,6 +653,7 @@ const AnikoPlayer = React.forwardRef(({
         panelAutoSkip?.classList.add('ap-hidden');
         panelSubs?.classList.add('ap-hidden');
         panelSubSettings?.classList.add('ap-hidden');
+        panelVolBoost?.classList.add('ap-hidden');
       }
       activeMenu = null;
     }
@@ -633,10 +707,42 @@ const AnikoPlayer = React.forwardRef(({
       panelSubs?.classList.remove('ap-hidden');
     });
 
+    // Volume Boost panel navigation
+    addListener(btnOpenVolBoost, 'click', (e) => {
+      e.stopPropagation();
+      panelMain?.classList.add('ap-hidden');
+      panelVolBoost?.classList.remove('ap-hidden');
+    });
+
+    addListener(btnBackVolBoost, 'click', (e) => {
+      e.stopPropagation();
+      panelVolBoost?.classList.add('ap-hidden');
+      panelMain?.classList.remove('ap-hidden');
+    });
+
+    // Volume Boost slider interaction
+    addListener(volBoostSlider, 'input', (e) => {
+      e.stopPropagation();
+      ensureAudioContext();
+      applyVolumeBoost(parseInt(e.target.value));
+    });
+
+    // Volume Boost preset buttons
+    volBoostPresets?.forEach(btn => {
+      addListener(btn, 'click', (e) => {
+        e.stopPropagation();
+        ensureAudioContext();
+        applyVolumeBoost(parseInt(btn.dataset.val));
+      });
+    });
+
+    // Initialize Volume Boost UI from saved state
+    applyVolumeBoost(currentBoost);
+
     // Subtitle settings selection
     addListener(subSettingsOptions, 'click', (e) => {
       e.stopPropagation();
-      const target = e.target.closest('.ap-menu-option');
+      const target = e.target.closest('[data-val]');
       if (!target) return;
       const val = target.dataset.val;
       if (target.classList.contains('sub-opt-color')) {
@@ -648,6 +754,12 @@ const AnikoPlayer = React.forwardRef(({
       } else if (target.classList.contains('sub-opt-size')) {
         subSize = val;
         localStorage.setItem('aniko_sub_size', val);
+      } else if (target.classList.contains('sub-opt-font')) {
+        subFont = val;
+        localStorage.setItem('aniko_sub_font', val);
+      } else if (target.classList.contains('sub-opt-shadow')) {
+        subShadow = val;
+        localStorage.setItem('aniko_sub_shadow', val);
       }
       applySubtitleSettings();
     });
@@ -768,6 +880,7 @@ const AnikoPlayer = React.forwardRef(({
       offBtn.textContent = 'Off';
       offBtn.addEventListener('click', () => {
         setSubTrack(-1);
+        localStorage.setItem('aniko_sub_lang', 'Off');
         closeAllMenus();
       });
       subOptions.appendChild(offBtn);
@@ -778,6 +891,8 @@ const AnikoPlayer = React.forwardRef(({
         btn.textContent = sub.label || sub.lang || sub.language || `Track ${i + 1}`;
         btn.addEventListener('click', () => {
           setSubTrack(i);
+          const lbl = sub.label || sub.lang || sub.language || `Track ${i + 1}`;
+          localStorage.setItem('aniko_sub_lang', lbl);
           closeAllMenus();
         });
         subOptions.appendChild(btn);
@@ -918,6 +1033,7 @@ const AnikoPlayer = React.forwardRef(({
 
       let englishIndex = -1;
       let defaultIndex = -1;
+      let matchIndex = -1;
 
       subtitles.forEach((sub, i) => {
         const track = document.createElement('track');
@@ -928,13 +1044,18 @@ const AnikoPlayer = React.forwardRef(({
         const isEng = track.label.toLowerCase().includes('english') || track.label.toLowerCase().includes('eng') || track.srclang.toLowerCase() === 'en';
         if (isEng && englishIndex === -1) englishIndex = i;
         if (sub.default || sub.isDefault) defaultIndex = i;
+        if (savedSubLang && track.label === savedSubLang) matchIndex = i;
 
         track.src = sub.url || sub.file;
         video.appendChild(track);
       });
 
       if (activeSubTrack === -1 || activeSubTrack >= subtitles.length) {
-        if (englishIndex !== -1) {
+        if (savedSubLang === 'Off') {
+          activeSubTrack = -1;
+        } else if (matchIndex !== -1) {
+          activeSubTrack = matchIndex;
+        } else if (englishIndex !== -1) {
           activeSubTrack = englishIndex;
         } else if (defaultIndex !== -1) {
           activeSubTrack = defaultIndex;
@@ -1003,6 +1124,7 @@ const AnikoPlayer = React.forwardRef(({
 
         hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
           hideLoading();
+
           buildQualityMenu(data.levels);
           addSubtitleTracks();
           buildSubMenu(subtitles);
@@ -1097,6 +1219,20 @@ const AnikoPlayer = React.forwardRef(({
       listeners.forEach(({ el, evt, handler, opts }) => {
         el.removeEventListener(evt, handler, opts);
       });
+
+      // Clean up Web Audio API
+      if (mediaSourceNode) {
+        try { mediaSourceNode.disconnect(); } catch { /* already disconnected */ }
+      }
+      if (gainNode) {
+        try { gainNode.disconnect(); } catch { /* already disconnected */ }
+      }
+      if (audioCtx && audioCtx.state !== 'closed') {
+        try { audioCtx.close(); } catch { /* already closed */ }
+      }
+      audioCtx = null;
+      gainNode = null;
+      mediaSourceNode = null;
 
       if (hls) {
         hls.destroy();
@@ -1302,6 +1438,10 @@ const AnikoPlayer = React.forwardRef(({
                       <span>Captions</span>
                       <span className="ap-settings-val ap-val-subs">Off</span>
                     </button>
+                    <button className="ap-settings-item ap-btn-open-volboost">
+                      <span>Volume Boost</span>
+                      <span className="ap-settings-val ap-val-volboost">Off</span>
+                    </button>
                   </div>
 
                   {/* Quality Panel */}
@@ -1345,22 +1485,115 @@ const AnikoPlayer = React.forwardRef(({
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                       Subtitle Settings
                     </button>
-                    <div className="ap-menu-options ap-sub-settings-options" style={{ paddingBottom: '8px', maxHeight: '250px', overflowY: 'auto' }}>
-                      <div className="ap-menu-title" style={{ padding: '8px 14px 4px', fontSize: '11px', opacity: 0.7 }}>COLOR</div>
-                      <button className="ap-menu-option sub-opt-color" data-val="#ffffff">White</button>
-                      <button className="ap-menu-option sub-opt-color" data-val="#ffff00">Yellow</button>
-                      <button className="ap-menu-option sub-opt-color" data-val="#00ffff">Cyan</button>
-                      <button className="ap-menu-option sub-opt-color" data-val="#00ff00">Green</button>
 
-                      <div className="ap-menu-title" style={{ padding: '8px 14px 4px', fontSize: '11px', opacity: 0.7 }}>BACKGROUND</div>
-                      <button className="ap-menu-option sub-opt-bg" data-val="rgba(0, 0, 0, 0)">Transparent</button>
-                      <button className="ap-menu-option sub-opt-bg" data-val="rgba(0, 0, 0, 0.75)">Semi-Transparent</button>
-                      <button className="ap-menu-option sub-opt-bg" data-val="rgba(0, 0, 0, 1)">Solid Black</button>
+                    {/* Live Preview */}
+                    <div className="ap-ss-preview">
+                      <span className="ap-ss-preview-text">Preview Text</span>
+                    </div>
 
-                      <div className="ap-menu-title" style={{ padding: '8px 14px 4px', fontSize: '11px', opacity: 0.7 }}>SIZE</div>
-                      <button className="ap-menu-option sub-opt-size" data-val="clamp(10px, 2.5vw, 18px)">Small</button>
-                      <button className="ap-menu-option sub-opt-size" data-val="clamp(12px, 3.5vw, 24px)">Normal</button>
-                      <button className="ap-menu-option sub-opt-size" data-val="clamp(16px, 4.5vw, 32px)">Large</button>
+                    <div className="ap-menu-options ap-sub-settings-options" style={{ paddingBottom: '8px', maxHeight: '320px', overflowY: 'auto' }}>
+
+                      {/* Color Swatches */}
+                      <div className="ap-ss-section-title">COLOR</div>
+                      <div className="ap-ss-swatches">
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#ffffff" style={{ background: '#ffffff' }} title="White"></button>
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#ffff00" style={{ background: '#ffff00' }} title="Yellow"></button>
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#00ffff" style={{ background: '#00ffff' }} title="Cyan"></button>
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#00ff00" style={{ background: '#00ff00' }} title="Green"></button>
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#ff6b6b" style={{ background: '#ff6b6b' }} title="Red"></button>
+                        <button className="ap-ss-swatch sub-opt-color" data-val="#ffa500" style={{ background: '#ffa500' }} title="Orange"></button>
+                      </div>
+
+                      {/* Background */}
+                      <div className="ap-ss-section-title">BACKGROUND</div>
+                      <div className="ap-ss-chips">
+                        <button className="ap-ss-chip sub-opt-bg" data-val="rgba(0, 0, 0, 0)">None</button>
+                        <button className="ap-ss-chip sub-opt-bg" data-val="rgba(0, 0, 0, 0.5)">Light</button>
+                        <button className="ap-ss-chip sub-opt-bg" data-val="rgba(0, 0, 0, 0.75)">Medium</button>
+                        <button className="ap-ss-chip sub-opt-bg" data-val="rgba(0, 0, 0, 1)">Solid</button>
+                      </div>
+
+                      {/* Size */}
+                      <div className="ap-ss-section-title">SIZE</div>
+                      <div className="ap-ss-chips">
+                        <button className="ap-ss-chip sub-opt-size" data-val="clamp(10px, 2.5vw, 18px)">S</button>
+                        <button className="ap-ss-chip sub-opt-size" data-val="clamp(12px, 3.5vw, 24px)">M</button>
+                        <button className="ap-ss-chip sub-opt-size" data-val="clamp(16px, 4.5vw, 32px)">L</button>
+                        <button className="ap-ss-chip sub-opt-size" data-val="clamp(20px, 5.5vw, 40px)">XL</button>
+                      </div>
+
+                      {/* Font Family */}
+                      <div className="ap-ss-section-title">FONT</div>
+                      <div className="ap-ss-chips ap-ss-chips--wide">
+                        <button className="ap-ss-chip sub-opt-font" data-val="'Inter', sans-serif" style={{ fontFamily: 'Inter, sans-serif' }}>Sans</button>
+                        <button className="ap-ss-chip sub-opt-font" data-val="Georgia, serif" style={{ fontFamily: 'Georgia, serif' }}>Serif</button>
+                        <button className="ap-ss-chip sub-opt-font" data-val="'Courier New', monospace" style={{ fontFamily: "'Courier New', monospace" }}>Mono</button>
+                        <button className="ap-ss-chip sub-opt-font" data-val="'Comic Sans MS', cursive" style={{ fontFamily: "'Comic Sans MS', cursive" }}>Fun</button>
+                      </div>
+
+                      {/* Text Shadow */}
+                      <div className="ap-ss-section-title">TEXT SHADOW</div>
+                      <div className="ap-ss-chips">
+                        <button className="ap-ss-chip sub-opt-shadow" data-val="none">None</button>
+                        <button className="ap-ss-chip sub-opt-shadow" data-val="1px 1px 3px rgba(0,0,0,0.9), -1px -1px 3px rgba(0,0,0,0.9)">Outline</button>
+                        <button className="ap-ss-chip sub-opt-shadow" data-val="2px 2px 4px rgba(0,0,0,0.8)">Drop</button>
+                        <button className="ap-ss-chip sub-opt-shadow" data-val="0 0 8px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,0.5)">Glow</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Volume Boost Panel */}
+                  <div className="ap-settings-panel ap-panel-volboost ap-hidden">
+                    <button className="ap-settings-back-btn ap-btn-back-volboost">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                      Volume Boost
+                    </button>
+
+                    {/* Volume Level Display */}
+                    <div className="ap-vb-display">
+                      <div className="ap-vb-icon-wrap">
+                        <svg className="ap-vb-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                        </svg>
+                      </div>
+                      <div className="ap-vb-level">
+                        <span className="ap-volboost-value">100%</span>
+                        <span className="ap-vb-label">Volume Level</span>
+                      </div>
+                    </div>
+
+                    {/* Slider Section */}
+                    <div className="ap-vb-slider-section">
+                      <div className="ap-volboost-slider-wrapper">
+                        <div className="ap-volboost-track">
+                          <div className="ap-volboost-fill" style={{ width: '0%' }}></div>
+                        </div>
+                        <input
+                          type="range"
+                          className="ap-volboost-slider"
+                          min="100"
+                          max="600"
+                          step="10"
+                          defaultValue="100"
+                        />
+                      </div>
+                      <div className="ap-vb-range-labels">
+                        <span>100%</span>
+                        <span>300%</span>
+                        <span>600%</span>
+                      </div>
+                    </div>
+
+                    {/* Preset Chips */}
+                    <div className="ap-vb-presets">
+                      <button className="ap-vb-chip ap-volboost-preset active" data-val="100">1x</button>
+                      <button className="ap-vb-chip ap-volboost-preset" data-val="150">1.5x</button>
+                      <button className="ap-vb-chip ap-volboost-preset" data-val="200">2x</button>
+                      <button className="ap-vb-chip ap-volboost-preset" data-val="300">3x</button>
+                      <button className="ap-vb-chip ap-volboost-preset" data-val="400">4x</button>
+                      <button className="ap-vb-chip ap-volboost-preset" data-val="600">6x</button>
                     </div>
                   </div>
                 </div>
