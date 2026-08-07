@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   Moon, FastForward, PlayCircle, SkipForward, SkipBack,
   Heart, Flag, MessageSquare, Mic, Users, Clock, Monitor
@@ -23,6 +23,19 @@ export default function PlayerToolbar({
 }) {
   const { t } = useTranslation();
   const watchlistRef = useRef(null);
+  const wtRef = useRef(null);
+  const [showWtDropdown, setShowWtDropdown] = useState(false);
+
+  // Close wt dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (wtRef.current && !wtRef.current.contains(event.target)) {
+        setShowWtDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Close watchlist dropdown when clicking outside
   useEffect(() => {
@@ -39,10 +52,10 @@ export default function PlayerToolbar({
     <>
       {/* Action Toolbar */}
       <section
-        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex flex-col xl:flex-row flex-wrap items-center justify-between gap-y-4 gap-x-4 select-none"
+        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-4 flex flex-row flex-nowrap sm:flex-wrap items-center justify-between gap-4 select-none overflow-x-auto sm:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {/* Primary Controls */}
-        <div className="flex items-center justify-between w-full xl:w-auto xl:justify-start gap-2 sm:gap-4">
+        <div className="flex flex-nowrap shrink-0 items-center justify-start gap-4 sm:gap-6">
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => setIsFocusMode(!isFocusMode)}
@@ -63,7 +76,7 @@ export default function PlayerToolbar({
             </button>
           </div>
 
-          <div className="w-px h-5 bg-white/10 hidden sm:block"></div>
+          <div className="w-px h-5 bg-white/10 block"></div>
 
           <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
             <button
@@ -85,7 +98,7 @@ export default function PlayerToolbar({
             </button>
           </div>
 
-          <div className="w-px h-5 bg-white/10 hidden sm:block"></div>
+          <div className="w-px h-5 bg-white/10 block"></div>
 
           <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
             <button
@@ -108,7 +121,7 @@ export default function PlayerToolbar({
         </div>
 
         {/* Secondary Controls */}
-        <div className={`flex items-center justify-between w-full xl:w-auto xl:justify-end gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+        <div className={`flex flex-nowrap shrink-0 items-center justify-end gap-4 sm:gap-6 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
           {!isFocusMode && !isTheaterMode && (
             <>
               <div className="relative" ref={watchlistRef}>
@@ -128,7 +141,9 @@ export default function PlayerToolbar({
                 </button>
 
                 {showWatchlistDropdown && (
-                  <div className="absolute bottom-full mb-3 right-0 bg-[#1a1c21] border border-white/15 rounded-[4px] shadow-2xl py-2 min-w-[140px] z-[110] animate-in slide-in-from-bottom-2 duration-200">
+                  <>
+                    <div className="fixed inset-0 z-[100] bg-black/60 sm:hidden" onClick={(e) => { e.stopPropagation(); setShowWatchlistDropdown(false); }}></div>
+                    <div className="fixed bottom-0 left-0 w-full sm:absolute sm:bottom-full sm:mb-3 sm:right-0 bg-[#1a1c21] border-t sm:border border-white/15 rounded-t-xl sm:rounded-[4px] shadow-2xl py-4 sm:py-2 sm:min-w-[140px] z-[110] animate-in slide-in-from-bottom-2 duration-200">
                     {["Watching", "Planning", "Completed", "On-Hold", "Dropped"].map((status) => {
                       const bookmarkItem = backendWatchlist.find(item => item.animeId === String(id));
                       const isActive = bookmarkItem?.status === status;
@@ -136,7 +151,7 @@ export default function PlayerToolbar({
                         <button
                           key={status}
                           onClick={() => handleUpdateWatchlistStatus(status)}
-                          className={`w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider transition-colors ${isActive ? 'text-discord-500 bg-discord-500/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                          className={`w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[13px] sm:text-[11px] uppercase tracking-wider transition-colors ${isActive ? 'text-discord-500 bg-discord-500/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
                         >
                           {status}
                         </button>
@@ -146,7 +161,7 @@ export default function PlayerToolbar({
                       <div className="border-t border-white/15 mt-2 pt-2">
                         <button
                           onClick={() => handleUpdateWatchlistStatus("Remove")}
-                          className="w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider text-discord-600 hover:bg-discord-600/10 transition-colors"
+                          className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[13px] sm:text-[11px] uppercase tracking-wider text-discord-600 hover:bg-discord-600/10 transition-colors"
                         >
                           Remove
                         </button>
@@ -155,13 +170,14 @@ export default function PlayerToolbar({
                     <div className={isBookmarked ? "" : "border-t border-white/15 mt-2 pt-2"}>
                       <button
                         onClick={() => setShowWatchlistDropdown(false)}
-                        className="w-full text-left px-4 py-2 text-[11px] uppercase tracking-wider text-discord-600 hover:text-discord-500 transition-colors"
+                        className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[15px] sm:text-[11px] uppercase tracking-wider text-discord-600 hover:text-discord-500 transition-colors"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
-                )}
+                </>
+              )}
               </div>
 
               <button
@@ -183,25 +199,34 @@ export default function PlayerToolbar({
               </a>
 
               {!wtRoom && handleCreateWtRoom && (
-                <div className="flex items-center bg-discord-500/10 rounded-full border border-discord-500/20 overflow-hidden">
+                <div className="relative" ref={wtRef}>
                   <button
-                    onClick={handleCreateWtRoom}
-                    className="flex items-center justify-center transition-all text-white/60 hover:text-discord-500 hover:bg-discord-500/20 px-2.5 sm:px-3 py-1.5"
-                    title="Start Watch Together Now"
+                    onClick={() => setShowWtDropdown(!showWtDropdown)}
+                    className={`flex items-center transition-all ${showWtDropdown ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+                    title="Watch Together"
                   >
-                    <Users size={14} className="w-4 h-4" />
+                    <Users size={15} className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  {handleScheduleWtRoom && (
+                  {showWtDropdown && (
                     <>
-                      <div className="w-px h-5 bg-discord-500/30"></div>
+                      <div className="fixed inset-0 z-[100] bg-black/60 sm:hidden" onClick={(e) => { e.stopPropagation(); setShowWtDropdown(false); }}></div>
+                      <div className="fixed bottom-0 left-0 w-full sm:absolute sm:bottom-full sm:mb-3 sm:right-0 bg-[#1a1c21] border-t sm:border border-white/15 rounded-t-xl sm:rounded-[4px] shadow-2xl py-4 sm:py-2 sm:min-w-[150px] z-[110] animate-in slide-in-from-bottom-2 duration-200">
                       <button
-                        onClick={handleScheduleWtRoom}
-                        className="px-2.5 sm:px-3 py-1.5 text-white/60 hover:text-discord-500 hover:bg-discord-500/20 transition-all"
-                        title="Schedule for Later"
+                        onClick={() => { handleCreateWtRoom(); setShowWtDropdown(false); }}
+                        className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[13px] sm:text-[11px] uppercase tracking-wider text-white/60 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-3 sm:gap-2"
                       >
-                        <Clock size={14} className="w-4 h-4" />
+                        <Users size={12} /> Start Now
                       </button>
-                    </>
+                      {handleScheduleWtRoom && (
+                        <button
+                          onClick={() => { handleScheduleWtRoom(); setShowWtDropdown(false); }}
+                          className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[13px] sm:text-[11px] uppercase tracking-wider text-white/60 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-3 sm:gap-2"
+                        >
+                          <Clock size={12} /> Schedule Later
+                        </button>
+                      )}
+                    </div>
+                  </>
                   )}
                 </div>
               )}
