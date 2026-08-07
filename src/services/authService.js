@@ -1,3 +1,4 @@
+import axios from "axios";
 import { authApi, backendApi } from "./api";
 
 export const login = async (email, password) => {
@@ -6,7 +7,7 @@ export const login = async (email, password) => {
 };
 
 export const loginWithGoogle = async (token) => {
-  const { data } = await authApi.post("https://anixo-wckh.onrender.com/auth/google", { token });
+  const { data } = await axios.post("https://anixo-wckh.onrender.com/auth/google", { token });
   return data;
 };
 
