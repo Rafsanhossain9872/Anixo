@@ -193,7 +193,7 @@ export default function EpisodeSidebar({
             </div>
           ) : episodeLayout === "list" && (
             <div className="flex flex-col gap-2">
-              {currentSlice.map(ep => {
+              {currentSlice.map((ep, index) => {
                 const isFiller = fillerData && fillerData[ep]?.isFiller;
                 const isMixed = fillerData && fillerData[ep]?.isMixed;
                 return (
@@ -218,7 +218,9 @@ export default function EpisodeSidebar({
                       <img
                         src={getEpThumb(ep)}
                         alt=""
-                        loading="lazy"
+                        loading={index < 4 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchpriority={index < 4 ? "high" : "auto"}
                         className="w-full h-full object-cover bg-white/5"
                       />
                       <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-[2px] rounded-[3px] border border-white/10 shadow-sm backdrop-blur-md">
