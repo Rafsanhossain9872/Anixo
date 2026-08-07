@@ -148,22 +148,12 @@ export default function EpisodeSidebar({
           {/* Filler Toggle & Info */}
           {!isEpisodeSearchOpen && fillerData && Object.keys(fillerData).length > 0 && (
             <div className="flex items-center justify-between mt-2 pt-3 border-t border-white/5">
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] text-white/40 uppercase font-bold tracking-widest flex items-center gap-1.5">
-                  <Filter size={12} />
-                  Hide Filler Episodes
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] text-amber-500/80 uppercase font-bold tracking-widest flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
-                    Filler
-                  </span>
-                  <span className="text-[9px] text-emerald-500/80 uppercase font-bold tracking-widest flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
-                    Mixed Canon
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-white/50 flex items-center gap-1.5">
+                    <Filter size={12} />
+                    Hide Filler Episodes
                   </span>
                 </div>
-              </div>
               <button
                 onClick={() => setHideFillerEpisodes(!hideFillerEpisodes)}
                 className={`relative w-8 h-4 rounded-full transition-colors ${hideFillerEpisodes ? 'bg-discord-500' : 'bg-white/10'}`}
