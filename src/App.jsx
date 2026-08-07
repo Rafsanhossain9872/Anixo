@@ -9,6 +9,7 @@ import ServerCostNotice from "./components/common/ServerCostNotice";
 // import W2GNoticeBanner from "./components/common/W2GNoticeBanner";
 import { ToastProvider } from "./context/ToastContext";
 import { ConfirmationProvider } from "./context/ConfirmationContext";
+import { initSecurity } from "./utils/security";
 // Eagerly loaded pages (critical path — must render instantly)
 import Portal from "./pages/Portal";
 import Home from "./pages/Home";
@@ -131,6 +132,13 @@ function AppRoutes() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Only run security scripts in production to allow local debugging
+    if (import.meta.env.PROD) {
+      initSecurity();
+    }
+  }, []);
+
   return (
     <Router>
       <ConfirmationProvider>
