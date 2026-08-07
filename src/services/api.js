@@ -1515,3 +1515,14 @@ export async function getStaffDetails(id) {
   }
   return null;
 }
+
+export async function getTmdbEpisodes(anilistId) {
+  if (!anilistId) return null;
+  try {
+    const { data } = await smartRequest("get", `/api/tmdb/episodes/${anilistId}`);
+    return data?.episodes || null;
+  } catch (error) {
+    console.error("Error fetching TMDB episodes:", error);
+    return null;
+  }
+}

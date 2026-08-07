@@ -52,90 +52,90 @@ export default function PlayerToolbar({
     <>
       {/* Action Toolbar */}
       <section
-        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-3 sm:px-4 lg:px-6 py-4 flex flex-row flex-nowrap sm:flex-wrap items-center justify-between gap-4 select-none overflow-x-auto sm:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="relative w-full bg-[#121418] border-x border-b border-white/15 px-2.5 sm:px-3 lg:px-4 py-1.5 flex flex-row flex-nowrap sm:flex-wrap items-center justify-between gap-2.5 select-none overflow-x-auto sm:overflow-visible [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {/* Primary Controls */}
-        <div className="flex flex-nowrap shrink-0 items-center justify-start gap-4 sm:gap-6">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-nowrap shrink-0 items-center justify-start gap-2.5 sm:gap-3.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               onClick={() => setIsFocusMode(!isFocusMode)}
-              className={`flex items-center gap-1 sm:gap-2 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+              className={`flex items-center gap-1 transition-all ${isFocusMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
               title={t('player.focus')}
             >
-              <Moon size={15} className="w-4 h-4" fill={isFocusMode ? "currentColor" : "none"} />
-              <span className="hidden md:inline text-[12px] font-medium">{t('player.focus')}</span>
+              <Moon size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill={isFocusMode ? "currentColor" : "none"} />
+              <span className="hidden md:inline text-[10px] font-medium">{t('player.focus')}</span>
             </button>
 
             <button
               onClick={() => setIsTheaterMode(!isTheaterMode)}
-              className={`flex items-center gap-1 sm:gap-2 transition-all ${isTheaterMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+              className={`flex items-center gap-1 transition-all ${isTheaterMode ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
               title="Theater Mode"
             >
-              <Monitor size={15} className="w-4 h-4" />
-              <span className="hidden md:inline text-[12px] font-medium">Theater</span>
+              <Monitor size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden md:inline text-[10px] font-medium">Theater</span>
             </button>
           </div>
 
-          <div className="w-px h-5 bg-white/10 block"></div>
+          <div className="w-px h-3.5 bg-white/10 block"></div>
 
-          <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+          <div className={`flex items-center gap-2 sm:gap-2.5 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
             <button
               onClick={() => setAutoNext(!autoNext)}
-              className="flex items-center gap-1 sm:gap-2 group transition-all"
+              className="flex items-center gap-1 group transition-all"
               title={t('player.autoNext')}
             >
-              <FastForward size={15} className={`w-4 h-4 transition-all ${autoNext ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
-              <span className={`hidden md:inline text-[12px] font-medium ${autoNext ? 'text-white' : 'text-white/70'}`}>{t('player.autoNext')}</span>
+              <FastForward size={12} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-all ${autoNext ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
+              <span className={`hidden md:inline text-[10px] font-medium ${autoNext ? 'text-white' : 'text-white/70'}`}>{t('player.autoNext')}</span>
             </button>
 
             <button
               onClick={() => setAutoPlay(!autoPlay)}
-              className="flex items-center gap-1 sm:gap-2 group transition-all"
+              className="flex items-center gap-1 group transition-all"
               title={t('player.autoPlay')}
             >
-              <PlayCircle size={15} className={`w-4 h-4 transition-all ${autoPlay ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
-              <span className={`hidden md:inline text-[12px] font-medium ${autoPlay ? 'text-white' : 'text-white/70'}`}>{t('player.autoPlay')}</span>
+              <PlayCircle size={12} className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-all ${autoPlay ? 'text-discord-500' : 'text-white/60 group-hover:text-white'}`} />
+              <span className={`hidden md:inline text-[10px] font-medium ${autoPlay ? 'text-white' : 'text-white/70'}`}>{t('player.autoPlay')}</span>
             </button>
           </div>
 
-          <div className="w-px h-5 bg-white/10 block"></div>
+          <div className="w-px h-3.5 bg-white/10 block"></div>
 
-          <div className={`flex items-center gap-3 sm:gap-4 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+          <div className={`flex items-center gap-2 sm:gap-2.5 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
             <button
               onClick={goPrevEpisode}
-              className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
+              className={`flex items-center gap-1 transition-all ${activeEpisode <= 1 ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
               title={t('player.prev')}
             >
-              <SkipBack size={15} className="w-4 h-4" fill="currentColor" />
-              <span className="hidden md:inline text-[12px] font-medium">{t('player.prev')}</span>
+              <SkipBack size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" />
+              <span className="hidden md:inline text-[10px] font-medium">{t('player.prev')}</span>
             </button>
             <button
               onClick={goNextEpisode}
-              className={`flex items-center gap-1 sm:gap-1.5 transition-all ${activeEpisode >= episodesList.length ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
+              className={`flex items-center gap-1 transition-all ${activeEpisode >= episodesList.length ? 'opacity-30 pointer-events-none' : 'text-white/70 hover:text-white'}`}
               title={t('player.next')}
             >
-              <SkipForward size={15} className="w-4 h-4" fill="currentColor" />
-              <span className="hidden md:inline text-[12px] font-medium">{t('player.next')}</span>
+              <SkipForward size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="currentColor" />
+              <span className="hidden md:inline text-[10px] font-medium">{t('player.next')}</span>
             </button>
           </div>
         </div>
 
         {/* Secondary Controls */}
-        <div className={`flex flex-nowrap shrink-0 items-center justify-end gap-4 sm:gap-6 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
+        <div className={`flex flex-nowrap shrink-0 items-center justify-end gap-2.5 sm:gap-3.5 ${wtRoom && !wtRoom.isHost ? 'pointer-events-none opacity-40' : ''}`}>
           {!isFocusMode && !isTheaterMode && (
             <>
               <div className="relative" ref={watchlistRef}>
                 <button
                   onClick={handleToggleBackendWatchlist}
                   disabled={isWatchlistLoading}
-                  className={`flex items-center gap-1 sm:gap-2 transition-all ${isBookmarked ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
+                  className={`flex items-center gap-1 transition-all ${isBookmarked ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
                 >
                   {isWatchlistLoading ? (
-                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <Heart size={14} className="w-4 h-4" fill={isBookmarked ? "currentColor" : "none"} />
+                    <Heart size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill={isBookmarked ? "currentColor" : "none"} />
                   )}
-                  <span className="hidden sm:inline text-[12px] font-medium">
+                  <span className="hidden sm:inline text-[10px] font-medium">
                     {isWatchlistLoading ? 'Saving...' : 'Bookmark'}
                   </span>
                 </button>
@@ -182,10 +182,10 @@ export default function PlayerToolbar({
 
               <button
                 onClick={handleReport}
-                className={`flex items-center gap-1.5 sm:gap-2 transition-all ${reportSuccess ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
+                className={`flex items-center gap-1 transition-all ${reportSuccess ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
               >
-                <Flag size={14} className="w-4 h-4" />
-                <span className="hidden sm:inline text-[12px] font-medium uppercase tracking-wider">{t('player.report')}</span>
+                <Flag size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden sm:inline text-[10px] font-medium uppercase tracking-wider">{t('player.report')}</span>
               </button>
 
               <a
@@ -195,7 +195,7 @@ export default function PlayerToolbar({
                 className="flex items-center text-white/70 hover:text-discord-500 transition-all group"
                 title="Get Free Anime Iframe Embeds at anaixo.buzz"
               >
-                <span className="text-[15px] sm:text-[17px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
+                <span className="text-[12px] sm:text-[13px] transform group-hover:scale-125 transition-transform duration-200">🌐</span>
               </a>
 
               {!wtRoom && handleCreateWtRoom && (
@@ -205,7 +205,7 @@ export default function PlayerToolbar({
                     className={`flex items-center transition-all ${showWtDropdown ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
                     title="Watch Together"
                   >
-                    <Users size={15} className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <Users size={12} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </button>
                   {showWtDropdown && (
                     <>
@@ -237,45 +237,45 @@ export default function PlayerToolbar({
 
       {/* Server Selector Section */}
       {!isFocusMode && !(wtRoom && !wtRoom.isHost) && (
-        <section className="flex flex-col md:flex-row md:items-center justify-between py-4 lg:py-6 gap-4 lg:gap-6">
+        <section className="flex flex-col md:flex-row md:items-center justify-between py-1.5 sm:py-2 gap-2 sm:gap-4">
           <div className="text-center md:text-left">
-            <p className="text-[13px] lg:text-[14px] font-bold text-white/80 tracking-wide">
+            <p className="text-[11px] sm:text-[12px] font-bold text-white/80 tracking-wide">
               You are watching <span className="text-discord-600">{t('player.episode')}{activeEpisode}</span>
             </p>
-            <p className="text-[9px] lg:text-[10px] text-white/40 font-bold uppercase tracking-[0.2em] mt-1">
+            <p className="text-[8.5px] sm:text-[9px] text-white/40 font-bold uppercase tracking-[0.15em] mt-0.5">
               Switch servers if the current link is unstable.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-10">
-            <div className="flex bg-[#161616] p-1 rounded-sm border border-white/15">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-6">
+            <div className="flex bg-[#161616] p-0.5 rounded-sm border border-white/15">
               <button
                 onClick={() => setPlayerLang("sub")}
                 disabled={!hasSub}
-                className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all ${playerLang === "sub" ? "bg-discord-600 text-white shadow-lg" : "text-white/40 hover:text-white"
+                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all ${playerLang === "sub" ? "bg-discord-600 text-white shadow-md" : "text-white/40 hover:text-white"
                   } ${!hasSub ? "opacity-20 pointer-events-none" : ""}`}
               >
-                <MessageSquare size={12} fill="currentColor" className="opacity-50" />
+                <MessageSquare size={10} fill="currentColor" className="opacity-50" />
                 Sub
               </button>
               <button
                 onClick={() => setPlayerLang("dub")}
                 disabled={!hasDub}
-                className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all ${playerLang === "dub" ? "bg-discord-600 text-white shadow-lg" : "text-white/40 hover:text-white"
+                className={`flex items-center gap-1.5 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm transition-all ${playerLang === "dub" ? "bg-discord-600 text-white shadow-md" : "text-white/40 hover:text-white"
                   } ${!hasDub ? "opacity-20 pointer-events-none" : ""}`}
               >
-                <Mic size={12} fill="currentColor" className="opacity-50" />
+                <Mic size={10} fill="currentColor" className="opacity-50" />
                 Dub
               </button>
             </div>
 
-            <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-0.5 md:gap-1 sm:mr-auto sm:mr-20">
+            <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-1">
               {[1, 2, 3, 4, 5, 6].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}
                   disabled={wtRoom && s !== 1}
-                  className={`px-1.5 sm:px-3 py-0.5 sm:py-1.5 text-[8.5px] sm:text-[10px] font-bold uppercase tracking-wider rounded-sm border transition-all flex-shrink-0 ${activeServer === s
+                  className={`px-2 py-0.5 sm:py-1 text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider rounded-sm border transition-all flex-shrink-0 ${activeServer === s
                     ? "bg-discord-600 border-discord-600 text-white "
                     : wtRoom && s !== 1
                       ? "border-white/10 text-white/20 cursor-not-allowed bg-black/20"

@@ -10,7 +10,7 @@ export default function EpisodeSidebar({
   activeEpisode, setActiveEpisode, watchedEpisodes,
   isEpisodeSearchOpen, setIsEpisodeSearchOpen,
   episodeSearchQuery, setEpisodeSearchQuery,
-  malEpisodes, anime, wtRoom,
+  malEpisodes, tmdbEpisodes, anime, wtRoom,
   fillerData, hideFillerEpisodes, setHideFillerEpisodes
 }) {
   const { t } = useTranslation();
@@ -30,16 +30,28 @@ export default function EpisodeSidebar({
 
   // Helper: resolve episode title from multiple sources
   const getEpTitle = (ep) => {
+    const tmdbEp = tmdbEpisodes?.[String(ep)];
+    if (tmdbEp?.title && tmdbEp.title.en) {
+      return tmdbEp.title.en;
+    }
+    
     const epData = malEpisodes?.find(e => e.mal_id === ep);
     const aniListEp = anime?.streamingEpisodes?.find(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
+    
+    const providerEp = anime?.episodes?.find(e => e.number === ep);
+    
     return epData?.title
       || aniListEp?.title?.replace(/^Episode \d+\s*-\s*/i, '')
+      || providerEp?.title
       || `Episode ${ep}`;
   };
 
   const getEpThumb = (ep) => {
+    const tmdbEp = tmdbEpisodes?.[String(ep)];
+    if (tmdbEp?.image) return tmdbEp.image;
+    
     const aniListEp = anime?.streamingEpisodes?.find(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
@@ -49,6 +61,33 @@ export default function EpisodeSidebar({
     if (epData?.images?.jpg?.image_url) return epData.images.jpg.image_url;
     
     return anime?.coverImage?.large || anime?.coverImage?.medium;
+  };
+
+  const getEpDescription = (ep) => {
+    const tmdbEp = tmdbEpisodes?.[String(ep)];
+    if (tmdbEp?.overview) return tmdbEp.overview;
+    
+    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    if (epData?.synopsis) return epData.synopsis;
+    
+    const aniListEp = anime?.streamingEpisodes?.find(
+      se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
+    ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
+    if (aniListEp?.description) return aniListEp.description;
+    
+    return "";
+  };
+
+  const getEpDate = (ep) => {
+    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    if (epData?.aired) {
+      try {
+        return new Date(epData.aired).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      } catch {
+        return "";
+      }
+    }
+    return "";
   };
 
   const isW2GNonHost = wtRoom && !wtRoom.isHost;
@@ -173,38 +212,49 @@ export default function EpisodeSidebar({
                     onClick={() => setActiveEpisode(ep)}
                     disabled={isW2GNonHost}
                     title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : isMixed ? "Mixed Canon/Filler" : ""}
-                    className={`w-full text-left flex flex-col gap-1 p-1.5 pr-3 text-[12px] font-medium transition-all rounded-[2px] border relative overflow-hidden ${
+                    className={`w-full text-left flex p-1.5 transition-all duration-200 rounded-[8px] border relative overflow-hidden group ${
                       activeEpisode === ep
-                        ? "bg-discord-600/10 text-discord-500 border-discord-500 shadow-lg"
+                        ? "bg-[#b2a5ff] border-[#b2a5ff] shadow-lg shadow-[#b2a5ff]/20"
                         : isW2GNonHost
-                          ? "bg-[#161616] text-white/30 border-white/5 cursor-not-allowed"
-                          : isFiller
-                            ? "bg-amber-500/5 text-amber-100/70 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40"
-                            : isMixed
-                              ? "bg-emerald-500/5 text-emerald-100/70 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/40"
-                              : "bg-[#161616] text-white/70 border-white/15 hover:bg-[#202020] hover:text-white"
+                          ? "bg-[#161616] border-white/5 cursor-not-allowed opacity-50"
+                          : "bg-[#161616] border-white/5 hover:bg-[#252525] hover:border-white/90 hover:shadow-lg hover:-translate-y-[2px]"
                     }`}
                   >
                     {isFiller && <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/50 z-10" />}
                     {isMixed && <div className="absolute top-0 left-0 w-[3px] h-full bg-emerald-500/50 z-10" />}
-                    <div className="flex w-full items-center">
+                    
+                    {/* Left: Thumbnail & Badge */}
+                    <div className="relative shrink-0 overflow-hidden rounded-[6px] w-[130px] aspect-video sm:w-[145px]">
                       <img
                         src={getEpThumb(ep)}
                         alt=""
                         loading="lazy"
-                        className="w-[80px] h-[45px] object-cover shrink-0 bg-white/5 mr-3 rounded-[2px]"
+                        className="w-full h-full object-cover bg-white/5"
                       />
-                      <div className="flex items-start justify-between gap-3 w-full pl-1">
-                        <div className="flex items-start gap-3">
-                          <span className="text-[10px] uppercase font-bold tracking-[0.2em] opacity-40 shrink-0 mt-[2px]">{t('sidebar.ep')}{String(ep).padStart(2, '0')}</span>
-                          <span className="line-clamp-2 leading-tight flex-1">{getEpTitle(ep)}</span>
+                      <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-[2px] rounded-[3px] border border-white/10 shadow-sm backdrop-blur-md">
+                        <span className="text-[9px] font-semibold text-white/90 tracking-wider leading-none">EP {ep}</span>
+                      </div>
+                    </div>
+
+                    {/* Right: Details */}
+                    <div className="flex flex-col justify-between ml-3 flex-1 min-w-0 py-0.5 pr-1">
+                      <div className="flex flex-col">
+                        <span className={`text-[14px] font-semibold line-clamp-1 ${activeEpisode === ep ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+                          {getEpTitle(ep)}
+                        </span>
+                        <p className={`text-[12px] leading-[1.3] line-clamp-3 mt-1 font-normal ${activeEpisode === ep ? 'text-[#3e2e5c]' : 'text-white/40'}`}>
+                          {getEpDescription(ep) || "No description available."}
+                        </p>
+                      </div>
+                      
+                      <div className={`flex items-center justify-between mt-2 ${activeEpisode === ep ? 'text-white/90' : 'text-white/30'}`}>
+                        <div className="flex items-center gap-2">
+                          <div className={`text-[9px] font-bold px-1 py-[1px] rounded-[3px] border leading-none ${activeEpisode === ep ? 'border-white/70 text-white/90' : 'border-white/20 text-white/40'}`}>CC</div>
+                          <Mic size={13} fill="currentColor" className="opacity-90" />
                         </div>
-                        {isFiller && (
-                          <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 shrink-0">Filler</span>
-                        )}
-                        {isMixed && (
-                          <span className="text-[8px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-500 shrink-0">Mixed</span>
-                        )}
+                        <span className={`text-[11px] font-medium ${activeEpisode === ep ? 'text-white/90' : 'text-white/20'}`}>
+                          {getEpDate(ep)}
+                        </span>
                       </div>
                     </div>
                   </button>

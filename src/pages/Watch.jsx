@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes } from "../services/api";
+import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes, getTmdbEpisodes } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useLoading } from "../context/LoadingContext";
 import Navbar from "../components/layout/Navbar";
@@ -121,7 +121,14 @@ export default function Watch({ isWatch2GetherMode }) {
     }
   }, [activeEpisode, navigate, location.pathname, openSmartLink, location.search, queryParams]);
 
-  const [episodeLayout, setEpisodeLayout] = useState("grid"); // "grid" | "list"
+  const [episodeLayout, setEpisodeLayout] = useState(() => {
+    try {
+      const val = localStorage.getItem("episodeLayout");
+      return val ? JSON.parse(val) : "list";
+    } catch { return "list"; }
+  }); // "grid" | "list"
+  useEffect(() => localStorage.setItem("episodeLayout", JSON.stringify(episodeLayout)), [episodeLayout]);
+
   const [playerLang, setPlayerLang] = useState("sub");
   const [activeServer, setActiveServer] = useState(1);
 
@@ -601,6 +608,14 @@ export default function Watch({ isWatch2GetherMode }) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  // TMDB Episodes (AniZip)
+  const { data: tmdbEpisodes } = useQuery({
+    queryKey: ["tmdbEpisodes", anime?.id],
+    queryFn: () => getTmdbEpisodes(anime?.id),
+    enabled: !!anime?.id,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const { data: fillerData } = useQuery({
     queryKey: ["fillerDataV2", anime?.idMal],
     queryFn: () => getFillerEpisodes(anime?.idMal, anime?.title?.english || anime?.title?.romaji || anime?.title?.native),
@@ -914,13 +929,13 @@ export default function Watch({ isWatch2GetherMode }) {
         />
       )}
 
-      <main className={`${isFocusMode ? 'pt-0' : 'pt-[60px]'} max-w-[1720px] mx-auto px-2 lg:px-4 transition-all duration-500`}>
+      <main className={`${isFocusMode ? 'pt-0' : 'pt-[60px]'} max-w-[1600px] mx-auto px-2 lg:px-4 transition-all duration-500`}>
 
         {/* Main Media Grid */}
-        <div className={`flex flex-col lg:grid lg:gap-6 ${isFocusMode ? 'lg:grid-cols-1' : isTheaterMode ? 'lg:grid-cols-1' : 'lg:grid-cols-4'} transition-all duration-500 mt-4`}>
+        <div className={`flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 transition-all duration-500 mt-4`}>
 
           {/* LEFT COLUMN: Player + Controls */}
-          <div className={`${isFocusMode ? 'lg:col-span-1 fixed inset-0 z-40 flex flex-col items-center justify-center p-4 lg:p-12 pointer-events-none' : isTheaterMode ? 'lg:col-span-1' : 'lg:col-span-3'}`}>
+          <div className={`${isFocusMode ? 'fixed inset-0 z-40 flex flex-col items-center justify-center p-4 lg:p-12 pointer-events-none' : isTheaterMode ? 'lg:col-span-12' : 'lg:col-span-7 xl:col-span-8'}`}>
 
             {/* Breadcrumbs */}
             {!isFocusMode && (
@@ -936,7 +951,7 @@ export default function Watch({ isWatch2GetherMode }) {
                   <span className="text-white/10 font-light">/</span>
                   <Link to={wtRoom ? "#" : `/browse?format=${(anime.format || "TV").toUpperCase()}`} className={`uppercase ${wtRoom ? "text-white/60" : "hover:text-white transition-colors cursor-pointer"}`}>{anime.format || "TV"}</Link>
                   <span className="text-white/10 font-light">/</span>
-                  <span className="text-white/70 truncate max-w-[200px] md:max-w-none">{getTitle(anime.title)}</span>
+                  <Link to={`/anime/${anime.id || id}`} className="text-white/70 hover:text-white transition-colors truncate max-w-[200px] md:max-w-none">{getTitle(anime.title)}</Link>
                 </nav>
               </div>
             )}
@@ -944,7 +959,7 @@ export default function Watch({ isWatch2GetherMode }) {
 
 
             {/* Video Player Container */}
-            <section className={`relative w-full aspect-video bg-[#000] overflow-hidden border-x border-white/15 shadow-2xl transition-all duration-500 ${isFocusMode ? 'max-w-[90vw] max-h-[85vh] pointer-events-auto ring-1 ring-white/10 rounded-sm' : ''}`}>
+            <section className={`relative w-full aspect-video bg-[#000] overflow-hidden border-x border-white/15 shadow-2xl transition-all duration-500 ${isFocusMode ? 'max-w-[90vw] max-h-[85vh] pointer-events-auto ring-1 ring-white/10 rounded-sm' : isTheaterMode ? 'max-w-[1280px] max-h-[75vh] mx-auto' : ''}`}>
               <VideoPlayerSection
                 anime={anime}
                 activeEpisode={activeEpisode}
@@ -1042,7 +1057,7 @@ export default function Watch({ isWatch2GetherMode }) {
 
           {/* RIGHT COLUMN: Episodes Sidebar & Watch Together */}
           {!isFocusMode && !isTheaterMode && (
-            <div className="lg:col-span-1 flex flex-col gap-6">
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
               {wtRoom && (
                 <WatchTogetherSidebar
                   wtRoom={wtRoom}
@@ -1072,6 +1087,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 episodeSearchQuery={episodeSearchQuery}
                 setEpisodeSearchQuery={setEpisodeSearchQuery}
                 malEpisodes={malEpisodes}
+                tmdbEpisodes={tmdbEpisodes}
                 anime={anime}
                 wtRoom={wtRoom}
                 fillerData={fillerData}

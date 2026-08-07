@@ -451,6 +451,25 @@ def api_malsync(mal_id):
     data = http.get_json(f"https://api.malsync.moe/mal/anime/{mal_id}")
     return data
 
+@app.route("/api/tmdb/episodes/<anilist_id>", methods=["GET"])
+@api_response
+def api_tmdb_episodes(anilist_id):
+    import time
+    cache_key = f"tmdb_episodes_{anilist_id}"
+    
+    entry = _cache.get(cache_key)
+    if entry and (time.time() - entry.get("ts", 0)) < TTL_EPISODES:
+        return entry["data"]
+
+    url = f"https://api.ani.zip/mappings?anilist_id={anilist_id}"
+    data = http.get_json(url)
+    
+    if data and "episodes" in data:
+        _cache[cache_key] = {"data": data, "ts": time.time()}
+        return data
+    else:
+        return {"episodes": {}}
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  API ROUTES — AniList Proxy (Bypass CORS)
