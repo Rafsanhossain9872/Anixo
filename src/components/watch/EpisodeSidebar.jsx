@@ -52,6 +52,9 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.image) return tmdbEp.image;
     
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
+    if (providerEp?.image) return providerEp.image;
+    
     const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
@@ -66,6 +69,10 @@ export default function EpisodeSidebar({
   const getEpDescription = (ep) => {
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.overview) return tmdbEp.overview;
+    if (tmdbEp?.summary) return tmdbEp.summary.replace(/Source:.*/gi, '').trim();
+    
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
+    if (providerEp?.description) return providerEp.description;
     
     const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.synopsis) return epData.synopsis;
