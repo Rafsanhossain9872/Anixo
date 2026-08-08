@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes, getTmdbEpisodes } from "../services/api";
+import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes, getTmdbEpisodes, getKitsuEpisodes } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useLoading } from "../context/LoadingContext";
 import Navbar from "../components/layout/Navbar";
@@ -616,6 +616,14 @@ export default function Watch({ isWatch2GetherMode }) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  // Kitsu Episodes (Fallback for TMDB)
+  const { data: kitsuEpisodes } = useQuery({
+    queryKey: ["kitsuEpisodes", anime?.id],
+    queryFn: () => getKitsuEpisodes(anime?.id),
+    enabled: !!anime?.id,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const { data: fillerData } = useQuery({
     queryKey: ["fillerDataV2", anime?.idMal],
     queryFn: () => getFillerEpisodes(anime?.idMal, anime?.title?.english || anime?.title?.romaji || anime?.title?.native),
@@ -1088,6 +1096,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 setEpisodeSearchQuery={setEpisodeSearchQuery}
                 malEpisodes={malEpisodes}
                 tmdbEpisodes={tmdbEpisodes}
+                kitsuEpisodes={kitsuEpisodes}
                 anime={anime}
                 wtRoom={wtRoom}
                 fillerData={fillerData}

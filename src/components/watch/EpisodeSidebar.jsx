@@ -10,7 +10,7 @@ export default function EpisodeSidebar({
   activeEpisode, setActiveEpisode, watchedEpisodes,
   isEpisodeSearchOpen, setIsEpisodeSearchOpen,
   episodeSearchQuery, setEpisodeSearchQuery,
-  malEpisodes, tmdbEpisodes, anime, wtRoom,
+  malEpisodes, tmdbEpisodes, kitsuEpisodes, anime, wtRoom,
   fillerData, hideFillerEpisodes, setHideFillerEpisodes
 }) {
   const { t } = useTranslation();
@@ -52,6 +52,9 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.image) return tmdbEp.image;
     
+    const kitsuEp = kitsuEpisodes?.[String(ep)];
+    if (kitsuEp?.thumbnail) return kitsuEp.thumbnail;
+    
     const providerEp = anime?.episodes?.find?.(e => e.number === ep);
     if (providerEp?.image) return providerEp.image;
     
@@ -70,6 +73,9 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.overview) return tmdbEp.overview;
     if (tmdbEp?.summary) return tmdbEp.summary.replace(/Source:.*/gi, '').trim();
+    
+    const kitsuEp = kitsuEpisodes?.[String(ep)];
+    if (kitsuEp?.description) return kitsuEp.description;
     
     const providerEp = anime?.episodes?.find?.(e => e.number === ep);
     if (providerEp?.description) return providerEp.description;

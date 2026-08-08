@@ -1526,3 +1526,14 @@ export async function getTmdbEpisodes(anilistId) {
     return null;
   }
 }
+
+export async function getKitsuEpisodes(anilistId) {
+  if (!anilistId) return null;
+  try {
+    const { data } = await smartRequest("get", `/api/kitsu/episodes/${anilistId}`);
+    return data || null;
+  } catch (error) {
+    console.error("Error fetching Kitsu episodes:", error);
+    return null;
+  }
+}
