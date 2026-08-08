@@ -57,12 +57,12 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  {getTitle(item.title)}
  </h3>
 
- {/* Episodes Badge */}
+ {/* Episodes & Format Badge */}
  <div className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider transition-all ${item.isActive
  ? 'bg-discord-600 text-white shadow-lg'
  : 'bg-white/10 text-white/40 group-hover:bg-white/20'
  }`}>
- {item.episodes || '?'} Eps
+ {item.format && !['TV', 'TV_SHORT'].includes(item.format) ? `${item.format.replace('_', ' ')} • ` : ''}{item.episodes || '?'} Eps
  </div>
  </div>
  </Link>
