@@ -470,6 +470,69 @@ def api_tmdb_episodes(anilist_id):
     else:
         return {"episodes": {}}
 
+@app.route("/api/kitsu/episodes/<anilist_id>", methods=["GET"])
+@api_response
+def api_kitsu_episodes(anilist_id):
+    import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    
+    cache_key = f"kitsu_episodes_{anilist_id}"
+    entry = _cache.get(cache_key)
+    if entry and (time.time() - entry.get("ts", 0)) < (24 * 3600):
+        return entry["data"]
+
+    # Get kitsu_id via AniZip mapping
+    mapping_url = f"https://api.ani.zip/mappings?anilist_id={anilist_id}"
+    mapping_data = http.get_json(mapping_url)
+    kitsu_id = None
+    if mapping_data and "mappings" in mapping_data:
+        kitsu_id = mapping_data["mappings"].get("kitsu_id")
+        
+    if not kitsu_id:
+        return {}
+
+    base_url = f"https://kitsu.io/api/edge/episodes?filter[mediaType]=Anime&filter[mediaId]={kitsu_id}&page[limit]=20&sort=number"
+    
+    # Fetch first page to get total count
+    first_page = http.get_json(base_url)
+    if not first_page or "data" not in first_page:
+        return {}
+
+    episodes = {}
+    
+    def process_data(page_data):
+        if not page_data or "data" not in page_data:
+            return
+        for ep in page_data["data"]:
+            attr = ep.get("attributes", {})
+            num = str(attr.get("number"))
+            episodes[num] = {
+                "title": attr.get("canonicalTitle"),
+                "description": attr.get("synopsis") or attr.get("description"),
+                "thumbnail": attr.get("thumbnail", {}).get("original") if attr.get("thumbnail") else None
+            }
+
+    process_data(first_page)
+    
+    total_count = first_page.get("meta", {}).get("count", 0)
+    
+    if total_count > 20:
+        urls_to_fetch = []
+        for offset in range(20, total_count, 20):
+            urls_to_fetch.append(f"{base_url}&page[offset]={offset}")
+            
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_url = {executor.submit(http.get_json, url): url for url in urls_to_fetch}
+            for future in as_completed(future_to_url):
+                try:
+                    data = future.result()
+                    process_data(data)
+                except Exception as exc:
+                    log.error(f"Kitsu page fetch generated an exception: {exc}")
+
+    _cache[cache_key] = {"data": episodes, "ts": time.time()}
+    return episodes
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  API ROUTES — AniList Proxy (Bypass CORS)

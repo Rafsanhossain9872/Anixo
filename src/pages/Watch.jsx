@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes, getTmdbEpisodes } from "../services/api";
+import { getAnimeDetails, getEpisodeTitles, getJikanAnimeDetails, getFillerEpisodes, getTmdbEpisodes, getKitsuEpisodes } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { useLoading } from "../context/LoadingContext";
 import Navbar from "../components/layout/Navbar";
@@ -616,6 +616,14 @@ export default function Watch({ isWatch2GetherMode }) {
     staleTime: 1000 * 60 * 60 * 24,
   });
 
+  // Kitsu Episodes (Fallback for TMDB)
+  const { data: kitsuEpisodes } = useQuery({
+    queryKey: ["kitsuEpisodes", anime?.id],
+    queryFn: () => getKitsuEpisodes(anime?.id),
+    enabled: !!anime?.id,
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+
   const { data: fillerData } = useQuery({
     queryKey: ["fillerDataV2", anime?.idMal],
     queryFn: () => getFillerEpisodes(anime?.idMal, anime?.title?.english || anime?.title?.romaji || anime?.title?.native),
@@ -710,7 +718,8 @@ export default function Watch({ isWatch2GetherMode }) {
 
         if (anime.relations?.edges) {
           anime.relations.edges.forEach(edge => {
-            if (["TV"].includes(edge.node?.format)) {
+            const allowedFormats = ["TV", "TV_SHORT", "MOVIE", "SPECIAL", "OVA", "ONA"];
+            if (allowedFormats.includes(edge.node?.format)) {
               items.push({
                 ...edge.node,
                 isActive: false,
@@ -738,8 +747,8 @@ export default function Watch({ isWatch2GetherMode }) {
           // 1. Always keep the current active anime
           if (item.isActive) return true;
 
-          // 2. Only allow specific relation types that define a "Season"
-          const allowedRelations = ['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'ALTERNATIVE'];
+          // 2. Only allow specific relation types that define related media
+          const allowedRelations = ['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY', 'ALTERNATIVE', 'SPIN_OFF', 'SUMMARY'];
           if (!allowedRelations.includes(item.relationToMain)) return false;
 
           // 3. Strict Title Check: Ensure it belongs to the same franchise
@@ -747,11 +756,11 @@ export default function Watch({ isWatch2GetherMode }) {
           const mainTitle = getTitle(anime.title).split(' ')[0].toLowerCase(); // e.g., "one"
           const itemTitle = getTitle(item.title).toLowerCase();
 
-          // Keep if it contains the first word of the main title OR it's a direct sequel/prequel
-          const isSequelPrequel = ['PREQUEL', 'SEQUEL'].includes(item.relationToMain);
+          // Keep if it contains the first word of the main title OR it's a direct sequel/prequel/parent
+          const isCoreRelation = ['PREQUEL', 'SEQUEL', 'PARENT'].includes(item.relationToMain);
           const isSimilarTitle = itemTitle.includes(mainTitle);
 
-          return isSequelPrequel || isSimilarTitle;
+          return isCoreRelation || isSimilarTitle;
         });
 
         uniqueItems.sort((a, b) => {
@@ -1086,6 +1095,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 setEpisodeSearchQuery={setEpisodeSearchQuery}
                 malEpisodes={malEpisodes}
                 tmdbEpisodes={tmdbEpisodes}
+                kitsuEpisodes={kitsuEpisodes}
                 anime={anime}
                 wtRoom={wtRoom}
                 fillerData={fillerData}

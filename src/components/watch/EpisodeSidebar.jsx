@@ -10,7 +10,7 @@ export default function EpisodeSidebar({
   activeEpisode, setActiveEpisode, watchedEpisodes,
   isEpisodeSearchOpen, setIsEpisodeSearchOpen,
   episodeSearchQuery, setEpisodeSearchQuery,
-  malEpisodes, tmdbEpisodes, anime, wtRoom,
+  malEpisodes, tmdbEpisodes, kitsuEpisodes, anime, wtRoom,
   fillerData, hideFillerEpisodes, setHideFillerEpisodes
 }) {
   const { t } = useTranslation();
@@ -35,12 +35,12 @@ export default function EpisodeSidebar({
       return tmdbEp.title.en;
     }
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     
-    const providerEp = Array.isArray(anime?.episodes) ? anime.episodes.find(e => e.number === ep) : null;
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
     
     return epData?.title
       || aniListEp?.title?.replace(/^Episode \d+\s*-\s*/i, '')
@@ -52,12 +52,18 @@ export default function EpisodeSidebar({
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.image) return tmdbEp.image;
     
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const kitsuEp = kitsuEpisodes?.[String(ep)];
+    if (kitsuEp?.thumbnail) return kitsuEp.thumbnail;
+    
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
+    if (providerEp?.image) return providerEp.image;
+    
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     if (aniListEp?.thumbnail) return aniListEp.thumbnail;
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.images?.jpg?.image_url) return epData.images.jpg.image_url;
     
     return anime?.coverImage?.large || anime?.coverImage?.medium;
@@ -66,11 +72,18 @@ export default function EpisodeSidebar({
   const getEpDescription = (ep) => {
     const tmdbEp = tmdbEpisodes?.[String(ep)];
     if (tmdbEp?.overview) return tmdbEp.overview;
+    if (tmdbEp?.summary) return tmdbEp.summary.replace(/Source:.*/gi, '').trim();
     
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const kitsuEp = kitsuEpisodes?.[String(ep)];
+    if (kitsuEp?.description) return kitsuEp.description;
+    
+    const providerEp = anime?.episodes?.find?.(e => e.number === ep);
+    if (providerEp?.description) return providerEp.description;
+    
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.synopsis) return epData.synopsis;
     
-    const aniListEp = anime?.streamingEpisodes?.find(
+    const aniListEp = anime?.streamingEpisodes?.find?.(
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     if (aniListEp?.description) return aniListEp.description;
@@ -79,7 +92,7 @@ export default function EpisodeSidebar({
   };
 
   const getEpDate = (ep) => {
-    const epData = malEpisodes?.find(e => e.mal_id === ep);
+    const epData = malEpisodes?.find?.(e => e.mal_id === ep);
     if (epData?.aired) {
       try {
         return new Date(epData.aired).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
