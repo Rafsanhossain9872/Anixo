@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tv, Heart, Star, ArrowUpRight } from "lucide-react";
+import { Tv, Star, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -94,48 +94,10 @@ function ListItem({ anime }) {
 }
 
 /* ── Ranked item (used in Most Viewed) ── */
-function RankedItem({ anime, rank, featured }) {
+function RankedItem({ anime, rank }) {
   const { t } = useTranslation();
   const { getTitle } = useLanguage();
   const navigate = useNavigate();
-
-  if (featured) {
-    return (
-      <div className="cursor-pointer group mb-4 relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 hover:ring-discord-500/50 transition-all duration-500" onClick={() => navigate(getWatchUrl(anime.id, anime.title))}>
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#1a1a1a]">
-          <img
-            src={anime.coverImage?.large}
-            alt={getTitle(anime.title)}
-            loading="lazy"
-            onLoad={(e) => e.target.classList.remove("opacity-0")}
-            className="w-full h-full object-cover opacity-0 transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent" />
-        </div>
-        
-        {/* Large rank number overlay */}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3 z-10">
-          <span className="text-[64px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 leading-none italic drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-            {rank}
-          </span>
-          <div className="pb-1.5 flex-1 min-w-0">
-            <p className="text-[14px] font-black text-white leading-tight uppercase group-hover:text-discord-400 transition-colors drop-shadow-md truncate">
-              {getTitle(anime.title)}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[9px] font-bold uppercase tracking-wider text-white/80">
-              {anime.status === "NOT_YET_RELEASED" ? (
-                <span className="bg-discord-500/30 text-discord-100 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md">{t('threeColumn.upcoming')}</span>
-              ) : (
-                <span className="flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md"><Tv size={10} className="text-white" /> {anime.episodes || "?"}</span>
-              )}
-              <span className="flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md"><Heart size={10} fill="currentColor" className="text-discord-400" /> {anime.favourites || "?"}</span>
-              <span className="bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md">{anime.format}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -165,7 +127,11 @@ function RankedItem({ anime, rank, featured }) {
           ) : (
              <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px]"><Tv size={9} /> {anime.episodes || "?"}</span>
           )}
-          <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px] text-white/80"><Heart size={9} fill="currentColor" className="text-discord-500/80" /> {anime.favourites || "?"}</span>
+          {anime.averageScore ? (
+            <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px] text-white/80">
+              <Star size={9} fill="currentColor" className="text-yellow-500/80" /> {anime.averageScore}%
+            </span>
+          ) : null}
           <span className="bg-white/5 px-1.5 py-0.5 rounded-[3px]">{anime.format}</span>
         </div>
       </div>
@@ -268,15 +234,14 @@ export default function ThreeColumnSection({ newReleases, justCompleted, isLoadi
           <div className="space-y-2 w-full">
             {loadingMostViewed ? (
               <>
-                <SkeletonRankedItem featured />
-                {Array.from({ length: 4 }).map((_, i) => <SkeletonRankedItem key={i} />)}
+                {Array.from({ length: 10 }).map((_, i) => <SkeletonRankedItem key={i} />)}
               </>
             ) : (
               <>
                 {mostViewedData?.media
-                  ?.slice(0, 6)
+                  ?.slice(0, 10)
                   ?.map((anime, i) => (
-                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} featured={i === 0} />
+                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} />
                   ))}
               </>
             )}

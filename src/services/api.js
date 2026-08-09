@@ -918,13 +918,12 @@ export async function getMostViewedAnime(timeframe, page = 1, signal) {
       seasonYear: year
     };
   } else {
-    // Month: Overall most popular anime of the current season (including finished)
+    // Month: Overall most popular anime of the Entire Current Year
     query = SEASONAL_QUERY;
     variables = {
       page,
       sort: ["POPULARITY_DESC"],
       status_in: ["RELEASING", "FINISHED"],
-      season,
       seasonYear: year
     };
   }
