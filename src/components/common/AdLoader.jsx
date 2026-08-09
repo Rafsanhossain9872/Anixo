@@ -32,10 +32,6 @@ export default function AdLoader() {
       document.body.appendChild(popunder);
     }
 
-    // Popunder 2 (Monetag Disabled)
-    const popunder2Script = document.getElementById("popunder2-global");
-    if (popunder2Script) popunder2Script.remove();
-
   }, [location.pathname]);
 
   return null;
