@@ -3,6 +3,8 @@ import { Tv, Heart, Star, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { getMostViewedAnime } from "../../services/api";
 import { getWatchUrl } from "../../utils/url";
 
 /* ── Skeleton Loaders ── */
@@ -201,9 +203,18 @@ function SectionHeader({ title, hasArrow = false, path }) {
 }
 
 /* ── Main three-column section ── */
-export default function ThreeColumnSection({ newReleases, mostViewed, justCompleted, isLoading }) {
+export default function ThreeColumnSection({ newReleases, justCompleted, isLoading }) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Day");
+
+  const { data: mostViewedData, isLoading: loadingMostViewed } = useQuery({
+    queryKey: ["mostViewed", activeTab],
+    queryFn: async ({ signal }) => {
+      const res = await getMostViewedAnime(activeTab, 1, signal);
+      return res;
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
   return (
     <section className="mt-12 w-full overflow-hidden">
@@ -255,21 +266,17 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
             </div>
           </div>
           <div className="space-y-2 w-full">
-            {isLoading ? (
+            {loadingMostViewed ? (
               <>
                 <SkeletonRankedItem featured />
                 {Array.from({ length: 4 }).map((_, i) => <SkeletonRankedItem key={i} />)}
               </>
             ) : (
               <>
-                {mostViewed
-                  ?.slice(
-                    activeTab === "Day" ? 0 : activeTab === "Week" ? 6 : 12,
-                    activeTab === "Day" ? 6 : activeTab === "Week" ? 12 : 18
-                  )
+                {mostViewedData?.media
                   ?.slice(0, 6)
                   ?.map((anime, i) => (
-                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} />
+                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} featured={i === 0} />
                   ))}
               </>
             )}

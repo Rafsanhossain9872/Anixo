@@ -884,6 +884,58 @@ export async function getPopularThisSeason(page = 1) {
   return fetchFromJikan("/top/anime", { page, filter: "airing", limit: 20 });
 }
 
+export async function getMostViewedAnime(timeframe, page = 1, signal) {
+  const date = new Date();
+  const month = date.getMonth();
+  const year = date.getFullYear();
+
+  let season;
+  if (month >= 0 && month <= 2) season = "WINTER";
+  else if (month >= 3 && month <= 5) season = "SPRING";
+  else if (month >= 6 && month <= 8) season = "SUMMER";
+  else season = "FALL";
+
+  let query, variables;
+
+  if (timeframe === "Day") {
+    // Current highest trending globally right now
+    query = BROWSE_QUERY;
+    variables = {
+      page,
+      perPage: 30,
+      sort: ["TRENDING_DESC"],
+      status: "RELEASING",
+      isAdult: false
+    };
+  } else if (timeframe === "Week") {
+    // Popular anime airing in the current season
+    query = SEASONAL_QUERY;
+    variables = {
+      page,
+      sort: ["POPULARITY_DESC"],
+      status_in: ["RELEASING"],
+      season,
+      seasonYear: year
+    };
+  } else {
+    // Month: Overall most popular anime of the current season (including finished)
+    query = SEASONAL_QUERY;
+    variables = {
+      page,
+      sort: ["POPULARITY_DESC"],
+      status_in: ["RELEASING", "FINISHED"],
+      season,
+      seasonYear: year
+    };
+  }
+
+  const anilistRes = await fetchFromAniList(query, variables, signal);
+  if (anilistRes?.media?.length > 0) {
+    return anilistRes;
+  }
+  return fetchFromJikan("/top/anime", { page, filter: "bypopularity", limit: 24 }, signal);
+}
+
 
 
 

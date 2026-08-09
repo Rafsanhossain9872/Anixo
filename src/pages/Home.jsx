@@ -341,9 +341,8 @@ export default function Home() {
         <div className="max-w-[1720px] mx-auto px-4 mt-10 w-full">
           <ThreeColumnSection
             newReleases={newReleasesData?.media || []}
-            mostViewed={popularData?.media || []}
             justCompleted={justCompletedData?.media || []}
-            isLoading={loadingNew || loadingPopular || loadingJustCompleted}
+            isLoading={loadingNew || loadingJustCompleted}
           />
         </div>
 
