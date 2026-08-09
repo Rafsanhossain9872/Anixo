@@ -12,18 +12,23 @@ export default function SidebarListCard({ anime }) {
   const { getTitle } = useLanguage();
 
   useEffect(() => {
+    const node = cardRef.current;
+    if (!node) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          observer.unobserve(entry.target);
+          observer.unobserve(node);
         }
       },
       { rootMargin: "100px" }
     );
-    if (cardRef.current) observer.observe(cardRef.current);
+    
+    observer.observe(node);
+    
     return () => {
-      if (cardRef.current) observer.unobserve(cardRef.current);
+      observer.unobserve(node);
     };
   }, []);
 

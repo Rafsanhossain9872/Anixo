@@ -117,7 +117,8 @@ export default function Navbar() {
              <Link to="/browse?sort=POPULARITY_DESC" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Popular</Link>
              <Link to="/browse?format=MOVIE" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Movies</Link>
              <button onClick={handleRandom} className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">Random</button>
-             <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">AI Live Chat</button>
+             <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="text-textMuted hover:text-discord-400 text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">AI Chat</button>
+             <Link to="/chat" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Live Chat</Link>
              <Link to="/community" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Community</Link>
              <Link to="/nsfw" className="text-textMuted hover:text-primary text-[13px] font-semibold transition-colors whitespace-nowrap">Hentai</Link>
              <Link to="/watch-later" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Watch Later</Link>

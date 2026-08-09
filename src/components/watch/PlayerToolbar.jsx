@@ -16,7 +16,7 @@ export default function PlayerToolbar({
   hasSub, hasDub,
   activeServer, setActiveServer,
   isBookmarked, isWatchlistLoading,
-  handleToggleBackendWatchlist, showWatchlistDropdown, setShowWatchlistDropdown,
+  showWatchlistDropdown, setShowWatchlistDropdown,
   backendWatchlist, handleUpdateWatchlistStatus, id,
   handleReport, reportSuccess,
   wtRoom, handleCreateWtRoom, handleScheduleWtRoom

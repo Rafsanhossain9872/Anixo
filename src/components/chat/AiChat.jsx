@@ -155,6 +155,12 @@ const AiChat = () => {
     localStorage.setItem('anixo_chat_history', JSON.stringify(messages));
   }, [messages]);
 
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener('open-ai-chat', handleOpen);
+    return () => window.removeEventListener('open-ai-chat', handleOpen);
+  }, []);
+
   const PERSONAS = {
     friendly: { label: '🌸 Friendly' },
     tsundere: { label: '💢 Tsundere' },
@@ -384,15 +390,6 @@ const AiChat = () => {
 
   return (
     <>
-      {/* Navbar Icon Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`block transition-all transform hover:scale-110 relative ${isOpen ? 'text-discord-500' : 'text-[#888] hover:text-white'}`}
-        title="Anixo AI"
-      >
-        {isOpen ? <X size={20} strokeWidth={2.5} /> : <span className="font-black text-[16px] tracking-tighter">AI</span>}
-      </button>
-
       {/* Chat Window */}
       {isOpen && createPortal(
         <div 
@@ -401,7 +398,7 @@ const AiChat = () => {
             transform: isExpanded ? 'none' : `translate(${position.x}px, ${position.y}px)`,
             touchAction: isDragging ? 'none' : 'auto'
           }}
-          className={`fixed bg-[#0d0d0f] border border-white/10 shadow-2xl flex flex-col z-[100] overflow-hidden backdrop-blur-xl transition-all duration-300
+          className={`fixed bg-[#0d0d0f] border border-white/10 shadow-2xl flex flex-col z-[9999] overflow-hidden backdrop-blur-xl transition-all duration-300
             ${isExpanded 
               ? 'inset-0 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[80vw] sm:h-[80vh] sm:max-w-[900px] sm:max-h-[900px] rounded-none sm:rounded-2xl' 
               : 'bottom-20 right-4 w-[calc(100vw-2rem)] h-[65vh] min-h-[450px] max-h-[600px] sm:bottom-24 sm:right-6 sm:w-[380px] sm:h-[550px] sm:max-h-[80vh] rounded-2xl'
@@ -480,6 +477,13 @@ const AiChat = () => {
                 title={isExpanded ? "Minimize" : "Maximize"}
               >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/20 rounded-full transition-all"
+                title="Close AI Chat"
+              >
+                <X size={16} />
               </button>
             </div>
           </div>
