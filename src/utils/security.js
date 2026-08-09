@@ -4,6 +4,9 @@
  */
 
 export function initSecurity() {
+  // TEMPORARILY DISABLED FOR DEBUGGING
+  return;
+
   // 1. Disable Right Click (Context Menu)
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
@@ -45,11 +48,11 @@ export function initSecurity() {
   // Continuously triggers debugger statement so if someone opens devtools, their browser freezes
   const debuggerTrap = () => {
     // A small obfuscated function so it doesn't look obvious
-    (function () { return false; })["constructor"]("debugger")["call"]();
+    // (function () { return false; })["constructor"]("debugger")["call"]();
   };
 
   // Run the trap on a loop
-  setInterval(() => {
-    debuggerTrap();
-  }, 1000);
+  // setInterval(() => {
+  //   debuggerTrap();
+  // }, 1000);
 }
