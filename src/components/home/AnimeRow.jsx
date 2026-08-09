@@ -18,7 +18,8 @@ export default function AnimeRow({
   isScrollable = false, 
   viewAllLink = "", 
   CardComponent = AnimeCard, 
-  headerAction 
+  headerAction,
+  emptyMessage
 }) {
   const Card = CardComponent;
   const hasData = data && data.length > 0;
@@ -90,16 +91,17 @@ export default function AnimeRow({
           )}
 
           {/* Navigation Controls (Desktop) */}
-          {isScrollable && (
-            <div className="hidden md:flex items-center gap-3">
-              {viewAllLink && (
-                <Link
-                  to={viewAllLink}
-                  className="text-xs font-senpai font-bold text-textMuted hover:text-white uppercase tracking-widest transition-colors duration-200"
-                >
-                  View All
-                </Link>
-              )}
+          <div className="hidden md:flex items-center gap-3">
+            {viewAllLink && (
+              <Link
+                to={viewAllLink}
+                className="text-xs font-senpai font-bold text-textMuted hover:text-white uppercase tracking-widest transition-colors duration-200"
+              >
+                View All
+              </Link>
+            )}
+            
+            {isScrollable && (
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => scroll("left")}
@@ -124,8 +126,8 @@ export default function AnimeRow({
                   <ChevronRight size={16} />
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -200,7 +202,9 @@ export default function AnimeRow({
             ))
           ) : (
             <div className="col-span-full py-12 flex flex-col items-center justify-center text-textMuted font-senpai">
-              <p className="text-xs font-bold uppercase tracking-widest border border-white/10 px-6 py-2 rounded">No Data Available</p>
+              <p className="text-xs font-bold uppercase tracking-widest border border-white/10 px-6 py-2 rounded text-center leading-relaxed">
+                {emptyMessage || "No Data Available"}
+              </p>
             </div>
           )}
         </div>

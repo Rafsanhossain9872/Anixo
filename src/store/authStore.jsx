@@ -15,7 +15,12 @@ export const AuthProvider = ({ children }) => {
     } catch { return null; }
   });
   const [globalWatchlist, setGlobalWatchlist] = useState([]);
-  const [globalProgress, setGlobalProgress] = useState([]);
+  const [globalProgress, setGlobalProgress] = useState(() => {
+    try {
+      const cached = localStorage.getItem("guest_watch_history");
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [globalSettings, setGlobalSettings] = useState(() => {
     try {
       const cached = localStorage.getItem("cached_settings");
@@ -136,12 +141,26 @@ export const AuthProvider = ({ children }) => {
         if (progRes?.success) setGlobalProgress(progRes.continueWatching);
       }).catch(e => console.warn("Progress fetch on user change failed:", e));
     } else {
-      // User logged out: reset progress to empty array
-      Promise.resolve().then(() => {
+      // User logged out: fallback to localStorage guest history
+      try {
+        const cached = localStorage.getItem("guest_watch_history");
+        setGlobalProgress(cached ? JSON.parse(cached) : []);
+      } catch {
         setGlobalProgress([]);
-      });
+      }
     }
   }, [user]);
+
+  // Sync guest progress to localStorage automatically
+  useEffect(() => {
+    // We only want to save to localStorage if the user is a guest.
+    // If the user is logged in, their progress is managed by the backend API.
+    if (!user && globalProgress) {
+      try {
+        localStorage.setItem("guest_watch_history", JSON.stringify(globalProgress));
+      } catch (e) { console.warn("Failed to save guest watch history:", e); }
+    }
+  }, [globalProgress, user]);
 
   // Set up smart polling for notifications every 60 seconds (only when tab is visible)
   useEffect(() => {

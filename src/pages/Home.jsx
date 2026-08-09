@@ -26,7 +26,6 @@ import ThreeColumnSection from "../components/home/ThreeColumnSection";
 import HorizontalProgressCard from "../components/home/HorizontalProgressCard";
 import SidebarListCard from "../components/home/SidebarListCard";
 import { removeProgress } from "../services/progressService";
-import Pagination from "../components/common/Pagination";
 import LiveComments from "../components/LiveComments";
 
 function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
@@ -77,11 +76,6 @@ export default function Home() {
   const { globalProgress, setGlobalProgress, user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Main Grid Tabs (NEWEST, POPULAR, TOP RATED)
-  const [activeMainTab, setActiveMainTab] = useState("NEWEST");
-  const [mainGridPage, setMainGridPage] = useState(1);
-  const cardsPerPage = 24;
-
   const [activeSidebarTab, setActiveSidebarTab] = useState("TOP AIRING");
 
   const [showContinueWatching, setShowContinueWatching] = useState(() => {
@@ -109,58 +103,38 @@ export default function Home() {
     } catch (e) { console.warn("Cache write failed:", e); }
   };
 
-  useEffect(() => {
-    // Background Prefetching for the next page to ensure ZERO LATENCY
-    if (activeMainTab === "NEWEST") {
-      queryClient.prefetchQuery({
-        queryKey: ["newReleases", mainGridPage + 1],
-        queryFn: ({ signal }) => getNewReleases(mainGridPage + 1, signal),
-      });
-    } else if (activeMainTab === "POPULAR") {
-      queryClient.prefetchQuery({
-        queryKey: ["trending", mainGridPage + 1],
-        queryFn: ({ signal }) => getTrendingAnime(mainGridPage + 1, signal),
-      });
-    } else if (activeMainTab === "TOP RATED") {
-      queryClient.prefetchQuery({
-        queryKey: ["popular", mainGridPage + 1],
-        queryFn: ({ signal }) => getPopularAnime(mainGridPage + 1, signal),
-      });
-    }
-  }, [mainGridPage, activeMainTab, queryClient]);
-
   const { data: trendingData, isLoading: loadingTrending, isFetching: fetchingTrending } = useQuery({
-    queryKey: ["trending", mainGridPage],
+    queryKey: ["trending", 1],
     queryFn: async ({ signal }) => {
-      const res = await getTrendingAnime(mainGridPage, signal);
-      if (res?.media && mainGridPage === 1) setCache("trending", res);
+      const res = await getTrendingAnime(1, signal);
+      if (res?.media) setCache("trending", res);
       return res;
     },
-    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("trending"),
+    placeholderData: getCached("trending"),
     staleTime: 1000 * 60 * 30,
-    gcTime: 1000 * 60 * 2, // 2 minutes (prevents RAM bloat if user hits page 800)
+    gcTime: 1000 * 60 * 2, // 2 minutes
   });
 
   const { data: popularData, isLoading: loadingPopular, isFetching: fetchingPopular } = useQuery({
-    queryKey: ["popular", mainGridPage],
+    queryKey: ["popular", 1],
     queryFn: async ({ signal }) => {
-      const res = await getPopularAnime(mainGridPage, signal);
-      if (res?.media && mainGridPage === 1) setCache("popular", res);
+      const res = await getPopularAnime(1, signal);
+      if (res?.media) setCache("popular", res);
       return res;
     },
-    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("popular"),
+    placeholderData: getCached("popular"),
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 2,
   });
 
   const { data: newReleasesData, isLoading: loadingNew, isFetching: fetchingNew } = useQuery({
-    queryKey: ["newReleases", mainGridPage],
+    queryKey: ["newReleases", 1],
     queryFn: async ({ signal }) => {
-      const res = await getNewReleases(mainGridPage, signal);
-      if (res?.media && mainGridPage === 1) setCache("new", res);
+      const res = await getNewReleases(1, signal);
+      if (res?.media) setCache("new", res);
       return res;
     },
-    placeholderData: (prev) => prev !== undefined ? keepPreviousData(prev) : getCached("new"),
+    placeholderData: getCached("new"),
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 2,
   });
@@ -189,36 +163,14 @@ export default function Home() {
 
   const handleRemoveProgress = async (animeId) => {
     setGlobalProgress(prev => prev.filter(p => p.animeId !== animeId));
-    try {
-      await removeProgress(animeId);
-    } catch (error) {
-      console.error("Failed to remove progress:", error);
+    if (user) {
+      try {
+        await removeProgress(animeId);
+      } catch (error) {
+        console.error("Failed to remove progress:", error);
+      }
     }
   };
-
-  // Determine which data to show in the main grid based on the active tab
-  let mainGridData = [];
-  let mainGridLoading = false;
-  let mainGridFetching = false;
-  let mainGridInfo = {};
-  if (activeMainTab === "NEWEST") {
-    mainGridData = newReleasesData?.media || [];
-    mainGridInfo = newReleasesData?.pageInfo || {};
-    mainGridLoading = loadingNew;
-    mainGridFetching = fetchingNew;
-  } else if (activeMainTab === "POPULAR") {
-    mainGridData = trendingData?.media || [];
-    mainGridInfo = trendingData?.pageInfo || {};
-    mainGridLoading = loadingTrending;
-    mainGridFetching = fetchingTrending;
-  } else if (activeMainTab === "TOP RATED") {
-    mainGridData = popularData?.media || [];
-    mainGridInfo = popularData?.pageInfo || {};
-    mainGridLoading = loadingPopular;
-    mainGridFetching = fetchingPopular;
-  }
-  
-  const mainGridTotalPages = mainGridInfo.lastPage || (mainGridInfo.total ? Math.ceil(mainGridInfo.total / cardsPerPage) : 1);
 
   return (
     <div className="min-h-screen text-white overflow-x-hidden relative bg-[#0B0B0E]">
@@ -233,8 +185,7 @@ export default function Home() {
           <div className="w-full xl:w-[70%] flex flex-col gap-8 min-w-0">
             
             {/* Watch History */}
-            {globalProgress && globalProgress.length > 0 && (
-              <div id="continue-watching" className="w-full">
+            <div id="continue-watching" className="w-full">
                 {showContinueWatching ? (
                   <AnimeRow
                     subtitle="Your Watchlist"
@@ -253,7 +204,7 @@ export default function Home() {
                     }))}
                     isLoading={false}
                     isScrollable={true}
-                    onRemove={user ? handleRemoveProgress : undefined}
+                    onRemove={handleRemoveProgress}
                     CardComponent={HorizontalProgressCard}
                     headerAction={
                       <button
@@ -264,6 +215,7 @@ export default function Home() {
                         <Eye size={15} />
                       </button>
                     }
+                    emptyMessage="You haven't watched anything yet. Start exploring!"
                   />
                 ) : (
                   <div className="flex items-center gap-3 py-4">
@@ -281,7 +233,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            )}
             
             {/* Live Comments */}
             <div className="w-full mt-4">
@@ -291,33 +242,32 @@ export default function Home() {
             <ShareBanner />
             <W2GNoticeBanner />
 
-            {/* Main Anime Grid */}
-            <div id="main-grid" className="w-full mt-4">
+            {/* Main Anime Grids */}
+            <div id="main-grid" className="w-full mt-4 flex flex-col gap-12">
               <AnimeRow
-                title=""
-                data={mainGridData}
-                isLoading={mainGridLoading}
-                isFetching={mainGridFetching}
-                limit={cardsPerPage}
-                tabs={["NEWEST", "POPULAR", "TOP RATED"]}
-                activeTab={activeMainTab}
-                onTabChange={(tab) => {
-                  setActiveMainTab(tab);
-                  setMainGridPage(1);
-                }}
+                title="Newest"
+                data={newReleasesData?.media || []}
+                isLoading={loadingNew}
+                isFetching={fetchingNew}
+                limit={16}
+                viewAllLink="/browse"
               />
-              <div className="mt-8">
-                <Pagination
-                  currentPage={mainGridPage}
-                  totalPages={mainGridTotalPages}
-                  hasNextPage={!!mainGridInfo?.hasNextPage}
-                  onPageChange={(p) => {
-                    setMainGridPage(p);
-                    const el = document.getElementById("main-grid");
-                    if (el) window.scrollTo({ top: el.offsetTop - 100, behavior: "smooth" });
-                  }}
-                />
-              </div>
+              <AnimeRow
+                title="Popular"
+                data={trendingData?.media || []}
+                isLoading={loadingTrending}
+                isFetching={fetchingTrending}
+                limit={16}
+                viewAllLink="/browse?sort=TRENDING_DESC"
+              />
+              <AnimeRow
+                title="Top Rated"
+                data={popularData?.media || []}
+                isLoading={loadingPopular}
+                isFetching={fetchingPopular}
+                limit={16}
+                viewAllLink="/browse?sort=SCORE_DESC"
+              />
             </div>
 
           </div>
