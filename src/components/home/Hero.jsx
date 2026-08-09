@@ -10,7 +10,7 @@ import { fetchAnimeLogo } from "../../services/api";
 import { useLanguage } from "../../context/LanguageContext";
 import { useRef } from "react";
 
-const HeroTrailer = ({ trailerId, isMuted, setIsMuted, onPlay, onError, activePlayerRef, ytReady }) => {
+const HeroTrailer = ({ trailerId, isMuted, setIsMuted, onPlay, onEnded, onError, activePlayerRef, ytReady }) => {
   const playerRef = useRef(null);
 
   useEffect(() => {
@@ -47,6 +47,8 @@ const HeroTrailer = ({ trailerId, isMuted, setIsMuted, onPlay, onError, activePl
         onStateChange: (event) => {
           if (event.data === 1) { // YT.PlayerState.PLAYING
             onPlay();
+          } else if (event.data === 0) { // YT.PlayerState.ENDED
+            if (onEnded) onEnded();
           }
         },
         onError: (event) => {
@@ -140,15 +142,36 @@ export default function Hero({ data = [], isLoading }) {
   const { language } = useLanguage();
   const lang = language === "JP" ? "ja" : "en";
 
-  const displayData = data?.slice(0, 6) || [];
+  const displayData = data?.slice(0, 10) || [];
+  const timerRef = useRef(null);
+
+  const advanceSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % displayData.length);
+  };
+
+  const startFallbackTimer = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(advanceSlide, 8000);
+  };
 
   useEffect(() => {
     if (displayData.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % displayData.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [displayData.length]);
+    
+    // Initial start
+    startFallbackTimer();
+    
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [currentIndex, displayData.length]);
+
+  const handlePlay = (id) => {
+    setVideoState(prev => ({ ...prev, [id]: 'playing' }));
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     // Fetch logos for all hero items
@@ -231,7 +254,8 @@ export default function Hero({ data = [], isLoading }) {
                   setIsMuted={setIsMuted}
                   activePlayerRef={activePlayerRef}
                   ytReady={ytReady}
-                  onPlay={() => setVideoState(prev => ({ ...prev, [anime.id]: 'playing' }))}
+                  onPlay={() => handlePlay(anime.id)}
+                  onEnded={advanceSlide}
                   onError={() => setVideoState(prev => ({ ...prev, [anime.id]: 'error' }))}
                 />
               )}

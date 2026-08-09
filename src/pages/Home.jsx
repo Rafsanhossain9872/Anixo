@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -29,9 +30,15 @@ import Pagination from "../components/common/Pagination";
 import LiveComments from "../components/LiveComments";
 
 function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
+  const getViewAllLink = () => {
+    if (activeTab === "TOP AIRING") return "/browse?sort=TRENDING_DESC";
+    if (activeTab === "UPCOMING") return "/browse?status=NOT_YET_RELEASED";
+    return "/browse";
+  };
+
   return (
     <div className="flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-6">
         {tabs ? (
           <div className="flex gap-4">
             {tabs.map(tab => (
@@ -47,11 +54,18 @@ function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
         ) : (
           <h2 className="text-[18px] font-bold text-white uppercase">{title}</h2>
         )}
+        <Link 
+          to={getViewAllLink()} 
+          className="bg-white/5 hover:bg-discord-600 border border-white/5 hover:border-discord-500 rounded p-1 text-white/50 hover:text-white transition-all group"
+          title={`View all ${activeTab ? activeTab.toLowerCase() : title.toLowerCase()}`}
+        >
+          <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+        </Link>
       </div>
       <div className="flex flex-col gap-2">
         {isLoading 
           ? Array.from({length: 5}).map((_,i) => <div key={i} className="h-[104px] bg-white/5 rounded-xl animate-pulse" />)
-          : data?.slice(0, 6).map(anime => <SidebarListCard key={anime.id} anime={anime} />)
+          : data?.slice(0, 10).map(anime => <SidebarListCard key={anime.id} anime={anime} />)
         }
       </div>
     </div>
