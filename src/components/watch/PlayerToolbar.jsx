@@ -103,7 +103,7 @@ export default function PlayerToolbar({
             <>
               <div className="relative" ref={watchlistRef}>
                 <button
-                  onClick={handleToggleBackendWatchlist}
+                  onClick={() => setShowWatchlistDropdown(!showWatchlistDropdown)}
                   disabled={isWatchlistLoading}
                   className={`flex items-center gap-2 transition-all ${isBookmarked ? 'text-discord-500' : 'text-white/70 hover:text-white'}`}
                 >
@@ -116,6 +116,45 @@ export default function PlayerToolbar({
                     {isWatchlistLoading ? 'Saving...' : 'Bookmark'}
                   </span>
                 </button>
+
+                {showWatchlistDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-[100] bg-black/60 sm:hidden" onClick={(e) => { e.stopPropagation(); setShowWatchlistDropdown(false); }}></div>
+                    <div className="fixed bottom-0 left-0 w-full sm:absolute sm:bottom-full sm:mb-3 sm:right-0 bg-[#09090b] border-t sm:border border-white/10 rounded-t-xl sm:rounded-md shadow-2xl py-4 sm:py-2 sm:min-w-[150px] z-[110] animate-in slide-in-from-bottom-2 duration-200">
+                    {["Watching", "Planning", "Completed", "On-Hold", "Dropped"].map((status) => {
+                      const bookmarkItem = backendWatchlist.find(item => item.animeId === String(id));
+                      const isActive = bookmarkItem?.status === status;
+                      return (
+                        <button
+                          key={status}
+                          onClick={() => { handleUpdateWatchlistStatus(status); setShowWatchlistDropdown(false); }}
+                          className={`w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[12px] uppercase tracking-widest font-bold transition-colors ${isActive ? 'text-discord-500 bg-discord-500/5' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                        >
+                          {status}
+                        </button>
+                      );
+                    })}
+                    {isBookmarked && (
+                      <div className="border-t border-white/10 mt-2 pt-2">
+                        <button
+                          onClick={() => { handleUpdateWatchlistStatus("Remove"); setShowWatchlistDropdown(false); }}
+                          className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[12px] uppercase tracking-widest font-bold text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+                    <div className={isBookmarked ? "" : "border-t border-white/10 mt-2 pt-2"}>
+                      <button
+                        onClick={() => setShowWatchlistDropdown(false)}
+                        className="w-full text-left px-5 sm:px-4 py-3 sm:py-2 text-[12px] uppercase tracking-widest font-bold text-white/50 hover:text-white transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
               </div>
 
               <button

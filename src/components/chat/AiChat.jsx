@@ -58,7 +58,7 @@ const lastGreetingIndices = { tsundere: -1, hype: -1, friendly: -1 };
 const getGreeting = (p) => {
   const greetings = {
     tsundere: [
-      "H-Hmph! 😤 I am TenZora. What kind of logical fallacy led you to seek my help? I-It's not like I care about your subpar taste, baka!",
+      "H-Hmph! 😤 I am AniXo. What kind of logical fallacy led you to seek my help? I-It's not like I care about your subpar taste, baka!",
       "Ugh, you again? 🙄 Based on your psychological profile, your taste is tragically predictable. But fine, I'll fix it.",
       "W-What are you staring at?! Just tell me your favorite genres so I can objectively analyze your flawed preferences! 😳",
       "Are you just going to stare, or are we going to find an anime? Objectively speaking, you need my help. Baka! 💢",
@@ -70,7 +70,7 @@ const getGreeting = (p) => {
       "Y-You want my psychological analysis of your taste? *Sigh* Fine. But only this once! Don't make me repeat myself, baka! 😡"
     ],
     hype: [
-      "YOOO! 🔥 What's good bro?! TenZora here! Ready to watch some absolute PEAK fiction?! Let's gooo! 🚀",
+      "YOOO! 🔥 What's good bro?! AniXo here! Ready to watch some absolute PEAK fiction?! Let's gooo! 🚀",
       "LET'S GOOO! 💯 You want action? You want hype? Tell me what you're craving and I'll give you an absolute banger! 🔥",
       "BRO! Stop wasting time! 🕒 Tell me your favorite anime right now and I'll bless you with some legendary recommendations! ⚡",
       "Get ready to binge! 🍿 Drop a genre or an anime you love, and let's find your next obsession! WOOOO! 💥",
@@ -79,10 +79,10 @@ const getGreeting = (p) => {
       "NO CAP! 🧢 I'm about to put you on to the best anime you've ever seen in your life! Tell me what you like! 😤",
       "WAKE UP BRO! ⏰ It's time to watch some peak cinema! Action? Romance? Thriller? Give me something! 🎬",
       "Let's get this bread! 🍞 Tell me what you're looking for, and I'll give straight fire, no misses! 🔥",
-      "YESSIR! 🫡 TenZora in the building! Drop your favorite show right now and let's find your next GOAT! 🐐"
+      "YESSIR! 🫡 AniXo in the building! Drop your favorite show right now and let's find your next GOAT! 🐐"
     ],
     friendly: [
-      "Hi there! 😊 I am TenZora. What kind of anime are we watching today?",
+      "Hi there! 😊 I am AniXo. What kind of anime are we watching today?",
       "Welcome back! ✨ I'm so happy to see you. Any specific anime mood you're in right now? 🌸",
       "Hello friend! 💖 Tell me what anime you usually enjoy, and I'll find something perfect just for you!",
       "Hey! 👋 Grab some snacks! Let me know what you want to watch, and I'll give you the best recommendations. 🍿",
@@ -120,7 +120,7 @@ const AiChat = () => {
   const chatWindowRef = useRef(null);
   
   const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem('tenzora_chat_history');
+    const saved = localStorage.getItem('anixo_chat_history');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -152,7 +152,7 @@ const AiChat = () => {
   const { list: userWatchlist } = useUserList();
 
   useEffect(() => {
-    localStorage.setItem('tenzora_chat_history', JSON.stringify(messages));
+    localStorage.setItem('anixo_chat_history', JSON.stringify(messages));
   }, [messages]);
 
   const PERSONAS = {
@@ -188,20 +188,15 @@ const AiChat = () => {
   }, [messages, isLoading]);
 
   // Drag handlers
-  useEffect(() => {
-    const handleOpenChat = () => setIsOpen(true);
-    window.addEventListener('open-ai-chat', handleOpenChat);
-    return () => window.removeEventListener('open-ai-chat', handleOpenChat);
-  }, []);
-
   const handleMouseDown = (e) => {
     // Agar target button hai toh drag na karein
     if (e.target.closest('button')) return;
     if (isExpanded) return;
     setIsDragging(true);
+    const rect = chatWindowRef.current.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
     });
   };
 
@@ -212,9 +207,10 @@ const AiChat = () => {
     e.preventDefault(); // Prevent scrolling
     setIsDragging(true);
     const touch = e.touches[0];
+    const rect = chatWindowRef.current.getBoundingClientRect();
     setDragOffset({
-      x: touch.clientX - position.x,
-      y: touch.clientY - position.y
+      x: touch.clientX - rect.left,
+      y: touch.clientY - rect.top
     });
   };
 
@@ -388,6 +384,15 @@ const AiChat = () => {
 
   return (
     <>
+      {/* Navbar Icon Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`block transition-all transform hover:scale-110 relative ${isOpen ? 'text-discord-500' : 'text-[#888] hover:text-white'}`}
+        title="Anixo AI"
+      >
+        {isOpen ? <X size={20} strokeWidth={2.5} /> : <span className="font-black text-[16px] tracking-tighter">AI</span>}
+      </button>
+
       {/* Chat Window */}
       {isOpen && createPortal(
         <div 
@@ -418,7 +423,7 @@ const AiChat = () => {
                 </div>
               </div>
               <div className="flex flex-col justify-center">
-                <h3 className="font-bold text-white text-[15px] sm:text-base tracking-wide leading-tight">TenZora</h3>
+                <h3 className="font-bold text-white text-[15px] sm:text-base tracking-wide leading-tight">AniXo</h3>
                 <p className="text-[11px] font-medium text-green-500/90 tracking-wider mt-0.5">Online</p>
               </div>
             </div>
@@ -476,13 +481,6 @@ const AiChat = () => {
               >
                 {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
               </button>
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="p-2 text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 rounded-full transition-all"
-                title="Close"
-              >
-                <X size={16} />
-              </button>
             </div>
           </div>
 
@@ -490,7 +488,7 @@ const AiChat = () => {
           <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {!user ? (
               <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center space-y-4">
-                <h2 className="text-xl font-semibold text-white mb-1">Chat with TenZora AI</h2>
+                <h2 className="text-xl font-semibold text-white mb-1">Chat with AniXo AI</h2>
                 <p className="text-gray-400 text-sm mb-6">for anime recommendation</p>
                 
                 <h3 className="text-base font-bold text-white">Login Required</h3>
@@ -712,11 +710,6 @@ const AiChat = () => {
                 ></iframe>
               </div>
             </div>
-          )}
-
-          {/* Invisible overlay while dragging to prevent iframes from swallowing mouse events */}
-          {isDragging && (
-            <div className="fixed inset-0 z-[999]" style={{ cursor: 'grabbing' }}></div>
           )}
         </div>,
         document.body
