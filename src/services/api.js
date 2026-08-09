@@ -630,10 +630,10 @@ export async function getBrowseAnime(variables, signal) {
 }
 
 export const ANIME_QUERY = `
-  query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus]) {
+  query ($page: Int, $sort: [MediaSort], $status_in: [MediaStatus], $startDate_greater: FuzzyDateInt, $startDate_lesser: FuzzyDateInt) {
     Page(page: $page, perPage: 24) {
       pageInfo { total hasNextPage lastPage }
-      media(type: ANIME, sort: $sort, status_in: $status_in, isAdult: false) {
+      media(type: ANIME, sort: $sort, status_in: $status_in, startDate_greater: $startDate_greater, startDate_lesser: $startDate_lesser, isAdult: false) {
         id
         title { romaji english native }
         coverImage { extraLarge large medium }
@@ -795,13 +795,20 @@ export async function getUpcomingAnime(page = 1, signal) {
 }
 
 export async function getNewReleases(page = 1, signal) {
-  const cacheKey = `newReleases_p${page}`;
+  const cacheKey = `newReleases_v3_p${page}`;
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  const tomorrow = parseInt(`${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`);
+
   const anilistRes = await fetchFromAniList(ANIME_QUERY, {
       page,
-      sort: ["START_DATE_DESC"]
+      sort: ["START_DATE_DESC"],
+      status_in: ["RELEASING", "FINISHED"],
+      startDate_greater: 20000000,
+      startDate_lesser: tomorrow
     }, signal);
   if (anilistRes?.media?.length > 0) {
     cache.set(cacheKey, anilistRes, CACHE_TTL.TRENDING); // Similar TTL as trending

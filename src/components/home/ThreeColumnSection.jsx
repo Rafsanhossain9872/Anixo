@@ -195,8 +195,8 @@ export default function ThreeColumnSection({ newReleases, justCompleted, isLoadi
           />
           <div className="w-full">
             {isLoading
-              ? Array.from({ length: 6 }).map((_, i) => <SkeletonListItem key={i} />)
-              : newReleases?.slice(0, 6)?.map((anime, i) => (
+              ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
+              : newReleases?.slice(0, 10)?.map((anime, i) => (
                 <ListItem key={`nr-${anime.id}-${i}`} anime={anime} />
               ))
             }
@@ -257,8 +257,8 @@ export default function ThreeColumnSection({ newReleases, justCompleted, isLoadi
           />
           <div className="w-full">
             {isLoading
-              ? Array.from({ length: 6 }).map((_, i) => <SkeletonListItem key={i} />)
-              : justCompleted?.slice(0, 6)?.map((anime, i) => (
+              ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
+              : justCompleted?.slice(0, 10)?.map((anime, i) => (
                 <ListItem key={`jc-${anime.id}-${i}`} anime={anime} />
               ))
             }

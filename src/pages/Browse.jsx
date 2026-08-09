@@ -837,7 +837,10 @@ export default function Browse() {
           <div className={`mt-24 mb-10 transition-all duration-1000 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
             <Pagination 
               currentPage={filters.page} 
-              totalPages={result.pageInfo?.lastPage || (result.pageInfo?.hasNextPage ? filters.page + 1 : filters.page)} 
+              totalPages={Math.min(
+                result.pageInfo?.lastPage || (result.pageInfo?.hasNextPage ? filters.page + 1 : filters.page),
+                Math.floor(5000 / (filters.search ? 50 : 30))
+              )} 
               onPageChange={handlePageChange} 
             />
           </div>
