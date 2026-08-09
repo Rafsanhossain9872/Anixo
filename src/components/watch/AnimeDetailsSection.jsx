@@ -6,8 +6,12 @@ import { Mic, Download, Frown, Smile, CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function AnimeDetailsSection({
-  anime, resolvedInfo, getTitle, activeServer, streamUrl,
-  userRating, setUserRating
+  anime,
+  resolvedInfo,
+  getTitle,
+  streamUrl,
+  userRating,
+  setUserRating,
 }) {
   const { t } = useTranslation();
   const [isDescExpanded, setIsDescExpanded] = useState(false);
@@ -119,21 +123,14 @@ export default function AnimeDetailsSection({
           {streamUrl && (
             <button
               onClick={() => {
-                if (activeServer === 4) {
-                  const downloadUrl = streamUrl.includes('#')
-                    ? streamUrl.replace('#', '&download=1#')
-                    : `${streamUrl}&download=1`;
-                  window.open(downloadUrl, '_blank');
-                } else {
-                  window.open(streamUrl, '_blank');
-                }
+                window.open(streamUrl, '_blank');
               }}
               className="flex items-center gap-1.5 text-white/60 hover:text-green-500 transition-all mb-4"
               title="Download / Open External Stream"
             >
               <Download size={15} />
               <span className="text-[9px] font-bold uppercase tracking-wider hidden sm:inline">
-                {activeServer === 4 ? t('details.download') : 'Download / External'}
+                Download / External
               </span>
             </button>
           )}

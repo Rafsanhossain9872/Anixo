@@ -270,7 +270,7 @@ export default function PlayerToolbar({
             </div>
 
             <div className="flex flex-wrap md:flex-nowrap items-center justify-center gap-1">
-              {[1, 2, 3, 4, 5, 6].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <button
                   key={s}
                   onClick={() => setActiveServer(s)}

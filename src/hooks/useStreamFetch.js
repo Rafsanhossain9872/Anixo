@@ -177,71 +177,20 @@ export function useStreamFetch({
           }
         }
 
-        // --- SERVER 4: VIDNEST (AniList ID - Embed Anime) ---
+
+        // --- SERVER 4: ANIXO EMBED (iframe) ---
         else if (activeServer === 4) {
-          const langParam =
-            playerLang.toLowerCase() === "dub" ? "dub" : "sub";
-          const anilistId = anime?.id || (!isMal ? id : null);
-
-          if (anilistId) {
-            url = `https://vidnest.fun/anime/${anilistId}/${activeEpisode}/${langParam}`;
-            setStreamData({
-              server_name: "SERVER 4 (Vidnest)",
-              lang: langParam,
-            });
-          } else {
-            setFetchError(
-              "AniList ID is required for Server 4. Try another server."
-            );
-          }
-        }
-
-        // --- SERVER 5: TRYEMBED (AniList ID) ---
-        else if (activeServer === 5) {
-          const langParam =
-            playerLang.toLowerCase() === "dub" ? "dub" : "sub";
-          const anilistId = anime?.id || (!isMal ? id : null);
-
-          if (anilistId) {
-            const queryParams = [];
-            if (autoPlayRef.current) {
-              queryParams.push("autoplay=true");
-            }
-            queryParams.push("autoSkip=false");
-            queryParams.push(`autoNext=${autoNextRef.current}`);
-            queryParams.push("lang-type=false");
-
-            if (initialTime && initialTime > 0) {
-              queryParams.push(`startAt=${Math.floor(initialTime)}`);
-            }
-
-            const queryString = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
-            url = `https://tryembed.us.cc/embed/anime/${anilistId}/${activeEpisode}/${langParam}${queryString}`;
-
-            setStreamData({
-              server_name: "SERVER 5 (Tryembed)",
-              lang: langParam,
-            });
-          } else {
-            setFetchError(
-              "AniList ID is required for Server 5. Try another server."
-            );
-          }
-        }
-
-        // --- SERVER 6: ANIXO EMBED (iframe) ---
-        else if (activeServer === 6) {
           const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
           const anilistId = anime?.id || (!isMal ? id : null);
 
           if (anilistId) {
             url = `https://anixo.buzz/embed/ani/${anilistId}/${activeEpisode}/${langParam}?autoplay=${autoPlayRef.current ? '1' : '0'}&autonext=${autoNextRef.current ? '1' : '0'}`;
             setStreamData({
-              server_name: "SERVER 6 (Anixo)",
+              server_name: "SERVER 4 (Anixo)",
               lang: langParam,
             });
           } else {
-            setFetchError("AniList ID is required for Server 6. Try another server.");
+            setFetchError("AniList ID is required for Server 4. Try another server.");
           }
         }
 

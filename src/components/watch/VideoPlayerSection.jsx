@@ -83,7 +83,7 @@ export default function VideoPlayerSection({
     let isIframe = false;
     let currentIframeUrl = streamUrl;
 
-    if ((activeServer === 1 || activeServer === 6) && streamData?.all_streams) {
+    if ((activeServer === 1 || activeServer === 4) && streamData?.all_streams) {
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {

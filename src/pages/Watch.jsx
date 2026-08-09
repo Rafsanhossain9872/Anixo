@@ -999,8 +999,8 @@ export default function Watch({ isWatch2GetherMode }) {
               />
             </section>
 
-            {/* Sub-Server Selector for Server 1 and 6 */}
-            {!(wtRoom && !wtRoom.isHost) && (activeServer === 1 || activeServer === 6) && streamData?.all_streams && streamData.all_streams.length > 1 && (
+            {/* Sub-Server Selector for Server 1 and 4 */}
+            {!(wtRoom && !wtRoom.isHost) && (activeServer === 1 || activeServer === 4) && streamData?.all_streams && streamData.all_streams.length > 1 && (
               <div className="bg-[#0a0a0a] border-b border-x border-white/15">
                 <button
                   onClick={() => setShowSubServers(prev => !prev)}
@@ -1116,9 +1116,12 @@ export default function Watch({ isWatch2GetherMode }) {
         {/* Anime Details */}
         {!isFocusMode && (
           <AnimeDetailsSection
-            anime={anime} resolvedInfo={resolvedInfo} getTitle={getTitle}
-            id={id} activeServer={activeServer} streamUrl={streamUrl}
-            userRating={userRating} setUserRating={setUserRating}
+            anime={anime}
+            resolvedInfo={resolvedInfo}
+            getTitle={getTitle}
+            streamUrl={streamUrl}
+            userRating={userRating}
+            setUserRating={setUserRating}
           />
         )}
 
