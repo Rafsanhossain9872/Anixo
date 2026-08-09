@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const PYTHON_API = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
-  ? "http://localhost:7860"
+  ? (import.meta.env.VITE_PYTHON_API || "http://localhost:7860")
   : (import.meta.env.VITE_PYTHON_API || "");
 
 export const PYTHON_API_BACKUP = import.meta.env.VITE_PYTHON_API_BACKUP || "";
@@ -13,13 +13,13 @@ export const TENZORA_SERVER = PYTHON_API;
 export const JIKAN_BASE_URL = import.meta.env.VITE_JIKAN_API || "https://api.jikan.moe/v4";
 
 export const CHAT_SERVER = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
-  ? "http://localhost:8080"
+  ? (import.meta.env.VITE_CHAT_API || "http://localhost:8080")
   : (import.meta.env.VITE_CHAT_API || "");
 
 export const WT_SERVER = import.meta.env.VITE_WATCH2GETHER_API || import.meta.env.VITE_WT_API || (
   (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
-    ? "http://localhost:8081"
-    : ""
+    ? (import.meta.env.VITE_WT_API || "http://localhost:8000")
+    : (import.meta.env.VITE_WT_API || "")
 );
 
 
@@ -190,12 +190,16 @@ async function smartRequest(method, path, options = {}) {
 }
 
 export const backendApi = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com",
+  baseURL: (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+    ? "http://127.0.0.1:5001"
+    : (import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com"),
 });
 
 // Auth-specific API instance — same-origin, proxied by Cloudflare Pages Functions.
 export const authApi = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com",
+  baseURL: (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+    ? "http://127.0.0.1:5001"
+    : (import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com"),
 });
 
 backendApi.interceptors.request.use((config) => {
@@ -641,6 +645,11 @@ export const ANIME_QUERY = `
           airingAt
           episode
         }
+        trailer {
+          id
+          site
+          thumbnail
+        }
         format
         status
         seasonYear
@@ -651,8 +660,51 @@ export const ANIME_QUERY = `
   }
 `;
 
+export async function fetchAnimeLogo(anilistId, title, lang = "en") {
+  try {
+    const cached = localStorage.getItem(`logo_${anilistId}_${lang}`);
+    if (cached) return cached;
+    
+    // Fallback public TMDB key if env is missing
+    const tmdbKey = import.meta.env.VITE_TMDB_API_KEY || "8597e491ed6e80f0de12e349eb60ea6e";
+    if (!title) return null;
+
+    // 1. Search TMDB for the anime (TV)
+    const searchRes = await fetch(`https://api.themoviedb.org/3/search/tv?api_key=${tmdbKey}&query=${encodeURIComponent(title)}`);
+    const searchData = await searchRes.json();
+    
+    if (searchData.results && searchData.results.length > 0) {
+      const tmdbId = searchData.results[0].id;
+      
+      // 2. Fetch images for that TV show
+      const imgRes = await fetch(`https://api.themoviedb.org/3/tv/${tmdbId}/images?api_key=${tmdbKey}`);
+      const imgData = await imgRes.json();
+      
+      if (imgData.logos && imgData.logos.length > 0) {
+        // Prioritize requested language, fallback to the other, then to first available
+        const primaryLang = lang === "ja" || lang === "jp" ? "ja" : "en";
+        const secondaryLang = primaryLang === "en" ? "ja" : "en";
+        
+        let logoObj = imgData.logos.find(l => l.iso_639_1 === primaryLang);
+        if (!logoObj) logoObj = imgData.logos.find(l => l.iso_639_1 === secondaryLang);
+        if (!logoObj) logoObj = imgData.logos[0];
+
+        if (logoObj) {
+          const logoUrl = `https://image.tmdb.org/t/p/w500${logoObj.file_path}`;
+          localStorage.setItem(`logo_${anilistId}_${lang}`, logoUrl);
+          return logoUrl;
+        }
+      }
+    }
+    
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function getTrendingAnime(page = 1, signal) {
-  const cacheKey = `trending_p${page}`;
+  const cacheKey = `trending_v3_p${page}`;
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 

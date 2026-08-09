@@ -65,7 +65,6 @@ export const register = async (req, res) => {
     const profileId = crypto.randomBytes(4).toString('hex');
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const now = { $date: new Date().toISOString() };
     
     const newUser = {
       username,
@@ -75,9 +74,7 @@ export const register = async (req, res) => {
       role: 'user',
       avatar: '',
       displayName: username,
-      lastActive: now,
-      createdAt: now,
-      updatedAt: now
+      lastActive: new Date()
     };
 
     const createdUser = await User.create(newUser);

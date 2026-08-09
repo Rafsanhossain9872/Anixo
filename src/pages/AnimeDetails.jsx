@@ -32,7 +32,7 @@ export default function AnimeDetails() {
     }
   }, [user]);
 
-  const isBookmarked = watchlist.some(item => item.animeId === String(id));
+  const isBookmarked = watchlist.some(item => String(item.animeId) === String(id));
 
   const handleToggleWatchlist = async () => {
     if (!user) return alert("Please login to add to watchlist");

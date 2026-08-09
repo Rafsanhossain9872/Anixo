@@ -6,24 +6,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        miruro: {
-          bg: '#0B0B0E',
-          surface: '#1A1A1E',
-          elevated: '#141418',
-        },
-        discord: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#8B5CF6',
-          600: '#7C3AED',
-          700: '#6D28D9',
-          800: '#5B21B6',
-          900: '#4C1D95',
-          950: '#2e1065',
-        }
+        bg: '#09090b',
+        surface: '#121214',
+        surfaceHover: '#18181b',
+        border: '#27272a',
+        primary: '#eab308', // Yellow for CTAs/badges
+        accent: '#10b981', // Green for AniList tags
+        textMain: '#f4f4f5',
+        textMuted: '#a1a1aa'
+      },
+      fontFamily: {
+        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"JetBrains Mono"', 'monospace'], // Defaulting to monospace as requested
       },
       fontWeight: {
         semibold: '500',

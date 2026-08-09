@@ -46,8 +46,8 @@ export default function NextEpisodeBanner({ anime }) {
   }) : "Release date unavailable";
 
   return (
-    <div className="w-full bg-[#1a1a2e] border border-white/5 rounded-md px-6 py-4 text-center mt-6">
-      <p className="text-[14px] font-bold text-white tracking-wide">
+    <div className="w-full bg-[#121214] border border-white/5 rounded-md px-6 py-4 text-center mt-6">
+      <p className="text-[14px] font-bold text-white tracking-wide font-mono">
         Episode <span className="text-discord-500">{nextEpisode.episode}</span> is scheduled to release on {releaseDate}
         {timeLeft && (
           <span className="text-discord-500 ml-2">

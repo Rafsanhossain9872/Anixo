@@ -40,7 +40,7 @@ export default function EpisodeSidebar({
       se => se.title && /Episode\s+(\d+)/i.test(se.title) && parseInt(se.title.match(/Episode\s+(\d+)/i)[1]) === ep
     ) || (anime?.streamingEpisodes ? anime.streamingEpisodes.at(ep - 1) : null);
     
-    const providerEp = anime?.episodes?.find(e => e.number === ep);
+    const providerEp = Array.isArray(anime?.episodes) ? anime.episodes.find(e => e.number === ep) : null;
     
     return epData?.title
       || aniListEp?.title?.replace(/^Episode \d+\s*-\s*/i, '')
@@ -95,11 +95,10 @@ export default function EpisodeSidebar({
   return (
     <aside className="lg:col-span-1 space-y-4 pt-4 lg:pt-0 animate-in fade-in slide-in-from-right duration-500 flex flex-col">
       <div
-        className="bg-[#0d0d0d] border border-white/15 overflow-hidden flex flex-col h-[500px] md:h-[600px] lg:h-full lg:max-h-[600px] xl:max-h-[650px]"
-        style={{ clipPath: 'polygon(15px 0%, 100% 0%, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0% 100%, 0% 15px)' }}
+        className="bg-[#09090b] border border-white/10 overflow-hidden flex flex-col h-[500px] md:h-[600px] lg:h-full lg:max-h-[600px] xl:max-h-[650px] rounded-xl"
       >
         {/* Header */}
-        <header className="p-4 border-b border-white/15 flex flex-col gap-3 bg-[#111] min-h-[60px]">
+        <header className="p-4 border-b border-white/10 flex flex-col gap-3 bg-[#09090b] min-h-[60px]">
           <div className="flex items-center justify-between w-full">
             {isEpisodeSearchOpen ? (
               <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-right-2 duration-300">
@@ -166,8 +165,8 @@ export default function EpisodeSidebar({
 
         {/* Range Selector */}
         {filteredEpisodes.length > 0 && (
-          <div className="p-4 bg-[#0a0a0a] border-b border-white/15">
-            <div className="flex items-center justify-between bg-[#161616] px-3 py-2 rounded-sm border border-white/15">
+          <div className="p-4 bg-[#09090b] border-b border-white/10">
+            <div className="flex items-center justify-between bg-[#121214] px-3 py-2 rounded-md border border-white/10">
               <button disabled={episodePage === 0} onClick={() => setEpisodePage(p => p - 1)} className={`transition-colors ${episodePage > 0 ? 'text-white hover:text-discord-500' : 'text-white/5'}`}>
                 <ChevronLeft size={18} />
               </button>
@@ -182,7 +181,7 @@ export default function EpisodeSidebar({
         )}
 
         {/* Episode List */}
-        <div className="flex-1 overflow-y-auto p-3 lg:p-4 mini-scrollbar bg-[#0d0d0d]">
+        <div className="flex-1 overflow-y-auto p-3 lg:p-4 mini-scrollbar bg-[#09090b]">
           {filteredEpisodes.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-white/30 animate-in fade-in duration-300">
               <Search size={32} className="mb-3 opacity-20" />
@@ -202,12 +201,12 @@ export default function EpisodeSidebar({
                     onClick={() => setActiveEpisode(ep)}
                     disabled={isW2GNonHost}
                     title={isW2GNonHost ? "Only the host can change episodes" : isFiller ? "Filler Episode" : isMixed ? "Mixed Canon/Filler" : ""}
-                    className={`w-full text-left flex p-1.5 transition-all duration-200 rounded-[8px] border relative overflow-hidden group ${
+                    className={`w-full text-left flex p-1.5 transition-all duration-200 rounded-md border relative overflow-hidden group ${
                       activeEpisode === ep
-                        ? "bg-[#b2a5ff] border-[#b2a5ff] shadow-lg shadow-[#b2a5ff]/20"
+                        ? "bg-[#121214] border-white/10 shadow-md"
                         : isW2GNonHost
-                          ? "bg-[#161616] border-white/5 cursor-not-allowed opacity-50"
-                          : "bg-[#161616] border-white/5 hover:bg-[#252525] hover:border-white/90 hover:shadow-lg hover:-translate-y-[2px]"
+                          ? "bg-transparent border-transparent cursor-not-allowed opacity-50"
+                          : "bg-transparent border-transparent hover:bg-white/5 hover:border-white/10"
                     }`}
                   >
                     {isFiller && <div className="absolute top-0 left-0 w-[3px] h-full bg-amber-500/50 z-10" />}
@@ -224,7 +223,7 @@ export default function EpisodeSidebar({
                         className="w-full h-full object-cover bg-white/5"
                       />
                       <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-[2px] rounded-[3px] border border-white/10 shadow-sm backdrop-blur-md">
-                        <span className="text-[9px] font-semibold text-white/90 tracking-wider leading-none">EP {ep}</span>
+                        <span className="text-[9px] font-mono font-semibold text-white/90 tracking-wider leading-none">EP {ep}</span>
                       </div>
                     </div>
 
@@ -234,7 +233,7 @@ export default function EpisodeSidebar({
                         <span className={`text-[14px] font-semibold line-clamp-1 ${activeEpisode === ep ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
                           {getEpTitle(ep)}
                         </span>
-                        <p className={`text-[12px] leading-[1.3] line-clamp-3 mt-1 font-normal ${activeEpisode === ep ? 'text-[#3e2e5c]' : 'text-white/40'}`}>
+                        <p className={`text-[12px] leading-[1.3] line-clamp-3 mt-1 font-normal ${activeEpisode === ep ? 'text-white/70' : 'text-white/40'}`}>
                           {getEpDescription(ep) || "No description available."}
                         </p>
                       </div>

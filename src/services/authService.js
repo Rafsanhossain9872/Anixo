@@ -7,7 +7,7 @@ export const login = async (email, password) => {
 };
 
 export const loginWithGoogle = async (token) => {
-  const { data } = await axios.post("https://anixo-wckh.onrender.com/auth/google", { token });
+  const { data } = await authApi.post("/auth/google", { token });
   return data;
 };
 

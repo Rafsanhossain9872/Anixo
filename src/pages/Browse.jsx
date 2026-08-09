@@ -236,36 +236,35 @@ export default function Browse() {
       <main className="container max-w-[1720px] mx-auto px-2 md:px-4 pt-16 md:pt-20">
 
         {/* Page Head - Ultra Compact */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 font-senpai">
           <div className="flex items-center gap-3">
-            <div className="w-1 h-5 bg-discord-600 rounded-full shrink-0" />
-            <h2 className="text-2xl font-normal tracking-tighter">{t('browse.title')}</h2>
+            <h2 className="text-3xl font-black tracking-tighter uppercase">{t('browse.title')}</h2>
           </div>
           <button 
             onClick={handleReset}
-            className="text-[11px] uppercase tracking-[0.2em] font-bold text-white/50 hover:text-discord-500 transition-all flex items-center gap-2 group"
+            className="text-[11px] uppercase tracking-widest font-bold text-textMuted hover:text-white transition-all flex items-center gap-2 group border border-border px-4 py-2 rounded"
           >
             <RefreshCw size={12} className={`transition-transform duration-500 ${isResetting ? 'rotate-[360deg]' : ''}`} />
-            ( {t('browse.reset')} )
+            {t('browse.reset')}
           </button>
         </div>
 
         {/* Filters Interface */}
         <div className="mb-6">
-          <div className="hidden md:flex flex-col gap-6">
-            <div className="flex h-[52px] bg-[#0d0d0d] border border-white/10 rounded-xl overflow-visible shadow-2xl relative">
-              <div className="flex-[2.5] relative flex items-center border-r border-white/15">
-                <Search className="absolute left-6 w-4 h-4 text-white/40" />
+          <div className="hidden md:flex flex-col gap-6 font-senpai">
+            <div className="flex h-12 bg-surface border border-border rounded overflow-visible shadow-xl relative">
+              <div className="flex-[2.5] relative flex items-center border-r border-border">
+                <Search className="absolute left-4 w-4 h-4 text-textMuted" />
                 <input
                   type="text"
                   placeholder={t('browse.placeholder')}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full h-full bg-transparent pl-14 pr-12 text-[14px] text-white font-medium placeholder-white/30 outline-none"
+                  className="w-full h-full bg-transparent pl-12 pr-12 text-[13px] text-white font-bold placeholder-textMuted outline-none uppercase tracking-wider"
                 />
                 {searchInput && (
-                  <button onClick={() => setSearchInput("")} className="absolute right-4 w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded-full transition-colors">
-                    <X size={12} className="text-white/40" />
+                  <button onClick={() => setSearchInput("")} className="absolute right-4 w-6 h-6 flex items-center justify-center hover:bg-white/5 rounded transition-colors">
+                    <X size={12} className="text-textMuted" />
                   </button>
                 )}
               </div>
@@ -276,15 +275,15 @@ export default function Browse() {
                 { label: t('browse.status'), key: "status", options: [{ label: t('browse.statusOptions.any'), value: "" }, { label: t('browse.statusOptions.releasing'), value: "RELEASING" }, { label: t('browse.statusOptions.finished'), value: "FINISHED" }, { label: t('browse.statusOptions.upcoming'), value: "NOT_YET_RELEASED" }] },
                 { label: t('browse.advanced'), key: "advanced", active: filters.year || filters.season || filters.rating }
               ].map(dd => (
-                <div key={dd.key} className="flex-1 relative flex items-center border-r border-white/15 group">
+                <div key={dd.key} className="flex-1 relative flex items-center border-r border-border group">
                   <button
                     onClick={() => setOpenDropdown(openDropdown === dd.key ? null : dd.key)}
-                    className={`w-full h-full flex items-center justify-between px-6 transition-all hover:bg-white/2 ${openDropdown === dd.key ? 'bg-white/3' : ''}`}
+                    className={`w-full h-full flex items-center justify-between px-6 transition-all hover:bg-white/5 ${openDropdown === dd.key ? 'bg-white/10' : ''}`}
                   >
-                    <span className={`text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${dd.active ? 'text-discord-500' : 'text-white/40'}`}>
+                    <span className={`text-[11px] uppercase tracking-widest font-bold transition-colors ${dd.active ? 'text-primary' : 'text-textMuted'}`}>
                       {dd.label}
                     </span>
-                    <ChevronDown size={12} className={`text-white/20 transition-transform duration-300 ${openDropdown === dd.key ? 'rotate-180 text-discord-500' : ''}`} />
+                    <ChevronDown size={12} className={`text-textMuted transition-transform duration-300 ${openDropdown === dd.key ? 'rotate-180 text-primary' : ''}`} />
                   </button>
 
                   {openDropdown === dd.key && (
@@ -307,9 +306,9 @@ export default function Browse() {
                                   }
                                   setOpenDropdown(null);
                                 }}
-                                className={`w-full px-3 py-1.5 rounded-lg text-left text-[11px] transition-all flex items-center justify-between group ${(dd.key === 'types' ? filters.formats.includes(opt.value) : filters.status === opt.value)
-                                  ? 'bg-discord-600/10 text-discord-500 font-medium'
-                                  : 'text-white/40 hover:bg-white/3 hover:text-white'
+                                className={`w-full px-3 py-1.5 rounded text-left text-[11px] font-bold tracking-wider transition-all flex items-center justify-between group ${(dd.key === 'types' ? filters.formats.includes(opt.value) : filters.status === opt.value)
+                                  ? 'bg-primary/20 text-primary border border-primary/30'
+                                  : 'text-textMuted hover:bg-white/5 hover:text-white border border-transparent'
                                   }`}
                               >
                                 <span>{opt.label}</span>
@@ -451,18 +450,17 @@ export default function Browse() {
 
               <button
                 onClick={handleShuffleSort}
-                className="w-16 h-full flex items-center justify-center transition-all hover:bg-white/4 text-white/20 hover:text-discord-500 border-r border-white/15"
+                className="w-14 h-full flex items-center justify-center transition-all hover:bg-white/5 text-textMuted hover:text-white border-r border-border"
               >
-                <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+                <RefreshCw size={14} className={isFetching ? 'animate-spin' : ''} />
               </button>
 
               <button
                 onClick={() => refetch()}
-                className="px-10 bg-discord-600 text-white flex items-center gap-4 rounded-r-xl group active:scale-95 transition-all overflow-hidden relative"
+                className="px-8 bg-primary text-black flex items-center gap-3 rounded-r hover:bg-yellow-400 font-bold active:scale-95 transition-all overflow-hidden relative"
               >
-                <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-                <span className="text-[13px] font-normal uppercase tracking-[0.2em] relative z-10">{t('browse.sync')}</span>
-                <ArrowRight size={16} className="relative z-10 group-hover:translate-x-1 transition-transform" />
+                <span className="text-xs uppercase tracking-widest relative z-10">{t('browse.sync')}</span>
+                <ArrowRight size={14} className="relative z-10" />
               </button>
             </div>
           </div>
@@ -556,31 +554,31 @@ export default function Browse() {
                                   <button
                                     key={opt}
                                     onClick={() => toggleGenre(opt)}
-                                    className={`px-2 py-1.5 rounded text-left text-[10px] transition-all flex items-center justify-between group ${
+                                    className={`px-2 py-1.5 rounded text-left text-[10px] uppercase font-bold tracking-wider transition-all flex items-center justify-between group ${
                                       isIncluded
-                                        ? "bg-discord-600/10 text-discord-500 font-medium border border-discord-500/20"
+                                        ? 'bg-primary/20 text-primary border border-primary/30'
                                         : isExcluded
-                                          ? "bg-white/[0.02] text-white/25 font-medium border border-white/10"
-                                          : "text-white/30 border border-transparent hover:bg-white/3 hover:text-white/60"
+                                          ? 'bg-white/5 text-white/30 border border-white/10'
+                                          : 'text-textMuted border border-transparent hover:bg-white/5 hover:text-white'
                                       }`}
                                   >
-                                    <span className={`truncate ${isExcluded ? 'line-through decoration-discord-500/60' : ''}`}>{opt}</span>
-                                    {isIncluded && <Check size={9} className="text-discord-500 shrink-0" />}
-                                    {isExcluded && <X size={9} className="text-discord-500/60 shrink-0" />}
+                                    <span className={`truncate ${isExcluded ? 'line-through decoration-red-500/60' : ''}`}>{opt}</span>
+                                    {isIncluded && <Check size={9} className="text-primary shrink-0" />}
+                                    {isExcluded && <X size={9} className="text-red-500/60 shrink-0" />}
                                   </button>
                                   );
                                 })}
                               </div>
-                              <div className="pt-2 border-t border-white/15 flex items-center justify-end gap-2 text-[9px]">
+                              <div className="pt-2 border-t border-border flex items-center justify-end gap-2 text-[9px] mt-2">
                                 <button
                                   onClick={handleReset}
-                                  className="px-4 py-1.5 uppercase tracking-widest text-white/20 hover:text-white transition-colors"
+                                  className="px-4 py-1.5 uppercase tracking-widest text-textMuted hover:text-white transition-colors font-bold"
                                 >
                                   {t('browse.reset')}
                                 </button>
                                 <button
                                   onClick={() => setOpenDropdown(null)}
-                                  className="px-5 py-1.5 bg-white/5 border border-white/10 text-white uppercase tracking-[0.2em] rounded-lg hover:bg-white/10 transition-all"
+                                  className="px-5 py-1.5 bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 uppercase tracking-widest rounded transition-all font-bold"
                                 >
                                   {t('browse.close')}
                                 </button>
@@ -743,16 +741,15 @@ export default function Browse() {
               <div className="flex gap-2">
                 <button
                   onClick={handleShuffleSort}
-                  className="flex-1 h-10 flex items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/40 hover:text-discord-500 hover:bg-white/10 transition-all"
+                  className="flex-1 h-10 flex items-center justify-center rounded border border-white/10 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
                 >
                   <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
                 </button>
                 <button
                   onClick={() => refetch()}
-                  className="flex-2 h-10 bg-discord-600 text-white flex items-center justify-center gap-3 rounded-lg active:scale-95 transition-all overflow-hidden relative"
+                  className="flex-2 h-10 bg-primary text-black flex items-center justify-center gap-3 rounded font-bold active:scale-95 transition-all overflow-hidden relative"
                 >
-                  <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-500" />
-                  <span className="text-[11px] font-normal uppercase tracking-[0.2em] relative z-10">{t('browse.sync')}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.2em] relative z-10">{t('browse.sync')}</span>
                   <ArrowRight size={14} className="relative z-10" />
                 </button>
               </div>
@@ -762,13 +759,13 @@ export default function Browse() {
           <div className="flex flex-wrap gap-2 pt-2">
             {(filters.include.length + filters.exclude.length + filters.formats.length + (filters.status ? 1 : 0) + (filters.year ? 1 : 0)) > 0 && (
               <>
-                <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:border-discord-500/50 hover:bg-discord-500/5 text-white/40 hover:text-discord-500 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all mr-2">
+                <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 hover:border-primary/50 hover:bg-primary/5 text-white/40 hover:text-primary rounded-full text-[9px] font-bold uppercase tracking-widest transition-all mr-2">
                   <Trash2 size={10} /> {t('browse.reset')}
                 </button>
                 {filters.include.map(g => (
-                  <div key={g} className="group flex items-center gap-2 px-3 py-1.5 bg-discord-600/10 border border-discord-600/30 rounded-full text-[9px] text-discord-500 font-bold uppercase tracking-widest transition-all">
+                  <div key={g} className="group flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-full text-[9px] text-primary font-bold uppercase tracking-widest transition-all">
                     {g}
-                    <X size={10} className="cursor-pointer text-discord-500/50 group-hover:text-discord-500" onClick={() => toggleGenre(g)} />
+                    <X size={10} className="cursor-pointer text-primary/50 group-hover:text-primary" onClick={() => toggleGenre(g)} />
                   </div>
                 ))}
                 {filters.exclude.map(g => (
@@ -811,23 +808,23 @@ export default function Browse() {
           )}
 
           {(isLoading || (isFetching && animeList.length === 0)) ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-x-3 gap-y-6 md:gap-x-5 md:gap-y-10 opacity-40">
-              {Array.from({ length: 30 }).map((_, i) => <SkeletonCard key={i} />)}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-3 gap-y-8 opacity-40">
+              {Array.from({ length: 32 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
           ) : animeList.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6 gap-x-3 gap-y-6 md:gap-x-5 md:gap-y-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-3 gap-y-8">
               {animeList.map(anime => <AnimeCard key={anime.id} anime={anime} />)}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-48 text-center">
               <div className="w-28 h-28 bg-white/5 rounded-full flex items-center justify-center mb-10 shadow-inner group">
-                <Search size={32} className="text-white/10 group-hover:text-discord-500 transition-colors" />
+                <Search size={32} className="text-white/10 group-hover:text-primary transition-colors" />
               </div>
               <h3 className="text-3xl font-bold tracking-tight mb-4">{t('browse.noResults')}</h3>
               <p className="text-white/40 max-w-sm text-sm mb-12 leading-relaxed font-medium">{t('browse.noResultsDesc')}</p>
               <button
                 onClick={handleReset}
-                className="px-12 py-4 bg-discord-600 hover:bg-discord-700 text-white text-[12px] font-bold uppercase tracking-[0.3em] rounded-full transition-all shadow-2xl active:scale-95"
+                className="px-12 py-4 bg-primary hover:bg-yellow-400 text-black text-[12px] font-bold uppercase tracking-[0.3em] rounded transition-all shadow-2xl active:scale-95"
               >
                 {t('browse.clearFilters')}
               </button>

@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ALL_GENRES } from "../../constants/genres";
 import NavSidebar from "./NavSidebar";
 import { useLanguage } from "../../context/LanguageContext";
 import { searchAnime } from "../../services/api";
 import { getWatchUrl } from "../../utils/url";
-import { Search, Shuffle, Camera, SlidersHorizontal, Mic, Menu, Bell, MessageSquare } from "lucide-react";
-
+import { Search, Shuffle, Menu, Bell, X } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LoginModal from "../auth/LoginModal";
 import AvatarDropdown from "../user/AvatarDropdown";
@@ -24,19 +22,12 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const searchContainerRef = useRef(null);
-  const mobileSearchRef = useRef(null);
   const { language, toggleLanguage, getTitle } = useLanguage();
-  const { user, loading: authLoading, globalNotifications, fetchNotifications, authToast } = useAuth();
+  const { user, globalNotifications, fetchNotifications } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [searchFilters, setSearchFilters] = useState({
-    format_in: [],
-    status: "",
-    season: "",
-  });
-
+  
   const unreadCount = globalNotifications.filter(n => !n.isRead).length;
 
   const handleSearchSubmit = (e) => {
@@ -62,21 +53,18 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const isInsideDesktop = searchContainerRef.current && searchContainerRef.current.contains(event.target);
-      const isInsideMobile = mobileSearchRef.current && mobileSearchRef.current.contains(event.target);
-
-      if (!isInsideDesktop && !isInsideMobile) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
         setShowDropdown(false);
+        setIsSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Real-time search logic matching Hero.jsx
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (!searchQuery.trim() && Object.keys(searchFilters).every(k => !searchFilters[k] || searchFilters[k].length === 0)) {
+      if (!searchQuery.trim()) {
         setSearchResults([]);
         setShowDropdown(false);
         return;
@@ -84,7 +72,7 @@ export default function Navbar() {
       setIsSearching(true);
       setShowDropdown(true);
       try {
-        const results = await searchAnime(searchQuery, searchFilters);
+        const results = await searchAnime(searchQuery, {});
         setSearchResults(results);
       } catch (err) {
         console.error("Navbar Search Error:", err);
@@ -92,325 +80,144 @@ export default function Navbar() {
         setIsSearching(false);
       }
     }, 300);
-
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, searchFilters]);
+  }, [searchQuery]);
+
+  const handleRandom = async () => {
+    try {
+      const { getTrendingAnime } = await import('../../services/api');
+      const res = await getTrendingAnime(1);
+      if (res?.media?.length) {
+        const randomAnime = res.media[Math.floor(Math.random() * res.media.length)];
+        navigate(getWatchUrl(randomAnime.id, randomAnime.title) + '?autoplay=1');
+      }
+    } catch (e) {
+      console.error("Failed to fetch random anime", e);
+    }
+  };
+
+  if (isLandingPage) return null;
 
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-[110] bg-[#0B0B0E] h-[56px]" style={{ willChange: 'transform' }}>
-        <div className="max-w-[1720px] mx-auto px-4 h-full flex items-center justify-between relative z-20">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[98%] max-w-[1600px] z-[110] font-senpai">
+        <nav className="flex items-center justify-between bg-bg/95 backdrop-blur-xl border border-white/5 rounded-full px-3 py-2.5 shadow-2xl">
           
-          {/* LEFT: Hamburger + Logo + Left Links */}
-          <div className="flex items-center gap-4 shrink-0 h-full">
-            <button
-              onClick={() => {
-                setSidebarTab("menu");
-                setShowSidebar(true);
-              }}
-              className="text-white/60 hover:text-white transition-colors duration-150 p-1 xl:hidden"
-            >
-              <Menu strokeWidth={2.5} size={24} />
-            </button>
-
-            {!isLandingPage && (
-              <Link to="/home" className="flex items-baseline gap-0 hover:opacity-80 transition-opacity">
-                <span className="text-white font-extrabold text-[22px] tracking-tight">Tenzora</span>
-              </Link>
-            )}
-
-            {!isLandingPage && (
-              <div className="hidden xl:flex items-center gap-1 ml-2 h-full">
-                <Link to="/browse?format=TV" className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase">Types</Link>
-                <Link to="/browse?genre=Action" className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase">Genres</Link>
-                <button onClick={async () => {
-                  try {
-                    const { getTrendingAnime } = await import('../../services/api');
-                    const res = await getTrendingAnime(1);
-                    if (res?.media?.length) {
-                      const randomAnime = res.media[Math.floor(Math.random() * res.media.length)];
-                      navigate(getWatchUrl(randomAnime.id, randomAnime.title) + '?autoplay=1');
-                    }
-                  } catch (e) {
-                    console.error("Failed to fetch random anime", e);
-                  }
-                }} className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase">Random</button>
-                <Link to="/chat" className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase">Live Chat</Link>
-                <Link to="/community" className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase">Community</Link>
-                <Link to="/nsfw" className="px-3 h-full flex items-center text-[12px] font-bold text-[#ff2a5f] hover:text-[#ff7e40] transition-colors duration-200 uppercase">Hentai</Link>
-                <Link to="/watch2gether" className="px-3 h-full flex items-center text-[12px] font-bold text-white/50 hover:text-white transition-colors duration-200 uppercase gap-1.5">
-                  Watch2gather
-                  <span className="bg-discord-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-[4px] uppercase tracking-wider">BETA</span>
-                </Link>
-              </div>
-            )}
+          {/* LOGO */}
+          <div className="flex-shrink-0 mr-4 pl-2">
+            <Link to="/home" className="flex items-center gap-1">
+              <span className="text-white font-black text-xl tracking-tighter uppercase">Tenzora</span>
+            </Link>
           </div>
 
-          {/* CENTER: Spacer (Search is on right now) */}
-          {!isLandingPage && (
-            <div className="flex-1 hidden xl:flex justify-end px-4 h-full items-center" ref={searchContainerRef}>
-              <div className="relative w-full max-w-[400px]">
-                <form
-                  onSubmit={handleSearchSubmit}
-                  className="flex items-center bg-[#1A1A1E] border border-transparent rounded-full px-4 h-[40px] hover:bg-[#202026] focus-within:border-discord-500/50 focus-within:bg-[#1A1A1E] transition-colors duration-150 w-full"
-                >
-                  <Search className="w-[18px] h-[18px] text-white/40 mr-2.5 shrink-0" strokeWidth={2.5} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => { if (searchQuery.trim()) setShowDropdown(true); }}
-                    placeholder="Search Anime"
-                    className="bg-transparent text-[14px] font-medium text-white/90 outline-none w-full placeholder-white/30"
-                  />
-                  {isSearching && <div className="w-4 h-4 border-2 border-discord-500 border-t-transparent rounded-full animate-spin shrink-0 mr-2" />}
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigate("/browse");
-                      setShowDropdown(false);
-                    }}
-                    className="text-white/40 hover:text-white transition-colors p-1 ml-1 shrink-0"
-                    title="Advanced Search"
-                  >
-                    <SlidersHorizontal size={16} strokeWidth={2.5} />
-                  </button>
-                </form>
+          {/* SCROLLABLE LINKS (Tenzora Hybrid Menu) */}
+          <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-5 px-4 mask-linear-fade">
+             <Link to="/home" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Home</Link>
+             <Link to="/browse" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Browse</Link>
+             <Link to="/browse?sort=POPULARITY_DESC" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Popular</Link>
+             <Link to="/browse?format=MOVIE" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Movies</Link>
+             <button onClick={handleRandom} className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">Random</button>
+             <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">AI Live Chat</button>
+             <Link to="/community" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Community</Link>
+             <Link to="/nsfw" className="text-textMuted hover:text-primary text-[13px] font-semibold transition-colors whitespace-nowrap">Hentai</Link>
+             <Link to="/watch-later" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Watch Later</Link>
+          </div>
 
-                {/* Desktop Dropdown Results */}
-                {showDropdown && (
-                  <div className="absolute top-full left-0 w-full mt-2 bg-[#1A1A1E] border border-white/[0.08] rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden z-[110] animate-in fade-in zoom-in-95 duration-200">
-                    {/* Advanced Filters Panel */}
-                    {showFilters && (
-                      <div className="p-4 border-b border-white/[0.05] bg-[#141418]">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em]">Quick Filters</span>
-                          <button
-                            onClick={() => setSearchFilters({ format_in: [], status: "", season: "" })}
-                            className="text-[9px] text-discord-400 hover:text-discord-300 font-bold uppercase transition-colors"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-1.5">
-                            {['TV', 'MOVIE', 'OVA', 'ONA'].map(f => (
-                              <button
-                                key={f}
-                                onClick={() => setSearchFilters(prev => ({
-                                  ...prev,
-                                  format_in: prev.format_in.includes(f) ? prev.format_in.filter(x => x !== f) : [...prev.format_in, f]
-                                }))}
-                                className={`px-2 py-1 rounded-md text-[9px] font-bold border transition-colors ${searchFilters.format_in.includes(f) ? 'bg-discord-600 border-discord-600 text-white' : 'bg-white/[0.04] border-white/[0.08] text-white/40 hover:border-white/15'}`}
-                              >
-                                {f}
-                              </button>
-                            ))}
+          {/* RIGHT SIDE ICONS */}
+          <div className="flex-shrink-0 flex items-center gap-2 ml-4 relative" ref={searchContainerRef}>
+             
+             {/* Search Icon / Bar */}
+             {isSearchOpen ? (
+               <form onSubmit={handleSearchSubmit} className="flex items-center bg-surface border border-border rounded-full px-3 h-10 w-[200px] animate-in fade-in slide-in-from-right-4">
+                 <Search size={14} className="text-textMuted mr-2 shrink-0" />
+                 <input
+                   autoFocus
+                   type="text"
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   className="bg-transparent outline-none text-sm text-white w-full placeholder:text-textMuted font-senpai"
+                   placeholder="Search..."
+                 />
+                 <button type="button" onClick={() => setIsSearchOpen(false)} className="text-textMuted hover:text-white shrink-0">
+                   <X size={14} />
+                 </button>
+               </form>
+             ) : (
+               <button onClick={() => setIsSearchOpen(true)} className="w-10 h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer">
+                  <Search size={16} />
+               </button>
+             )}
+
+             {/* Search Dropdown Overlay */}
+             {showDropdown && (
+                <div className="absolute top-[50px] right-0 w-[300px] bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[120]">
+                  {isSearching ? (
+                    <div className="p-4 text-center text-textMuted text-xs font-senpai">Searching...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="max-h-[400px] overflow-y-auto mini-scrollbar">
+                      {searchResults.map(anime => (
+                        <Link 
+                          key={anime.id} 
+                          to={getWatchUrl(anime.id, anime.title)}
+                          onClick={() => { setShowDropdown(false); setIsSearchOpen(false); setSearchQuery(""); }}
+                          className="flex items-center gap-3 p-3 hover:bg-surfaceHover border-b border-border last:border-0 transition-colors"
+                        >
+                          <img src={anime.coverImage?.medium} className="w-10 h-14 object-cover rounded bg-bg" alt="" />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-white text-xs font-semibold truncate font-senpai">{getTitle(anime.title)}</span>
+                            <span className="text-textMuted text-[10px] mt-1 font-senpai">{anime.format || "TV"}</span>
                           </div>
-                          <div className="flex gap-2">
-                            <select
-                              value={searchFilters.status}
-                              onChange={(e) => setSearchFilters(prev => ({ ...prev, status: e.target.value }))}
-                              className="bg-white/[0.04] border border-white/[0.08] text-[9px] text-white/50 rounded-md px-2 py-1 outline-none flex-1 focus:border-discord-500/50 transition-colors"
-                            >
-                              <option value="">All Status</option>
-                              <option value="RELEASING">Airing</option>
-                              <option value="FINISHED">Finished</option>
-                            </select>
-                            <select
-                              value={searchFilters.season}
-                              onChange={(e) => setSearchFilters(prev => ({ ...prev, season: e.target.value }))}
-                              className="bg-white/[0.04] border border-white/[0.08] text-[9px] text-white/50 rounded-md px-2 py-1 outline-none flex-1 focus:border-discord-500/50 transition-colors"
-                            >
-                              <option value="">All Seasons</option>
-                              <option value="WINTER">Winter</option>
-                              <option value="SPRING">Spring</option>
-                              <option value="SUMMER">Summer</option>
-                              <option value="FALL">Fall</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    {isSearching ? (
-                      <div className="p-6 text-center text-white/30 text-[13px] animate-pulse">Searching...</div>
-                    ) : (
-                      <>
-                        <div className="px-4 py-2 border-b border-white/[0.05] flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Results</span>
-                          <button
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowFilters(!showFilters); }}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors ${showFilters ? 'bg-discord-600/20 text-discord-400' : 'text-white/40 hover:text-white/60 hover:bg-white/[0.02]'}`}
-                          >
-                            <SlidersHorizontal size={10} strokeWidth={3} />
-                            <span className="text-[9px] font-bold uppercase">Filters</span>
-                          </button>
-                        </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-textMuted text-xs font-senpai">No results found.</div>
+                  )}
+                </div>
+             )}
 
-                        {searchResults.length > 0 ? (
-                          <ul className="max-h-[60vh] overflow-y-auto mini-scrollbar py-2">
-                            {searchResults.map((anime) => {
-                              const currentEps = anime.nextAiringEpisode ? (anime.nextAiringEpisode.episode - 1) : anime.episodes;
-                              return (
-                                <Link
-                                  key={anime.id}
-                                  to={getWatchUrl(anime.id, anime.title)}
-                                  onClick={() => {
-                                    setShowDropdown(false);
-                                    setSearchQuery("");
-                                  }}
-                                  className="flex items-start gap-4 p-3 hover:bg-white/[0.04] cursor-pointer transition-colors border-b border-white/[0.02] last:border-0 group text-left"
-                                >
-                                  <img
-                                    src={anime.coverImage?.medium || anime.coverImage?.large}
-                                    alt={getTitle(anime.title)}
-                                    loading="lazy"
-                                    className="w-[40px] h-[54px] object-cover rounded-md flex-shrink-0 bg-[#0B0B0E]"
-                                  />
-                                  <div className="flex flex-col min-w-0 justify-center">
-                                    <span className="text-white/90 text-[13px] font-medium truncate mb-1 group-hover:text-discord-400 transition-colors">
-                                      {getTitle(anime.title)}
-                                    </span>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <span className="text-[9px] text-white/40 bg-white/[0.05] px-1.5 py-[2.5px] rounded-md flex items-center gap-1 font-medium leading-none">
-                                        <span className="font-black text-[8px] tracking-tight translate-y-[0.2px]">CC</span>
-                                        <span className="translate-y-[-0.2px]">{currentEps || "?"}</span>
-                                      </span>
-                                      <span className="text-[9px] text-white/40 bg-white/[0.05] px-1.5 py-[2.5px] rounded-md flex items-center gap-1 font-medium leading-none">
-                                        <Mic size={9} fill="currentColor" className="translate-y-[0.2px]" />
-                                        <span className="translate-y-[-0.2px]">{currentEps || "?"}</span>
-                                      </span>
-                                      <span className="text-[9px] text-white/40 font-bold uppercase tracking-tighter">
-                                        {anime.format || "TV"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <div className="p-6 text-center text-white/30 text-[13px]">No results found.</div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+             {/* Shuffle Icon */}
+             <button onClick={handleRandom} className="hidden md:flex w-10 h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer">
+                <Shuffle size={16} />
+             </button>
 
-          {/* RIGHT: Icons */}
-          {!isLandingPage && (
-            <div className="flex items-center gap-2 shrink-0">
-              
-              {/* Mobile Search Toggle */}
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="xl:hidden w-[38px] h-[38px] flex items-center justify-center rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors duration-150"
-              >
-                <Search size={18} strokeWidth={2.5} />
-              </button>
-              
-              {/* Desktop EN Toggle */}
-              <button
-                onClick={toggleLanguage}
-                className="hidden md:flex items-center justify-center w-[38px] h-[38px] rounded-full font-bold text-[13px] text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors duration-150"
-                title="Toggle Language"
-              >
-                {language}
-              </button>
+             {/* EN | JP Toggle */}
+             <button onClick={toggleLanguage} className="hidden sm:flex items-center bg-surface rounded-full p-1 border border-border cursor-pointer">
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition-colors ${language === 'EN' ? 'bg-white/10 text-white' : 'text-textMuted'}`}>EN</span>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition-colors ${language === 'JP' ? 'bg-white/10 text-white' : 'text-textMuted'}`}>JP</span>
+             </button>
 
-              {/* AI Recommendations Icon */}
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('open-ai-chat'));
-                }}
-                className="flex w-auto px-3 h-[38px] gap-2 items-center justify-center rounded-full text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors duration-150"
-                title="AI Recommendations"
-              >
-                <MessageSquare size={18} strokeWidth={2.5} />
-                <span className="text-[12px] font-bold">AI</span>
-              </button>
-
-              {/* Notifications */}
-              <div className="relative flex items-center">
+             {/* Notifications */}
+             <div className="relative">
                 <button
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={() => {
-                    if (!isNotifOpen) fetchNotifications();
-                    setIsNotifOpen(!isNotifOpen);
-                  }}
-                  className={`w-[38px] h-[38px] flex items-center justify-center rounded-full transition-colors duration-150 ${isNotifOpen ? 'text-discord-400 bg-white/[0.05]' : 'text-white/50 hover:text-white hover:bg-white/[0.05]'}`}
+                  onClick={() => { if(!isNotifOpen) fetchNotifications(); setIsNotifOpen(!isNotifOpen); }}
+                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${isNotifOpen ? 'bg-surfaceHover border-white/10 text-white' : 'bg-surface border-white/5 text-textMuted hover:text-white hover:bg-surfaceHover'}`}
                 >
-                  <Bell size={18} strokeWidth={2.5} />
+                  <Bell size={16} />
                   {unreadCount > 0 && (
-                    <span className="absolute top-[8px] right-[8px] bg-discord-600 text-white text-[9px] font-black min-w-[16px] h-[16px] px-1 rounded-full flex items-center justify-center border-[2px] border-[#0B0B0E]">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
+                    <span className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-bg"></span>
                   )}
                 </button>
                 <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
-              </div>
+             </div>
 
-              {/* Profile / Avatar or LOGIN button */}
-              {user ? (
-                <div className="ml-1">
-                  <AvatarDropdown />
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="ml-1 h-[38px] flex items-center justify-center rounded-md px-3 text-white/50 hover:text-white hover:bg-white/[0.05] font-bold text-[12px] uppercase tracking-widest transition-colors duration-150"
-                  title="Login"
-                >
-                  LOGIN
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+             {/* User Profile */}
+             {user ? (
+               <AvatarDropdown />
+             ) : (
+               <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded transition-colors backdrop-blur-sm">LOGIN</button>
+             )}
 
-        {/* Mobile Search Overlay */}
-        {isSearchOpen && (
-          <div ref={mobileSearchRef} className="md:hidden absolute top-[56px] left-0 w-full bg-[#0B0B0E] border-b border-white/[0.05] p-3 animate-in slide-in-from-top duration-200 z-10 shadow-lg">
-            <div className="relative w-full">
-              <form
-                onSubmit={handleSearchSubmit}
-                className="flex items-center bg-[#1A1A1E] border border-transparent rounded-full px-4 h-[44px] w-full"
-              >
-                <Search className="w-[18px] h-[18px] text-white/40 mr-2.5" strokeWidth={2.5} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search Anime"
-                  className="bg-transparent text-[15px] font-medium text-white/90 outline-none w-full placeholder-white/30"
-                  autoFocus
-                />
-                {isSearching && <div className="w-4 h-4 border-2 border-discord-500 border-t-transparent rounded-full animate-spin shrink-0 mr-2" />}
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate("/browse");
-                    setIsSearchOpen(false);
-                    setShowDropdown(false);
-                  }}
-                  className="text-white/40 p-1 rounded-full transition-colors shrink-0 ml-1"
-                >
-                  <SlidersHorizontal size={18} strokeWidth={2.5} />
-                </button>
-              </form>
-            </div>
+             {/* Hamburger */}
+             <button onClick={() => { setSidebarTab("menu"); setShowSidebar(true); }} className="w-10 h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer">
+                <Menu size={16} />
+             </button>
           </div>
-        )}
-      </nav>
+        </nav>
+      </div>
 
       <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />
       <NavSidebar open={showSidebar} onClose={() => setShowSidebar(false)} initialTab={sidebarTab} />
-      
-      {/* Floating AI Chat */}
       <AiChat />
     </>
   );

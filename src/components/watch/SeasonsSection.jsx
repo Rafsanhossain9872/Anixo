@@ -12,9 +12,9 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  if (!stableSeasons || stableSeasons.length === 0) return null;
 
  return (
- <section className="py-8 my-10 bg-[#0d0d0d]/80 border border-white/15 rounded-[4px] animate-in fade-in duration-700">
+ <section className="py-8 my-10 bg-[#121214] border border-white/10 rounded-md animate-in fade-in duration-700">
  <header className="mb-8 px-6 flex items-center justify-between">
- <h2 className="text-[18px] font-black text-white tracking-wide">
+ <h2 className="text-[18px] font-black text-white tracking-wide font-mono">
  {t('seasons.title')}
  </h2>
  <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  </h3>
 
  {/* Episodes Badge */}
- <div className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider transition-all ${item.isActive
+ <div className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider transition-all font-mono ${item.isActive
  ? 'bg-discord-600 text-white shadow-lg'
  : 'bg-white/10 text-white/40 group-hover:bg-white/20'
  }`}>

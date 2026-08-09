@@ -38,6 +38,7 @@
     "react-error-boundary": "^6.1.2",
     "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
+    "react-player": "^3.4.0",
     "react-router-dom": "7.14.1",
     "socket.io-client": "^4.8.3",
     "vite": "^6.4.2"

@@ -12,6 +12,7 @@ import { ConfirmationProvider } from "./context/ConfirmationContext";
 // Eagerly loaded pages (critical path — must render instantly)
 import Portal from "./pages/Portal";
 import Home from "./pages/Home";
+import GlobalHoverManager from "./components/common/GlobalHoverManager";
 
 // Dynamic Imports (Code Splitting)
 const Browse = lazy(() => import("./pages/Browse"));
@@ -22,6 +23,8 @@ const Staff = lazy(() => import("./pages/Staff"));
 const DMCA = lazy(() => import("./pages/DMCA"));
 const NSFW = lazy(() => import("./pages/NSFW"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Stories = lazy(() => import("./pages/Stories"));
+const Schedule = lazy(() => import("./pages/Schedule"));
 const Watchlist = lazy(() => import("./pages/Watchlist"));
 const Profile = lazy(() => import("./pages/Profile"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
@@ -99,6 +102,8 @@ function AppRoutes() {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<Home />} />
             <Route path="/browse" element={<Browse />} />
+            <Route path="/stories" element={<Stories />} />
+            <Route path="/schedule" element={<Schedule />} />
             <Route path="/nsfw/*" element={<NSFW />} />
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/watch/:id/:slug" element={<Watch />} />
@@ -137,6 +142,7 @@ export default function App() {
         <ToastProvider>
           <ScrollToTop />
           <PageLoader />
+          <GlobalHoverManager />
           <AppRoutes />
         </ToastProvider>
       </ConfirmationProvider>

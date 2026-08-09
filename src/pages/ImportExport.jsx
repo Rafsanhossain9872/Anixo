@@ -485,25 +485,19 @@ export default function ImportExport() {
                 </div>
               )}
 
-              {/* Mode Selector */}
+              {/* Import Mode */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
+                <div className="text-left">
                   <h3 className="text-sm font-medium text-white mb-1">Import Mode</h3>
                   <p className="text-xs text-[#666]">How to handle existing items.</p>
                 </div>
-                <div className="flex bg-[#181818] p-1 rounded-lg border border-[#2a2a2a]">
-                  {['Merge', 'Replace'].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setImportMode(m)}
-                      className={`px-5 py-2 rounded-md text-xs font-medium transition-all ${
-                        importMode === m ? 'bg-discord-600 text-white' : 'text-[#888] hover:text-white'
-                      }`}
-                    >
-                      {m === 'Merge' ? 'Merge' : 'Replace All'}
-                    </button>
-                  ))}
+                <div className="flex bg-[#181818] p-1 rounded-lg border border-[#2a2a2a] w-full md:w-auto">
+                  <button
+                    type="button"
+                    className="flex-1 md:flex-none px-6 py-2 rounded-md text-xs font-medium bg-discord-600 text-white shadow-lg"
+                  >
+                    Merge Only
+                  </button>
                 </div>
               </div>
 

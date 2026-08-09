@@ -20,11 +20,16 @@ const app = express();
 
 // CORS Configuration
 app.use(cors({
-    origin: ['https://tenzora.top', 'https://www.tenzora.top', 'http://localhost:5173'],
+    origin: ['https://tenzora.top', 'https://www.tenzora.top', 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-api']
 }));
+
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url} from ${req.headers.origin || 'unknown origin'}`);
+    next();
+});
 
 // Initialize DB on every request (re-uses cached connection in serverless)
 app.use(async (req, res, next) => {
