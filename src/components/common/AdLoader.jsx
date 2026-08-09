@@ -19,7 +19,10 @@ export default function AdLoader() {
     const isAdFreePage = isPortalPage || isCommunityPage || isChatPage;
 
 
-    // adst popunder
+    // Adsterra Popunder (Temporarily Disabled)
+    const adsterraScript = document.getElementById("popunder-global");
+    if (adsterraScript) adsterraScript.remove();
+    /*
     if (isAdFreePage) {
       const popunderScript = document.getElementById("popunder-global");
       if (popunderScript) popunderScript.remove();
@@ -31,10 +34,19 @@ export default function AdLoader() {
 
       document.body.appendChild(popunder);
     }
+    */
 
-    // Popunder 2 (Monetag Disabled)
-    const popunder2Script = document.getElementById("popunder2-global");
-    if (popunder2Script) popunder2Script.remove();
+    // LootLab Popunder
+    if (isAdFreePage) {
+      const lootlabScript = document.getElementById("lootlab-global");
+      if (lootlabScript) lootlabScript.remove();
+    } else if (!document.getElementById("lootlab-global")) {
+      const lootlab = document.createElement("script");
+      lootlab.id = "lootlab-global";
+      lootlab.setAttribute("data-cfasync", "false");
+      lootlab.src = "//d23uh58cc2jksn.cloudfront.net/?cchud=1524428";
+      document.head.appendChild(lootlab);
+    }
 
   }, [location.pathname]);
 

@@ -132,26 +132,3 @@ export function AdNativeBanner() {
   return null;
 }
 
-// PopAds Banner Component (Add your PopAds banner code here if needed)
-export function PopAdsBanner() {
-  const containerRef = useRef(null);
-  const loadedRef = useRef(false);
-
-  useEffect(() => {
-    if (loadedRef.current || !containerRef.current) return;
-    loadedRef.current = true;
-
-    // Add your PopAds banner code here when you get it
-    // For now, this is a placeholder
-
-    return () => {
-      loadedRef.current = false;
-    };
-  }, [window.location.hostname]);
-
-  return (
-    <div className="w-full flex justify-center py-4 overflow-hidden">
-      <div ref={containerRef} />
-    </div>
-  );
-}
