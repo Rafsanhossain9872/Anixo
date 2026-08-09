@@ -56,7 +56,7 @@ export default function LoginModal({ isOpen, onClose }) {
 
       
       if (err.code === 'ERR_NETWORK') {
-        setError("Network Error: Is the backend running on port 5001?");
+        setError("Network Error: Cannot connect to the Cloudflare Edge API.");
       } else {
         setError(err.response?.data?.message || err.message || "Something went wrong");
       }

@@ -289,8 +289,8 @@ const AiChat = () => {
     setIsLoading(true);
 
     try {
-      // Determine backend URL (fallback for dev if VITE_API_URL isn't set)
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      // Use configured backend URL
+      const apiUrl = import.meta.env.VITE_BACKEND_API;
       const token = localStorage.getItem('token');
 
       // Format watchlist concisely for AI to save tokens

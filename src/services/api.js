@@ -190,16 +190,12 @@ async function smartRequest(method, path, options = {}) {
 }
 
 export const backendApi = axios.create({
-  baseURL: (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
-    ? "http://127.0.0.1:5001"
-    : (import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com"),
+  baseURL: import.meta.env.VITE_BACKEND_API,
 });
 
 // Auth-specific API instance — same-origin, proxied by Cloudflare Pages Functions.
 export const authApi = axios.create({
-  baseURL: (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
-    ? "http://127.0.0.1:5001"
-    : (import.meta.env.VITE_BACKEND_API || "https://anixo-wckh.onrender.com"),
+  baseURL: import.meta.env.VITE_BACKEND_API,
 });
 
 backendApi.interceptors.request.use((config) => {
