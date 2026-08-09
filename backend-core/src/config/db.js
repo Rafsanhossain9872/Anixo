@@ -16,9 +16,13 @@ const connectDB = async (env = process.env) => {
     }
 
     console.log("Creating new MongoDB connection...");
-    // In serverless, it's critical to disable buffering and use the right connection options
+    // In serverless/edge environments, minimize pool size and set strict timeouts
     const conn = await mongoose.connect(uri, {
       bufferCommands: false,
+      maxPoolSize: 1, // CF Workers spin up many isolates; limit per-isolate connections
+      serverSelectionTimeoutMS: 5000, // Fail fast if MongoDB is unreachable
+      socketTimeoutMS: 30000,
+      family: 4, // Force IPv4 to avoid DNS resolution delays on some Edge nodes
     });
     
     cachedConnection = conn;

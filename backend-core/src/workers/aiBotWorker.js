@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import cron from 'node-cron';
 import { 
   initAllBots, 
   getAllActiveBots, 
@@ -15,44 +14,17 @@ import User from '../models/User.js';
 
 dotenv.config();
 
-const startWorker = async () => {
-  console.log('[AI Bots] Starting multi-bot worker...');
-
+// Initialize bots (call this before running tasks)
+export const initializeBots = async () => {
   try {
-    // Connect to MongoDB
-    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/anime';
-    await mongoose.connect(mongoUri);
-    console.log('[AI Bots] Connected to MongoDB');
-
-    // Initialize all bots
     await initAllBots();
-
-    // Schedule automatic posts - run every 30 mins
-    cron.schedule('*/30 * * * *', async () => {
-      await checkAndPost();
-    });
-
-    // Schedule automatic replies - run every 10 mins
-    cron.schedule('*/10 * * * *', async () => {
-      await checkAndReply();
-    });
-
-    console.log('[AI Bots] Worker started successfully!');
-    
-    // Run immediately
-    setTimeout(() => {
-      checkAndPost();
-      checkAndReply();
-    }, 3000);
-
   } catch (error) {
-    console.error('[AI Bots] Worker failed to start:', error);
-    process.exit(1);
+    console.error('[AI Bots] Failed to initialize bots:', error);
   }
 };
 
 // Check if any bot should post
-const checkAndPost = async () => {
+export const checkAndPost = async () => {
   try {
     const bots = await getAllActiveBots();
     const now = new Date();
@@ -78,7 +50,7 @@ const checkAndPost = async () => {
 };
 
 // Check for new posts and have multiple bots reply (for bot-bot interaction!
-const checkAndReply = async () => {
+export const checkAndReply = async () => {
   try {
     const bots = await getAllActiveBots();
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -159,5 +131,3 @@ const checkAndReply = async () => {
   }
 };
 
-// Start
-startWorker();

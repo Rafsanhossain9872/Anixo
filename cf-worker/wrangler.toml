@@ -5,3 +5,6 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 CF_WORKER = "true"
+
+[triggers]
+crons = ["*/10 * * * *", "*/30 * * * *"]
