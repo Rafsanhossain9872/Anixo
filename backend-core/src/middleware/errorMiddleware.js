@@ -18,10 +18,13 @@ export const errorHandler = (err, req, res, next) => { // eslint-disable-line no
     statusCode = 400;
   }
 
+  // Always log the exact stack trace to the Cloudflare Worker console
+  console.error(`[Express Error Handler] Caught a 500 error on ${req.originalUrl}:`, err);
+
   res.status(statusCode).json({
     success: false,
     message: message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    stack: err.stack, // Explicitly exposed for debugging the Cloudflare migration
   });
 };
 
