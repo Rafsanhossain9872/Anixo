@@ -12,6 +12,20 @@ export default {
         }
         Object.assign(globalThis.process.env, env);
 
+        // 1.5. SERVERLESS-HTTP CLOUDFLARE POLYFILL
+        // Cloudflare's nodejs_compat stream Writable requires _write to be implemented.
+        // serverless-http 3.x relies on an older Node behavior and throws an error when Express uses res.json().
+        const http = await import('node:http');
+        if (http.default && http.default.ServerResponse && !http.default.ServerResponse.prototype._write) {
+            http.default.ServerResponse.prototype._write = function(chunk, encoding, callback) {
+                if (this.socket && typeof this.socket.write === 'function') {
+                    this.socket.write(chunk, encoding, callback);
+                } else {
+                    if (callback) callback();
+                }
+            };
+        }
+
         // 2. OPTIONS PREFLIGHT
         if (request.method === 'OPTIONS') {
             return new Response(null, {
