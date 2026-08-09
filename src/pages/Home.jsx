@@ -125,7 +125,7 @@ export default function Home() {
       }
       return res;
     },
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
   });
   const popularThisSeason = popularThisSeasonData?.media || [];
   const seasonInfo = popularThisSeasonData?.pageInfo || {};
