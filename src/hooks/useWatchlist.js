@@ -17,17 +17,51 @@ export function useWatchlist(id, anime, getTitle) {
     if (user) {
       getWatchlist().then(res => {
         if (res.success) {
-          setBackendWatchlist(res.watchlist);
+          setBackendWatchlist(res.watchlist || []);
         }
       });
     }
   }, [user]);
 
-  const isBookmarked = backendWatchlist.some(item => item.animeId === String(id));
+  const isBookmarked = backendWatchlist.some(item => String(item.animeId) === String(id));
 
-  const handleToggleBackendWatchlist = () => {
+  const handleToggleBackendWatchlist = async () => {
     if (!user) return triggerAuthToast("Sign in to manage your watchlist");
-    setShowWatchlistDropdown(!showWatchlistDropdown);
+    
+    // Optimistic UI update
+    const previousWatchlist = [...backendWatchlist];
+    if (isBookmarked) {
+      setBackendWatchlist(prev => prev.filter(item => String(item.animeId) !== String(id)));
+    } else {
+      setBackendWatchlist(prev => [...prev, { animeId: String(id), status: 'Watching' }]);
+    }
+    
+    // setIsWatchlistLoading(true);
+    try {
+      if (isBookmarked) {
+        const res = await removeFromWatchlist(id);
+        if (res.success) {
+          setBackendWatchlist(res.watchlist || []);
+        } else {
+          setBackendWatchlist(previousWatchlist); // revert on failure
+          console.error("Failed to remove from watchlist: " + res.message);
+        }
+      } else {
+        const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
+        const res = await addToWatchlist(String(id), getTitle(anime?.title), coverImg, 'Watching');
+        if (res.success) {
+          setBackendWatchlist(res.watchlist || []);
+        } else {
+          setBackendWatchlist(previousWatchlist); // revert on failure
+          console.error("Failed to add to watchlist: " + res.message);
+        }
+      }
+    } catch (err) {
+      console.error("Watchlist error:", err);
+      setBackendWatchlist(previousWatchlist); // revert on error
+    } finally {
+      setIsWatchlistLoading(false);
+    }
   };
 
   const handleUpdateWatchlistStatus = async (status) => {
@@ -38,11 +72,11 @@ export function useWatchlist(id, anime, getTitle) {
     try {
       if (status === "Remove") {
         const res = await removeFromWatchlist(id);
-        if (res.success) setBackendWatchlist(res.watchlist);
+        if (res.success) setBackendWatchlist(res.watchlist || []);
       } else {
         const coverImg = anime?.coverImage?.large || anime?.coverImage?.extraLarge;
         const res = await addToWatchlist(String(id), getTitle(anime?.title), coverImg, status);
-        if (res.success) setBackendWatchlist(res.watchlist);
+        if (res.success) setBackendWatchlist(res.watchlist || []);
       }
     } catch (err) {
       console.error("Watchlist error:", err);

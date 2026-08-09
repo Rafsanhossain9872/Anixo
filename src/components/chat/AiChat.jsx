@@ -199,10 +199,9 @@ const AiChat = () => {
     if (e.target.closest('button')) return;
     if (isExpanded) return;
     setIsDragging(true);
-    const rect = chatWindowRef.current.getBoundingClientRect();
     setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
     });
   };
 
@@ -213,10 +212,9 @@ const AiChat = () => {
     e.preventDefault(); // Prevent scrolling
     setIsDragging(true);
     const touch = e.touches[0];
-    const rect = chatWindowRef.current.getBoundingClientRect();
     setDragOffset({
-      x: touch.clientX - rect.left,
-      y: touch.clientY - rect.top
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
     });
   };
 
@@ -390,15 +388,6 @@ const AiChat = () => {
 
   return (
     <>
-      {/* Navbar Icon Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`block transition-all transform hover:scale-110 relative ${isOpen ? 'text-discord-500' : 'text-[#888] hover:text-white'}`}
-        title="Tenzora AI"
-      >
-        {isOpen ? <X size={20} strokeWidth={2.5} /> : <span className="font-black text-[16px] tracking-tighter">AI</span>}
-      </button>
-
       {/* Chat Window */}
       {isOpen && createPortal(
         <div 
@@ -723,6 +712,11 @@ const AiChat = () => {
                 ></iframe>
               </div>
             </div>
+          )}
+
+          {/* Invisible overlay while dragging to prevent iframes from swallowing mouse events */}
+          {isDragging && (
+            <div className="fixed inset-0 z-[999]" style={{ cursor: 'grabbing' }}></div>
           )}
         </div>,
         document.body
