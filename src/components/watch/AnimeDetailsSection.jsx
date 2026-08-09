@@ -1,118 +1,160 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import DOMPurify from "dompurify";
 import parse from "html-react-parser";
-import { Mic, Download, Frown, Smile, CheckCircle2 } from "lucide-react";
+import { Star, Clock, Tag, Calendar, ChevronDown, ChevronUp, Play, Tv } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export default function AnimeDetailsSection({
-  anime, resolvedInfo, getTitle, activeServer, streamUrl,
-  userRating, setUserRating
+  anime, resolvedInfo, getTitle, activeServer, streamUrl
 }) {
   const { t } = useTranslation();
   const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   if (!anime) return null;
 
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'releasing':
+      case 'currently airing':
+        return 'text-discord-500';
+      case 'finished':
+      case 'finished airing':
+        return 'text-green-500';
+      case 'not_yet_released':
+      case 'upcoming':
+        return 'text-yellow-500';
+      default:
+        return 'text-white/60';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'releasing': return 'Currently Airing';
+      case 'finished': return 'Finished Airing';
+      case 'not_yet_released': return 'Not Yet Released';
+      default: return status || 'Unknown';
+    }
+  };
+
+  const sanitizedDesc = resolvedInfo.description ? DOMPurify.sanitize(resolvedInfo.description) : "No description available.";
+  const showMoreRequired = sanitizedDesc.length > 250;
+  
+  const displayDesc = showMoreRequired && !isDescExpanded
+    ? sanitizedDesc.substring(0, 250) + "..."
+    : sanitizedDesc;
+
   return (
-    <section className="py-8 lg:py-12 border-t border-white/15 mt-6 lg:mt-10 animate-in fade-in duration-1000">
-      <div className="flex flex-col md:flex-row gap-6 lg:gap-8">
+    <section className="mt-6 lg:mt-10 animate-in fade-in duration-1000 px-0 sm:px-4">
+      <div className="bg-[#121316] rounded-[20px] p-4 sm:p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 max-w-[1200px] mx-auto border border-white/[0.02] shadow-2xl relative overflow-hidden">
+        
+        {/* Background Glow */}
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-discord-600/10 blur-[100px] rounded-full pointer-events-none -z-10" />
+
         {/* Poster Column */}
-        <div className="w-[180px] sm:w-[220px] shrink-0 mx-auto md:mx-0">
-          <div className="relative group overflow-hidden rounded-[4px] border border-white/15 shadow-2xl aspect-[2/3] w-full">
+        <div className="w-[140px] sm:w-[180px] md:w-[200px] shrink-0 mx-auto md:mx-0">
+          <div className="relative group overflow-hidden rounded-xl bg-[#0a0a0a] shadow-lg aspect-[2/3] w-full">
             {anime.coverImage && (
               <img
                 src={anime.coverImage.extraLarge || anime.coverImage.large}
                 alt={getTitle(anime.title)}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover"
               />
             )}
           </div>
         </div>
 
         {/* Content Column */}
-        <div className="flex-1 min-w-0">
-          <div className="mb-4">
-            <h1 className="text-2xl sm:text-[32px] font-bold text-white leading-tight mb-1 line-clamp-2">
-              {getTitle(anime.title)}
-            </h1>
-            {anime.synonyms && anime.synonyms.length > 0 && (
-              <p className="text-[13px] text-white/60 italic line-clamp-1 mt-1 mb-4">
-                {anime.synonyms.slice(0, 3).join("; ")}
-              </p>
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          
+          <h1 className="text-2xl sm:text-3xl md:text-[34px] font-bold text-white leading-tight mb-4 line-clamp-2 font-mono tracking-tight">
+            {getTitle(anime.title)}
+          </h1>
+
+          {/* Badges Row */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 text-[11px] font-bold">
+            <div className="flex items-center gap-1.5 bg-[#1a1b1f] border border-white/5 rounded-full px-3 py-1.5 text-yellow-500">
+              <Star size={12} fill="currentColor" />
+              <span>{resolvedInfo.mal_score || anime.averageScore || "?"}</span>
+            </div>
+            <div className="bg-[#1a1b1f] border border-white/5 rounded-full px-3 py-1.5 text-[#6993ff]">
+              HD
+            </div>
+            <div className="flex items-center gap-1.5 bg-[#142820] border border-[#34d399]/20 rounded-full px-3 py-1.5 text-[#34d399] uppercase">
+              <span className="bg-[#34d399] text-[#142820] text-[9px] px-1 rounded-sm font-black">CC</span>
+              <span>SUB {anime.episodes || "?"}</span>
+            </div>
+            <div className="bg-[#1a1b1f] border border-white/5 rounded-full px-3 py-1.5 text-white/50">
+              {anime.episodes ? `${anime.episodes} eps` : "? eps"}
+            </div>
+          </div>
+
+          {/* Metadata Row */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-5 text-[11px] text-white/50 uppercase tracking-widest font-medium">
+            <div className="flex items-center gap-1.5">
+              <Tag size={12} className="text-white/30" />
+              <span className="text-white/30">TYPE</span>
+              <span className="text-white/80">{anime.format || "TV"}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-white/30">STATUS</span>
+              <span className={getStatusColor(resolvedInfo.status || anime.status)}>{getStatusText(resolvedInfo.status || anime.status)}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Calendar size={12} className="text-white/30" />
+              <span className="text-white/30">AIRED</span>
+              <span className="text-white/80">{resolvedInfo.aired || 'Unknown'}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-white/30">STUDIO</span>
+              <span className="text-white/80 truncate max-w-[150px]">{resolvedInfo.studios || "N/A"}</span>
+            </div>
+          </div>
+
+          {/* Schedule Row (Next Episode) - Only show if releasing and nextAiringEpisode exists */}
+          {anime.nextAiringEpisode && (
+            <div className="flex flex-wrap items-center gap-3 mb-5 p-2 pr-4 bg-[#1a1317] border border-[#3a1d28] rounded-full w-fit">
+              <div className="flex items-center gap-1.5 text-[#f4a1ce] text-[10px] font-bold uppercase tracking-wider px-2">
+                <Clock size={12} />
+                <span>NEXT</span>
+              </div>
+              <div className="bg-[#2a1b22] text-[#f4a1ce] text-[11px] font-bold px-2 py-0.5 rounded uppercase">
+                EP {anime.nextAiringEpisode.episode}
+              </div>
+              <div className="text-white/70 text-[11px] font-medium">
+                {new Date(anime.nextAiringEpisode.airingAt * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </div>
+              <div className="text-yellow-600 font-bold text-[11px]">
+                in {Math.ceil((anime.nextAiringEpisode.airingAt * 1000 - Date.now()) / 86400000)} days
+              </div>
+            </div>
+          )}
+
+          {/* Genres */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {(resolvedInfo.genres || anime.genres || []).map(g => (
+              <Link key={g} to={`/browse?genre=${encodeURIComponent(g)}`} className="px-4 py-1.5 bg-[#1a1b1f] border border-white/10 rounded-full text-[11px] font-bold text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition-colors cursor-pointer">
+                {g}
+              </Link>
+            ))}
+          </div>
+
+          {/* Description - Monospaced */}
+          <div className="text-[13px] sm:text-[14px] text-white/60 leading-relaxed font-mono relative">
+            <div className="break-words">
+              {parse(displayDesc)}
+            </div>
+            
+            {showMoreRequired && (
+              <button
+                onClick={() => setIsDescExpanded(!isDescExpanded)}
+                className="flex items-center gap-1 mt-3 text-[10px] font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest"
+              >
+                {isDescExpanded ? 'SHOW LESS' : 'SHOW MORE'}
+                {isDescExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
             )}
-
-            {/* Badges */}
-            <div className="flex flex-wrap items-center gap-2 mb-6 text-[11px] font-bold">
-              <div className="flex items-center bg-white/10 rounded-[2px] overflow-hidden tracking-wider h-6">
-                <span className="px-1.5 h-full bg-[#e3e3e3] text-black flex items-center">CC</span>
-                <span className="px-2 h-full flex items-center">{anime.episodes || "?"}</span>
-              </div>
-              <div className="flex items-center bg-white/10 rounded-[2px] overflow-hidden tracking-wider h-6">
-                <span className="px-1.5 h-full bg-[#f4a1ce] text-black flex items-center justify-center"><Mic size={11} fill="currentColor" /></span>
-                <span className="px-2 h-full flex items-center">{anime.episodes || "?"}</span>
-              </div>
-              <span className="bg-[#b0b0b0] text-[#111] h-6 flex items-center px-2 rounded-[2px] font-medium">{resolvedInfo.rating || "?"}</span>
-              {anime.isAdult && <span className="bg-[#e3e3e3] text-black h-6 flex items-center px-2 rounded-[2px] uppercase">R</span>}
-              <Link to={`/browse?format=${(anime.format || "TV").toUpperCase()}`} className="bg-white/10 hover:bg-white/20 hover:text-white text-white/90 h-6 flex items-center px-2 rounded-[2px] uppercase transition-colors">{anime.format || "TV"}</Link>
-              <span className="bg-white/10 text-white/90 h-6 flex items-center px-2 rounded-[2px] uppercase">{anime.duration ? `${anime.duration} min` : "? min"}</span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div
-            onClick={() => setIsDescExpanded(!isDescExpanded)}
-            className={`text-[14px] text-white/80 leading-relaxed mb-8 transition-all duration-500 cursor-pointer ${isDescExpanded ? "" : "line-clamp-4"}`}
-          >
-            {resolvedInfo.description ? parse(DOMPurify.sanitize(resolvedInfo.description)) : "No description available."}
-          </div>
-
-          {/* Grid Info */}
-          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-y-3 gap-x-6 text-[13px] mb-8">
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.country')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.country || 'Unknown'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.premiered')}</span>
-              <span className="text-white/90 capitalize break-words">{resolvedInfo.premiered || 'Unknown'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.dateAired')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.aired || '?'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.episodes')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.episodes || '?'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.duration')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.duration || '?'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.status')}</span>
-              <span className="text-white/90 capitalize break-words">{resolvedInfo.status || '?'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.malScore')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.mal_score || '?'}</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.links')}</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                {anime.idMal && <a href={`https://myanimelist.net/anime/${anime.idMal}`} target="_blank" rel="noreferrer" className="text-white font-bold hover:text-discord-500 transition-colors">{t('details.mal')}</a>}
-                {anime.idMal && <span className="text-white/90">,</span>}
-                {anime.id && <a href={`https://anilist.co/anime/${anime.id}`} target="_blank" rel="noreferrer" className="text-white font-bold hover:text-discord-500 transition-colors ml-1">AL</a>}
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.studios')}</span>
-              <span className="text-white/90 truncate">{resolvedInfo.studios || "N/A"}</span>
-            </div>
-            <div className="flex items-start gap-2 sm:col-span-2">
-              <span className="text-white/60 font-medium min-w-[85px] shrink-0">{t('details.producers')}</span>
-              <span className="text-white/90 break-words">{resolvedInfo.producers || "N/A"}</span>
-            </div>
           </div>
 
           {/* Download Button (All Servers) */}
@@ -128,67 +170,14 @@ export default function AnimeDetailsSection({
                   window.open(streamUrl, '_blank');
                 }
               }}
-              className="flex items-center gap-1.5 text-white/60 hover:text-green-500 transition-all mb-4"
+              className="flex items-center gap-2 text-white/40 hover:text-white transition-colors mt-6 uppercase text-[10px] tracking-widest font-bold"
               title="Download / Open External Stream"
             >
-              <Download size={15} />
-              <span className="text-[9px] font-bold uppercase tracking-wider hidden sm:inline">
-                {activeServer === 4 ? t('details.download') : 'Download / External'}
-              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+              <span>{activeServer === 4 ? t('details.download') : 'Download / External'}</span>
             </button>
           )}
 
-          {/* Genres */}
-          <div className="flex flex-wrap gap-2">
-            {(resolvedInfo.genres || []).map(g => (
-              <Link key={g} to={`/browse?genre=${encodeURIComponent(g)}`} className="px-4 py-1 bg-white/5 border border-white/15 rounded-[4px] text-[12px] font-medium text-white/70 hover:text-white hover:border-white/20 hover:bg-white/10 transition-colors cursor-pointer">
-                {g}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Rating Section */}
-        <div className="flex flex-col gap-4 w-full md:w-[280px] lg:w-[320px] shrink-0">
-          <div className="bg-[#0d0d0d] border border-white/15 p-7 rounded-sm shadow-xl relative mt-0 md:mt-2 min-h-[160px] flex flex-col items-center justify-center">
-            {userRating ? (
-              <div className="text-center py-4 animate-in zoom-in duration-500">
-                <div className="flex justify-center mb-3">
-                  <CheckCircle2 size={28} className="text-white/60" />
-                </div>
-                <p className="text-[14px] font-medium text-white/80 mb-1">{t('details.ratingThanks')}</p>
-                <p className="text-[12px] text-white/40">{t('details.ratingFeedback')}</p>
-              </div>
-            ) : (
-              <>
-                <div className="text-center mb-6">
-                  <h3 className="text-[18px] font-medium text-white/80 mb-1">{t('details.ratingPrompt')}</h3>
-                  <p className="text-[13px] text-white/50 font-medium">
-                    {resolvedInfo.mal_score || "8.58"} / {resolvedInfo.scored_by?.toLocaleString() || "1,221"} reviews
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 w-full px-2">
-                  {[
-                    { icon: Frown, val: "boring" },
-                    { icon: Smile, val: "decent" },
-                    { icon: Smile, val: "masterpiece", isHappy: true }
-                  ].map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setUserRating(item.val)}
-                      className="flex-1 bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.02] h-20 flex items-center justify-center transition-all duration-300 rounded-[2px] group"
-                    >
-                      <item.icon
-                        size={28}
-                        strokeWidth={1.5}
-                        className={`text-white/30 group-hover:text-white/80 transition-colors ${item.isHappy ? 'scale-110' : ''}`}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </section>
