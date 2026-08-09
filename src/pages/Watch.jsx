@@ -130,7 +130,7 @@ export default function Watch({ isWatch2GetherMode }) {
   useEffect(() => localStorage.setItem("episodeLayout", JSON.stringify(episodeLayout)), [episodeLayout]);
 
   const [playerLang, setPlayerLang] = useState("sub");
-  const [activeServer, setActiveServer] = useState(1);
+  const [activeServer, setActiveServer] = useState(6);
 
 
 
