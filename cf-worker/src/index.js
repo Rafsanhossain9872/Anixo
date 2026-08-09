@@ -1,207 +1,112 @@
 /**
- * Anixo Cloudflare Worker — Custom Express Adapter v3
+ * Anixo Cloudflare Worker — Smart Edge Proxy
  * 
- * CRITICAL FIX: Cloudflare's nodejs_compat requires _write() on any Writable subclass.
- * http.ServerResponse extends Writable but doesn't implement _write() itself (it delegates
- * to the socket in standard Node). We patch the prototype BEFORE any instance is created.
+ * Architecture: Cloudflare Worker acts as a global edge proxy that forwards
+ * all API requests to the Render backend. This gives you:
+ * - Global edge CDN (requests hit the nearest CF data center)
+ * - Automatic CORS handling
+ * - DDoS protection from Cloudflare
+ * - Future: edge caching for GET requests
+ * 
+ * Why not run Express directly? Mongoose (MongoDB ODM) is fundamentally
+ * incompatible with CF Workers — it requires Node.js net.Socket/tls which
+ * esbuild cannot bundle for V8 Isolates.
  */
 
-import http from 'node:http';
-import { Readable, PassThrough } from 'node:stream';
-
-// ============================================================
-// CRITICAL: Patch _write on ServerResponse prototype IMMEDIATELY
-// before Express or any other code creates an instance.
-// This is the root cause of the "The _write() method is not implemented" error.
-// ============================================================
-if (!http.ServerResponse.prototype._write) {
-    http.ServerResponse.prototype._write = function(chunk, encoding, callback) {
-        // Delegate to the assigned socket's write method if available
-        if (this.socket && typeof this.socket.write === 'function') {
-            this.socket.write(chunk, encoding, callback);
-        } else if (callback) {
-            callback();
-        }
-    };
-}
-
-let app;
+const RENDER_BACKEND_URL = 'https://anixo-wckh.onrender.com';
 
 export default {
     async fetch(request, env, ctx) {
         const origin = request.headers.get('Origin') || '*';
+        const backendUrl = env.RENDER_BACKEND_URL || RENDER_BACKEND_URL;
 
-        // 1. PROCESS.ENV POLYFILL
-        if (typeof process === 'undefined') {
-            globalThis.process = { env: {} };
-        }
-        Object.assign(globalThis.process.env, env);
-
-        // 2. OPTIONS PREFLIGHT
+        // 1. OPTIONS PREFLIGHT — handle instantly at the edge
         if (request.method === 'OPTIONS') {
             return new Response(null, {
-                status: 200,
+                status: 204,
                 headers: {
                     'Access-Control-Allow-Origin': origin,
                     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
                     'Access-Control-Allow-Headers': request.headers.get('Access-Control-Request-Headers') || 'Content-Type, Authorization, x-api, Accept, X-Requested-With',
                     'Access-Control-Allow-Credentials': 'true',
+                    'Access-Control-Max-Age': '86400', // Cache preflight for 24h
                 }
             });
         }
 
-        // 3. LAZY LOAD EXPRESS APP
-        if (!app) {
-            const appModule = await import('../../backend-core/src/app.js');
-            app = appModule.default || appModule;
-        }
+        // 2. BUILD PROXIED REQUEST
+        const url = new URL(request.url);
+        const proxyUrl = backendUrl + url.pathname + url.search;
 
-        // 4. CONVERT CF REQUEST → NODE.JS REQUEST
+        // Forward all headers, add the real client IP
+        const proxyHeaders = new Headers(request.headers);
+        proxyHeaders.set('X-Forwarded-For', request.headers.get('cf-connecting-ip') || '127.0.0.1');
+        proxyHeaders.set('X-Forwarded-Proto', 'https');
+        proxyHeaders.set('X-Real-IP', request.headers.get('cf-connecting-ip') || '127.0.0.1');
+        // Remove CF-specific headers that might confuse the backend
+        proxyHeaders.delete('cf-connecting-ip');
+        proxyHeaders.delete('cf-ipcountry');
+        proxyHeaders.delete('cf-ray');
+        proxyHeaders.delete('cf-visitor');
+
         try {
-            const url = new URL(request.url);
-
-            // Build a minimal IncomingMessage
-            const socket = new PassThrough();
-            socket.remoteAddress = request.headers.get('cf-connecting-ip') || '127.0.0.1';
-            socket.encrypted = url.protocol === 'https:';
-
-            const req = new http.IncomingMessage(socket);
-            req.method = request.method;
-            req.url = url.pathname + url.search;
-            req.httpVersion = '1.1';
-            req.httpVersionMajor = 1;
-            req.httpVersionMinor = 1;
-            req.env = env;
-
-            // Copy headers
-            for (const [key, value] of request.headers.entries()) {
-                req.headers[key.toLowerCase()] = value;
-            }
-
-            // Push request body
-            if (request.method !== 'GET' && request.method !== 'HEAD' && request.body) {
-                try {
-                    const bodyBuffer = await request.arrayBuffer();
-                    req.push(Buffer.from(bodyBuffer));
-                } catch (e) { /* body empty or consumed */ }
-            }
-            req.push(null);
-
-            // 5. CREATE RESPONSE COLLECTOR
-            const bodyChunks = [];
-
-            const res = new http.ServerResponse(req);
-
-            // Create a writable socket that captures all output
-            const outputSocket = new PassThrough();
-            outputSocket._writableState = outputSocket._writableState || {};
-            outputSocket.writable = true;
-            outputSocket.cork = Function.prototype;
-            outputSocket.uncork = Function.prototype;
-
-            // Intercept data written to the socket
-            outputSocket.on('data', (chunk) => {
-                bodyChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            // 3. FORWARD TO RENDER
+            const proxyResponse = await fetch(proxyUrl, {
+                method: request.method,
+                headers: proxyHeaders,
+                body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
+                redirect: 'follow',
             });
 
-            res.assignSocket(outputSocket);
-            res.useChunkedEncodingByDefault = false;
-            res.chunkedEncoding = false;
-
-            // 6. RUN EXPRESS AND WAIT FOR FINISH
-            const result = await new Promise((resolve, reject) => {
-                let resolved = false;
-
-                res.on('finish', () => {
-                    if (resolved) return;
-                    resolved = true;
-
-                    const rawOutput = Buffer.concat(bodyChunks).toString('utf8');
-
-                    // Split HTTP response: headers section + body
-                    const headerEndIndex = rawOutput.indexOf('\r\n\r\n');
-                    let body = '';
-                    if (headerEndIndex !== -1) {
-                        body = rawOutput.slice(headerEndIndex + 4);
-                    } else {
-                        body = rawOutput;
-                    }
-
-                    const headers = {};
-                    const rawHeaders = typeof res.getHeaders === 'function' ? res.getHeaders() : {};
-                    for (const [key, value] of Object.entries(rawHeaders)) {
-                        headers[key] = String(value);
-                    }
-
-                    resolve({ statusCode: res.statusCode || 200, headers, body });
-                });
-
-                res.on('error', (err) => {
-                    if (resolved) return;
-                    resolved = true;
-                    reject(err);
-                });
-
-                // Timeout safety net (30 seconds)
-                setTimeout(() => {
-                    if (resolved) return;
-                    resolved = true;
-                    reject(new Error('Express handler timed out after 30s'));
-                }, 30000);
-
-                app(req, res);
-            });
-
-            // 7. BUILD CLOUDFLARE RESPONSE WITH CORS
-            const responseHeaders = new Headers(result.headers);
+            // 4. ADD CORS HEADERS TO RESPONSE
+            const responseHeaders = new Headers(proxyResponse.headers);
             responseHeaders.set('Access-Control-Allow-Origin', origin);
             responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+            // Add edge performance header
+            responseHeaders.set('X-Edge-Location', request.cf?.colo || 'unknown');
 
-            return new Response(result.body, {
-                status: result.statusCode,
-                headers: responseHeaders
+            return new Response(proxyResponse.body, {
+                status: proxyResponse.status,
+                statusText: proxyResponse.statusText,
+                headers: responseHeaders,
             });
 
         } catch (error) {
-            console.error('[CF Worker] Fatal error:', error);
+            console.error('[CF Proxy] Failed to reach Render backend:', error);
             return new Response(JSON.stringify({ 
-                error: error.message, 
-                stack: error.stack 
+                error: 'Edge proxy error: Backend unreachable',
+                detail: error.message 
             }), {
-                status: 500,
+                status: 502,
                 headers: {
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': origin,
-                    'Access-Control-Allow-Credentials': 'true'
+                    'Access-Control-Allow-Credentials': 'true',
                 }
             });
         }
     },
 
     async scheduled(event, env, ctx) {
-        if (typeof process === 'undefined') {
-            globalThis.process = { env: {} };
-        }
-        Object.assign(globalThis.process.env, env);
-
+        // Cron jobs: Forward to the Render backend via HTTP
+        const backendUrl = env.RENDER_BACKEND_URL || RENDER_BACKEND_URL;
+        
         try {
-            const connectDB = (await import('../../backend-core/src/config/db.js')).default;
-            await connectDB(env);
-
-            const { initializeBots, checkAndPost, checkAndReply } = await import('../../backend-core/src/workers/aiBotWorker.js');
-            await initializeBots();
-
             if (event.cron === "*/30 * * * *") {
-                console.log('Running 30m cron: checkAndPost');
-                await checkAndPost();
+                console.log('Running 30m cron: triggering checkAndPost');
+                await fetch(`${backendUrl}/ai-bot/cron/post`, { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` }
+                });
             } else if (event.cron === "*/10 * * * *") {
-                console.log('Running 10m cron: checkAndReply');
-                await checkAndReply();
-            } else {
-                console.log(`Unknown cron trigger: ${event.cron}`);
+                console.log('Running 10m cron: triggering checkAndReply');
+                await fetch(`${backendUrl}/ai-bot/cron/reply`, { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` }
+                });
             }
         } catch (error) {
-            console.error('Scheduled event failed:', error);
+            console.error('Scheduled cron proxy failed:', error);
         }
     }
 };

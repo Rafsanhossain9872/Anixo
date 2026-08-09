@@ -153,7 +153,9 @@ export const login = async (req, res) => {
     }
   } catch (error) {
     console.error("LOGIN ERROR:", error);
-    res.status(500).json({ success: false, message: error.message });
+    // Preserve any status code already set (e.g., 401 for invalid credentials)
+    const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+    res.status(statusCode).json({ success: false, message: error.message });
   }
 };
 
