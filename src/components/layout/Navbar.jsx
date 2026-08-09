@@ -121,7 +121,7 @@ export default function Navbar() {
              <Link to="/chat" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Live Chat</Link>
              <Link to="/community" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Community</Link>
              <Link to="/nsfw" className="text-textMuted hover:text-primary text-[13px] font-semibold transition-colors whitespace-nowrap">Hentai</Link>
-             <Link to="/watch-later" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Watch Later</Link>
+             <Link to="/watchlist" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Watch Later</Link>
           </div>
 
           {/* RIGHT SIDE ICONS */}

@@ -16,7 +16,12 @@ export const AuthProvider = ({ children }) => {
   });
   const [globalWatchlist, setGlobalWatchlist] = useState([]);
   const [globalProgress, setGlobalProgress] = useState([]);
-  const [globalSettings, setGlobalSettings] = useState(null);
+  const [globalSettings, setGlobalSettings] = useState(() => {
+    try {
+      const cached = localStorage.getItem("cached_settings");
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
   const [globalNotifications, setGlobalNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [authToast, setAuthToast] = useState(null);
@@ -109,7 +114,10 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const settRes = await getSettings();
-        if (settRes?.success) setGlobalSettings(settRes.settings);
+        if (settRes?.success) {
+          setGlobalSettings(settRes.settings);
+          localStorage.setItem("cached_settings", JSON.stringify(settRes.settings));
+        }
       } catch (e) { console.warn("Settings fetch failed on init:", e.message); }
 
       await fetchNotifications();

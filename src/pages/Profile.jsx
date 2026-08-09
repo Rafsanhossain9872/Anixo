@@ -106,6 +106,17 @@ export default function Profile() {
     triggerAuthToast(t('profile.avatarUpdated'), "success");
   };
 
+  const navItems = [
+    { id: "profile", label: "Profile", icon: User, path: "/profile" },
+    { id: "watching", label: "Continue Watching", icon: Clock, path: "/watching" },
+    { id: "bookmarks", label: "Watch Later", icon: Heart, path: "/watchlist" },
+    { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
+    { id: "stats", label: "Stats", icon: BarChart2, path: "/stats" },
+    { id: "import", label: "Import/Export", icon: Download, path: "/import" },
+    ...(user?.role === 'admin' ? [{ id: "admin", label: "Admin", icon: Shield, path: "/admin" }] : []),
+    { id: "settings", label: "Settings", icon: Settings, path: "/settings" }
+  ];
+
   if (!user) return null;
 
   return (
@@ -115,35 +126,24 @@ export default function Profile() {
       <div className="min-h-screen bg-background text-text pt-24 pb-20 font-senpai">
         <div className="container mx-auto px-4 sm:px-6 md:px-8 max-w-[1200px] flex flex-col gap-8 md:gap-12">
           
-          {/* Top Sub-Navigation */}
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-2 overflow-x-auto hide-scrollbar pb-2">
-            {[
-              { id: 'profile', label: 'PROFILE', icon: User, path: '/profile' },
-              { id: 'continue', label: 'CONTINUE WATCHING', icon: Clock, path: '/home' },
-              { id: 'bookmarks', label: 'BOOKMARKS', icon: Heart, path: '/watchlist' },
-              { id: 'notifications', label: 'NOTIFICATIONS', icon: Bell, path: '/notifications' },
-              { id: 'stats', label: 'STATS', icon: BarChart2, path: '/stats' },
-              { id: 'import', label: 'IMPORT/EXPORT', icon: Download, path: '/import' },
-              { id: 'admin', label: 'ADMIN', icon: Shield, path: '/admin' },
-              { id: 'settings', label: 'SETTINGS', icon: Settings, path: '/settings' }
-            ].map(item => {
-              if (item.id === 'admin' && user?.role !== 'admin') return null;
-              
-              const isActive = location.pathname.startsWith(item.path);
+          {/* Compact Navigation Tabs */}
+          <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1.5 sm:gap-2 md:gap-3 mb-10 w-full max-w-4xl mx-auto px-1 sm:px-0">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path || (item.id === "profile" && location.pathname === "/profile");
               const Icon = item.icon;
               
               return (
                 <Link
                   key={item.id}
                   to={item.path}
-                  style={isActive ? { backgroundColor: globalSettings?.themeColor || '#5865F2', borderColor: globalSettings?.themeColor || '#5865F2' } : {}}
-                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded transition-all duration-300 border shrink-0 ${isActive
-                      ? "text-white shadow-lg"
-                      : "bg-surface border-border text-textMuted hover:text-white hover:bg-white/5"
-                    }`}
+                  className={`flex items-center justify-center gap-2 px-2.5 sm:px-3 md:px-4 py-2 sm:py-2 rounded-xl transition-all duration-300 border shrink-0 ${
+                    isActive 
+                    ? "bg-discord-600 text-white border-discord-600" 
+                    : "bg-white/[0.02] border-white/15 text-white/30 hover:text-white hover:bg-white/[0.05]"
+                  }`}
                 >
                   <Icon size={18} strokeWidth={isActive ? 2.5 : 2} className="shrink-0 w-[18px] h-[18px] md:w-4 md:h-4" />
-                  <span className="hidden md:block text-[12px] font-senpai font-bold uppercase tracking-widest whitespace-nowrap">
+                  <span className="hidden md:block text-[12px] font-bold tracking-tight whitespace-nowrap">
                     {item.label}
                   </span>
                 </Link>

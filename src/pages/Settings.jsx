@@ -87,6 +87,7 @@ export default function Settings() {
     const res = await updateSettings(formData);
     if (res.success) {
       setGlobalSettings(res.settings);
+      localStorage.setItem("cached_settings", JSON.stringify(res.settings));
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
@@ -104,7 +105,7 @@ export default function Settings() {
   const navItems = [
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
     { id: "watching", label: "Continue Watching", icon: Clock, path: "/watching" },
-    { id: "bookmarks", label: "Bookmarks", icon: Heart, path: "/watchlist" },
+    { id: "bookmarks", label: "Watch Later", icon: Heart, path: "/watchlist" },
     { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
     { id: "stats", label: "Stats", icon: BarChart2, path: "/stats" },
     { id: "import", label: "Import/Export", icon: Download, path: "/import" },
@@ -113,7 +114,7 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-screen text-white flex flex-col font-sans selection:bg-discord-500/30" key={settingsKey}>
+    <div className="min-h-screen text-white flex flex-col font-senpai selection:bg-discord-500/30" key={settingsKey}>
       <Navbar />
 
       <div className="w-full pt-[80px] px-4 md:px-8 pb-12 max-w-[1200px] mx-auto flex-1">
