@@ -1,9 +1,17 @@
 import express from 'express';
-import axios from 'axios';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+const proxyLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    max: 1000, 
+    message: { error: 'Too many proxy requests from this IP, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+router.get('/', proxyLimiter, async (req, res) => {
     try {
         const { url, referer } = req.query;
         
@@ -11,36 +19,24 @@ router.get('/', async (req, res) => {
             return res.status(400).json({ error: 'URL is required' });
         }
 
-        // req.query.url is already decoded by Express.
-        // We do NOT use decodeURIComponent here to avoid double-decoding 
-        // which can corrupt complex tokens or nested query strings.
         const targetUrl = url;
+
+        let targetOrigin = '';
+        try {
+            const parsedUrl = new URL(targetUrl);
+            targetOrigin = parsedUrl.origin;
+        } catch (e) {
+            console.error('[Proxy] Invalid target URL:', targetUrl);
+        }
 
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9',
-            'Connection': 'keep-alive',
             'Sec-Fetch-Dest': 'empty',
             'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'cross-site',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache'
+            'Sec-Fetch-Site': 'cross-site'
         };
-
-        let targetOrigin = '';
-        try {
-            const urlObj = new URL(targetUrl);
-            // Example: https://fetch7.flixcloud.cc -> https://flixcloud.cc
-            const hostnameParts = urlObj.hostname.split('.');
-            if (hostnameParts.length > 2) {
-                targetOrigin = `${urlObj.protocol}//${hostnameParts.slice(-2).join('.')}`;
-            } else {
-                targetOrigin = urlObj.origin;
-            }
-        } catch (e) {
-            // Ignore URL parsing errors
-        }
 
         if (referer) {
             headers['Referer'] = referer;
@@ -54,33 +50,28 @@ router.get('/', async (req, res) => {
             headers['Origin'] = targetOrigin;
         }
 
-        const isM3U8 = targetUrl.includes('.m3u8');
-
-        const response = await axios({
+        const response = await fetch(targetUrl, {
             method: 'GET',
-            url: targetUrl,
             headers,
-            responseType: isM3U8 ? 'text' : 'stream',
-            validateStatus: () => true, // Forward all status codes
-            timeout: 15000
         });
 
-        // Detailed logging for debugging 403s
-        if (response.status === 403) {
-            console.error('[Proxy 403 Error] Target URL:', targetUrl);
-            console.error('[Proxy 403 Error] Headers Sent:', headers);
-        }
-
-        // Forward CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        if (response.headers['content-type']) res.setHeader('Content-Type', response.headers['content-type']);
+        
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType) {
+            res.setHeader('Content-Type', contentType);
+        }
 
-        if (isM3U8 && typeof response.data === 'string') {
+        const isM3U8 = contentType.includes('mpegurl') || contentType.includes('mpegURL') || targetUrl.includes('.m3u8');
+
+        if (isM3U8) {
             const baseUrl = new URL(targetUrl);
             const proxyBase = `${req.protocol}://${req.get('host')}/api/proxy`;
 
-            let bodyText = response.data.split('\n').map(line => {
+            let bodyText = await response.text();
+            
+            bodyText = bodyText.split('\n').map(line => {
                 let trimmed = line.trim();
                 if (!trimmed) return line;
                 
@@ -108,18 +99,35 @@ router.get('/', async (req, res) => {
             res.status(response.status);
             return res.send(bodyText);
         } else {
-            if (response.headers['content-length']) res.setHeader('Content-Length', response.headers['content-length']);
+            const contentLength = response.headers.get('content-length');
+            if (contentLength) res.setHeader('Content-Length', contentLength);
+            
             res.status(response.status);
-            return response.data.pipe(res);
+            
+            if (response.body) {
+                const reader = response.body.getReader();
+                const pump = async () => {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            res.end();
+                            break;
+                        }
+                        res.write(value);
+                    }
+                };
+                return pump().catch(err => {
+                    console.error('[Proxy Stream Error]', err);
+                    res.end();
+                });
+            } else {
+                return res.end();
+            }
         }
 
     } catch (error) {
         console.error('[Proxy Catch Error]:', error.message);
-        if (error.response) {
-            console.error('[Proxy Catch Error Status]:', error.response.status);
-            console.error('[Proxy Catch Error Headers]:', error.response.headers);
-        }
-        res.status(500).json({ error: 'Failed to proxy request', details: error.message });
+        res.status(500).json({ error: 'Proxy request failed', details: error.message });
     }
 });
 
