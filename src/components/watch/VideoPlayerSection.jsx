@@ -84,15 +84,19 @@ export default function VideoPlayerSection({
     let currentIframeUrl = streamUrl;
 
     if ((activeServer === 1 || activeServer === 6) && streamData?.all_streams) {
+        // For Server 1, prefer embed streams (flixcloud's built-in player handles decryption)
+        // Fall back to HLS if no embeds available
+        const embedStream = streamData.all_streams.find(s => s.type === "embed");
+        const hlsStream = streamData.all_streams.find(s => s.type === "hls" || (s.url && s.url.includes('.m3u8')));
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
-        if (currentStream) {
+
+        if (embedStream) {
+            isIframe = true;
+            currentIframeUrl = embedStream.url;
+        } else if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
-                // Use the /api/hls endpoint which resolves + proxies in one request
-                // This avoids IP-locked token mismatches across Cloudflare edge nodes
-                const apiBase = import.meta.env.VITE_ANIKO_SERVER_API || 'https://anivexa-api.rafsanh983.workers.dev';
-                const anilistId = anime?.id || id;
-                const langParam = playerLang?.toLowerCase() === "dub" ? "dub" : "sub";
-                videoSrc = `${apiBase}/api/hls/${anilistId}/${langParam}/${activeEpisode}`;
+                const proxyBase = import.meta.env.VITE_PROXY_URL || 'https://anivexa-api.rafsanh983.workers.dev/api/proxy';
+                videoSrc = `${proxyBase}?url=${encodeURIComponent(currentStream.url)}&referer=${encodeURIComponent(currentStream.referer || 'https://flixcloud.cc/')}`;
                 videoType = "hls";
                 isIframe = false;
             } else if (currentStream.type === "embed" || currentStream.url.includes('embed')) {
