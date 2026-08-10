@@ -87,7 +87,7 @@ export default function VideoPlayerSection({
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
-                videoSrc = `https://api.tenzora.top/api/proxy?url=${encodeURIComponent(currentStream.url)}&referer=${encodeURIComponent(currentStream.referer || 'https://anikototv.to/')}`;
+                videoSrc = currentStream.url;
                 videoType = "hls";
                 isIframe = false;
             } else if (currentStream.type === "embed" || currentStream.url.includes('embed')) {
@@ -132,15 +132,11 @@ export default function VideoPlayerSection({
 
             return uniqueSubs.map(sub => {
                 const subUrl = sub.file || sub.url;
-                if (subUrl && !subUrl.includes('/api/proxy')) {
-                    let ref = sub.source === 'VidWish' ? 'https://vidwish.live/' : 'https://megaplay.buzz/';
-                    return {
-                        ...sub,
-                        file: `https://api.tenzora.top/api/proxy?url=${encodeURIComponent(subUrl)}&referer=${encodeURIComponent(ref)}`,
-                        url: `https://api.tenzora.top/api/proxy?url=${encodeURIComponent(subUrl)}&referer=${encodeURIComponent(ref)}`
-                    };
-                }
-                return sub;
+                return {
+                    ...sub,
+                    file: subUrl,
+                    url: subUrl
+                };
             });
         }
         return subs;
