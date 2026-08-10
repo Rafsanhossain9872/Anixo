@@ -87,8 +87,12 @@ export default function VideoPlayerSection({
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
-                const proxyBase = import.meta.env.VITE_PROXY_URL || 'https://anivexa-api.rafsanh983.workers.dev/api/proxy';
-                videoSrc = `${proxyBase}?url=${encodeURIComponent(currentStream.url)}&referer=${encodeURIComponent(currentStream.referer || 'https://anikototv.to/')}`;
+                // Use the /api/hls endpoint which resolves + proxies in one request
+                // This avoids IP-locked token mismatches across Cloudflare edge nodes
+                const apiBase = import.meta.env.VITE_ANIKO_SERVER_API || 'https://anivexa-api.rafsanh983.workers.dev';
+                const anilistId = anime?.id || id;
+                const langParam = playerLang?.toLowerCase() === "dub" ? "dub" : "sub";
+                videoSrc = `${apiBase}/api/hls/${anilistId}/${langParam}/${activeEpisode}`;
                 videoType = "hls";
                 isIframe = false;
             } else if (currentStream.type === "embed" || currentStream.url.includes('embed')) {
