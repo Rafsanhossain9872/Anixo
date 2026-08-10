@@ -11,16 +11,26 @@ router.get('/', async (req, res) => {
             return res.status(400).json({ error: 'URL is required' });
         }
 
-        const decodedUrl = decodeURIComponent(url);
+        // req.query.url is already decoded by Express.
+        // We do NOT use decodeURIComponent here to avoid double-decoding 
+        // which can corrupt complex tokens or nested query strings.
+        const targetUrl = url;
 
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*'
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
         };
 
         let targetOrigin = '';
         try {
-            const urlObj = new URL(decodedUrl);
+            const urlObj = new URL(targetUrl);
             // Example: https://fetch7.flixcloud.cc -> https://flixcloud.cc
             const hostnameParts = urlObj.hostname.split('.');
             if (hostnameParts.length > 2) {
@@ -46,12 +56,18 @@ router.get('/', async (req, res) => {
 
         const response = await axios({
             method: 'GET',
-            url: decodedUrl,
+            url: targetUrl,
             headers,
             responseType: 'stream',
             validateStatus: () => true, // Forward all status codes
             timeout: 15000
         });
+
+        // Detailed logging for debugging 403s
+        if (response.status === 403) {
+            console.error('[Proxy 403 Error] Target URL:', targetUrl);
+            console.error('[Proxy 403 Error] Headers Sent:', headers);
+        }
 
         // Forward CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -76,7 +92,11 @@ router.get('/', async (req, res) => {
         response.data.pipe(res);
 
     } catch (error) {
-        console.error('[Proxy Error]:', error.message);
+        console.error('[Proxy Catch Error]:', error.message);
+        if (error.response) {
+            console.error('[Proxy Catch Error Status]:', error.response.status);
+            console.error('[Proxy Catch Error Headers]:', error.response.headers);
+        }
         res.status(500).json({ error: 'Failed to proxy request', details: error.message });
     }
 });
