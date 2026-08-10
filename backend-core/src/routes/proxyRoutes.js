@@ -11,22 +11,42 @@ router.get('/', async (req, res) => {
             return res.status(400).json({ error: 'URL is required' });
         }
 
+        const decodedUrl = decodeURIComponent(url);
+
         const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*'
         };
+
+        let targetOrigin = '';
+        try {
+            const urlObj = new URL(decodedUrl);
+            // Example: https://fetch7.flixcloud.cc -> https://flixcloud.cc
+            const hostnameParts = urlObj.hostname.split('.');
+            if (hostnameParts.length > 2) {
+                targetOrigin = `${urlObj.protocol}//${hostnameParts.slice(-2).join('.')}`;
+            } else {
+                targetOrigin = urlObj.origin;
+            }
+        } catch (e) {
+            // Ignore URL parsing errors
+        }
 
         if (referer) {
             headers['Referer'] = referer;
             try {
                 headers['Origin'] = new URL(referer).origin;
             } catch (e) {
-                // Ignore invalid referer parsing errors
+                headers['Origin'] = targetOrigin;
             }
+        } else if (targetOrigin) {
+            headers['Referer'] = targetOrigin + '/';
+            headers['Origin'] = targetOrigin;
         }
 
         const response = await axios({
             method: 'GET',
-            url: decodeURIComponent(url),
+            url: decodedUrl,
             headers,
             responseType: 'stream',
             validateStatus: () => true, // Forward all status codes
