@@ -1084,10 +1084,44 @@ export async function getAnimeDetails(id, isMal = false) {
     return null;
   }
 
+  /**
+   * Universal Jikan Fallback Helper
+   * Works for BOTH AniList IDs and MAL IDs.
+   * - If we already have a MAL ID (isMal=true or extracted from AniList response), use it directly.
+   * - If we only have an AniList ID, we can't directly map it, but we attempt a search.
+   */
+  const attemptJikanFallback = async (malIdHint) => {
+    // 1. If we have a known MAL ID, use it directly
+    if (malIdHint) {
+      console.info(`[Fallback] Attempting Jikan with MAL ID: ${malIdHint}`);
+      const jikanData = await getJikanAnimeDetails(malIdHint);
+      if (jikanData) {
+        const result = transformJikanToAnilist(jikanData);
+        cache.set(cacheKey, result, CACHE_TTL.DETAILS);
+        return result;
+      }
+    }
+
+    // 2. If isMal was true from the start, the finalId IS a MAL ID
+    if (finalIsMal) {
+      console.info(`[Fallback] Attempting Jikan with original MAL ID: ${finalId}`);
+      const jikanData = await getJikanAnimeDetails(finalId);
+      if (jikanData) {
+        const result = transformJikanToAnilist(jikanData);
+        cache.set(cacheKey, result, CACHE_TTL.DETAILS);
+        return result;
+      }
+    }
+
+    console.warn("[Fallback] Jikan fallback exhausted — no MAL ID available.");
+    return null;
+  };
+
   try {
     let data = null;
+    let extractedMalId = null;
 
-    // 1. Try proxy first
+    // 1. Try proxy first (Cloudflare Worker edge cache)
     try {
       const response = await smartRequest("post", "/api/anilist/proxy", {
         data: payload,
@@ -1113,41 +1147,34 @@ export async function getAnimeDetails(id, isMal = false) {
       }
     }
 
+    // 3. If AniList returned nothing at all (total failure / 429)
     if (!data) {
-      console.error("AniList Detail: No response from any source");
-      // FALLBACK TO JIKAN if we have a MAL ID
-      if (finalIsMal) {
-        console.info(`[Fallback] Attempting Jikan fallback for MAL ID: ${finalId}`);
-        const jikanData = await getJikanAnimeDetails(finalId);
-        if (jikanData) {
-          const result = transformJikanToAnilist(jikanData);
-          cache.set(cacheKey, result, CACHE_TTL.DETAILS);
-          return result;
-        }
-      }
+      console.error("AniList Detail: No response from any source — trying Jikan fallback");
+      const fallback = await attemptJikanFallback(null);
+      if (fallback) return fallback;
       return null;
     }
 
+    // 4. AniList returned errors (e.g., rate limit message inside JSON)
     if (data.errors) {
       console.error("AniList Detail Errors [ID:", finalId, "]:", data.errors);
+      // Try to extract MAL ID from partial data if it exists
+      extractedMalId = data.data?.Media?.idMal || null;
+      const fallback = await attemptJikanFallback(extractedMalId);
+      if (fallback) return fallback;
       return null;
     }
 
     const media = data.data?.Media || data.Media;
     if (!media) {
       console.warn("AniList Detail: No media found in response for ID:", finalId);
-      // FALLBACK TO JIKAN if we have a MAL ID
-      if (finalIsMal) {
-        console.info(`[Fallback] Attempting Jikan fallback for MAL ID: ${finalId}`);
-        const jikanData = await getJikanAnimeDetails(finalId);
-        if (jikanData) {
-          const result = transformJikanToAnilist(jikanData);
-          cache.set(cacheKey, result, CACHE_TTL.DETAILS);
-          return result;
-        }
-      }
+      const fallback = await attemptJikanFallback(null);
+      if (fallback) return fallback;
       return null;
     }
+
+    // Extract MAL ID from successful response for future fallback reference
+    extractedMalId = media.idMal || null;
 
     // Flatten deep relations for season navigation
     if (media.relations?.edges) {
@@ -1183,24 +1210,18 @@ export async function getAnimeDetails(id, isMal = false) {
   } catch (err) {
     console.error("getAnimeDetails Error:", err);
 
-    // FALLBACK TO JIKAN on error if we have a MAL ID
-    if (finalIsMal) {
-      try {
-        console.info(`[Fallback] AniList Down. Attempting Jikan for MAL ID: ${finalId}`);
-        const jikanData = await getJikanAnimeDetails(finalId);
-        if (jikanData) {
-          const result = transformJikanToAnilist(jikanData);
-          cache.set(cacheKey, result, CACHE_TTL.DETAILS);
-          return result;
-        }
-      } catch (fallbackErr) {
-        console.error("[Fallback] Jikan fallback failed:", fallbackErr);
-      }
+    // UNIVERSAL FALLBACK — always try Jikan on any uncaught error
+    try {
+      const fallback = await attemptJikanFallback(null);
+      if (fallback) return fallback;
+    } catch (fallbackErr) {
+      console.error("[Fallback] Jikan fallback failed:", fallbackErr);
     }
 
     return null;
   }
 }
+
 
 // Helper to transform Jikan response to match the AniList structure expected by the app
 function transformJikanToAnilist(item) {
