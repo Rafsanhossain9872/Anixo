@@ -54,6 +54,32 @@ export default function VideoPlayerSection({
         }
     }, [activeServer, iframeRef]);
 
+    // Inject AniXo Embed SDK for Servers 2-6 (required by Megaplay + AniXo embed providers)
+    // The SDK must be present on the page or the embed will show "Invalid Embed" errors.
+    useEffect(() => {
+        const SDK_ID = 'anixo-embed-sdk';
+        const needsSDK = activeServer >= 2 && activeServer <= 6;
+
+        if (needsSDK) {
+            // Only inject if not already present
+            if (!document.getElementById(SDK_ID)) {
+                const script = document.createElement('script');
+                script.id = SDK_ID;
+                script.src = 'https://anixo.buzz/embed-sdk.js';
+                script.async = true;
+                document.head.appendChild(script);
+            }
+        }
+
+        // Cleanup: remove SDK when switching away from servers 2-6 or on unmount
+        return () => {
+            const existing = document.getElementById(SDK_ID);
+            if (existing && !(activeServer >= 2 && activeServer <= 6)) {
+                existing.remove();
+            }
+        };
+    }, [activeServer]);
+
     // Resolve current episode image for player background/loading placeholder
     const currentEpisodeImage = useMemo(() => {
         if (!anime) return null;
