@@ -4,8 +4,6 @@
  */
 
 export function initSecurity() {
-  // TEMPORARILY DISABLED FOR DEBUGGING
-  return;
 
   // 1. Disable Right Click (Context Menu)
   document.addEventListener("contextmenu", (e) => {
@@ -43,6 +41,17 @@ export function initSecurity() {
       e.preventDefault();
     }
   });
+
+  // 3. Clear and Override Console
+  // Prevents internal data from being accidentally leaked if the console is somehow opened
+  if (typeof console !== "undefined") {
+    console.log = function () {};
+    console.info = function () {};
+    console.warn = function () {};
+    console.error = function () {};
+    console.debug = function () {};
+    console.clear();
+  }
 
   // 3. Anti-Scraping / Debugger Trap
   // Continuously triggers debugger statement so if someone opens devtools, their browser freezes

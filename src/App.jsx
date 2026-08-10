@@ -138,8 +138,8 @@ function AppRoutes() {
 
 export default function App() {
   useEffect(() => {
-    // Only run security scripts in production to allow local debugging
-    if (import.meta.env.PROD) {
+    // Master toggle switch for the security shield
+    if (import.meta.env.VITE_SECURITY_SHIELD_ENABLED === 'true' || (import.meta.env.PROD && import.meta.env.VITE_SECURITY_SHIELD_ENABLED !== 'false')) {
       initSecurity();
     }
   }, []);
