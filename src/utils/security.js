@@ -4,7 +4,8 @@
  */
 
 export function initSecurity() {
-  // Security protections active
+  // TEMPORARILY DISABLED FOR DEBUGGING
+  return;
 
   // 1. Disable Right Click (Context Menu)
   document.addEventListener("contextmenu", (e) => {
