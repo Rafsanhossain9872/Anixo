@@ -54,11 +54,13 @@ router.get('/', async (req, res) => {
             headers['Origin'] = targetOrigin;
         }
 
+        const isM3U8 = targetUrl.includes('.m3u8');
+
         const response = await axios({
             method: 'GET',
             url: targetUrl,
             headers,
-            responseType: 'stream',
+            responseType: isM3U8 ? 'text' : 'stream',
             validateStatus: () => true, // Forward all status codes
             timeout: 15000
         });
@@ -72,24 +74,44 @@ router.get('/', async (req, res) => {
         // Forward CORS headers
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        if (response.headers['content-type']) res.setHeader('Content-Type', response.headers['content-type']);
 
-        // Forward important stream headers
-        const headersToForward = [
-            'content-type',
-            'content-length',
-            'accept-ranges',
-            'content-range'
-        ];
+        if (isM3U8 && typeof response.data === 'string') {
+            const baseUrl = new URL(targetUrl);
+            const proxyBase = `${req.protocol}://${req.get('host')}/api/proxy`;
 
-        headersToForward.forEach(header => {
-            if (response.headers[header]) {
-                res.setHeader(header, response.headers[header]);
-            }
-        });
-
-        res.status(response.status);
-        response.data.pipe(res);
+            let bodyText = response.data.split('\n').map(line => {
+                let trimmed = line.trim();
+                if (!trimmed) return line;
+                
+                if (trimmed.startsWith('#') && trimmed.includes('URI=')) {
+                    return trimmed.replace(/URI="([^"]+)"/, (match, p1) => {
+                        try {
+                            const absUrl = new URL(p1, baseUrl).toString();
+                            const proxyUrl = `${proxyBase}?url=${encodeURIComponent(absUrl)}&referer=${encodeURIComponent(referer || '')}`;
+                            return `URI="${proxyUrl}"`;
+                        } catch(e) { return match; }
+                    });
+                }
+                
+                if (!trimmed.startsWith('#')) {
+                    try {
+                        const absUrl = new URL(trimmed, baseUrl).toString();
+                        const proxyUrl = `${proxyBase}?url=${encodeURIComponent(absUrl)}&referer=${encodeURIComponent(referer || '')}`;
+                        return proxyUrl;
+                    } catch (e) { return trimmed; }
+                }
+                return trimmed;
+            }).join('\n');
+            
+            res.setHeader('Content-Length', Buffer.byteLength(bodyText));
+            res.status(response.status);
+            return res.send(bodyText);
+        } else {
+            if (response.headers['content-length']) res.setHeader('Content-Length', response.headers['content-length']);
+            res.status(response.status);
+            return response.data.pipe(res);
+        }
 
     } catch (error) {
         console.error('[Proxy Catch Error]:', error.message);
