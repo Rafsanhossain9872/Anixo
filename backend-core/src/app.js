@@ -12,6 +12,7 @@ import userRoutes from './routes/userRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import communityRoutes from './routes/communityRoutes.js';
 import aiBotRoutes from './routes/aiBotRoutes.js';
+import proxyRoutes from './routes/proxyRoutes.js';
 import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 import process from 'node:process';
 import connectDB from './config/db.js';
@@ -78,6 +79,7 @@ app.use('/users', userRoutes);
 app.use('/ai', aiRoutes);
 app.use('/community', communityRoutes);
 app.use('/ai-bot', aiBotRoutes);
+app.use('/api/proxy', proxyRoutes);
 
 app.get('/', (req, res) => {
   res.send('API running');
