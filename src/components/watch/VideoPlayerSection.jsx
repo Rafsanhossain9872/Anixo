@@ -87,7 +87,8 @@ export default function VideoPlayerSection({
         const currentStream = streamData.all_streams[activeSubServer] || streamData.all_streams[0];
         if (currentStream) {
             if (currentStream.type === "hls" || currentStream.url.includes('.m3u8')) {
-                videoSrc = currentStream.url;
+                const proxyBase = import.meta.env.VITE_PROXY_URL || 'https://anixo-wckh.onrender.com/api/proxy';
+                videoSrc = `${proxyBase}?url=${encodeURIComponent(currentStream.url)}&referer=${encodeURIComponent(currentStream.referer || 'https://anikototv.to/')}`;
                 videoType = "hls";
                 isIframe = false;
             } else if (currentStream.type === "embed" || currentStream.url.includes('embed')) {
