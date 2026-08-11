@@ -5,22 +5,22 @@ const steps = [
     {
         title: "Step 1: Open Site Settings",
         description: "Click on the lock icon or site settings icon next to the URL in your browser.",
-        image: "/step1.png"
+        image: "/page-1.png"
     },
     {
         title: "Step 2: Go to Cookies and Site Data",
         description: "Select 'Cookies and site data' from the dropdown menu.",
-        image: "/step2.png" 
+        image: "/page-2.png" 
     },
     {
         title: "Step 3: Manage Site Data",
         description: "Click on the 'Manage on-device site data' button.",
-        image: "/step3.png" 
+        image: "/page-3.png" 
     },
     {
         title: "Step 4: Confirm",
         description: "Confirm your action to delete the cache. Then refresh the page!",
-        image: "/step4.png"
+        image: "/page-4.png"
     }
 ];
 
