@@ -66,6 +66,15 @@ export async function onRequest(context) {
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.delete('set-cookie');  // Remove any HF cookies
 
+    // Explicitly forward cache diagnostic headers from the Worker
+    // (Cloudflare internal routing can strip custom headers between Pages ↔ Workers)
+    const cacheStatus = response.headers.get('X-Cache');
+    const edgeLocation = response.headers.get('X-Edge-Location');
+    const edgeCacheTTL = response.headers.get('X-Edge-Cache-TTL');
+    if (cacheStatus) responseHeaders.set('X-Cache', cacheStatus);
+    if (edgeLocation) responseHeaders.set('X-Edge-Location', edgeLocation);
+    if (edgeCacheTTL) responseHeaders.set('X-Edge-Cache-TTL', edgeCacheTTL);
+
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
