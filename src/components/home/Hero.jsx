@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import LoginModal from "../auth/LoginModal";
 import { optimizeImage } from "../../utils/image";
 import { getWatchUrl } from "../../utils/url";
+import { getTmdbAssets } from "../../services/api";
 
 export default function Hero({ data = [], isLoading }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,15 +16,51 @@ export default function Hero({ data = [], isLoading }) {
   const { user, triggerAuthToast } = useAuth();
 
   const displayData = data?.slice(0, 6) || [];
+  const [tmdbAssets, setTmdbAssets] = useState({});
 
   useEffect(() => {
     if (displayData.length === 0) return;
+
+    let isMounted = true;
+    
+    const fetchAssets = async () => {
+      const fetchPromises = displayData.map(async (anime) => {
+        if (!tmdbAssets[anime.id]) {
+          if (anime.title) {
+            const assets = await getTmdbAssets(anime.title);
+            return { id: anime.id, assets: assets || { failed: true } };
+          }
+        }
+        return null;
+      });
+
+      const results = await Promise.all(fetchPromises);
+      const newAssets = {};
+      let updated = false;
+
+      results.forEach(res => {
+        if (res && res.assets) {
+          newAssets[res.id] = res.assets;
+          updated = true;
+        }
+      });
+
+      if (updated && isMounted) {
+        setTmdbAssets(prev => ({ ...prev, ...newAssets }));
+      }
+    };
+    
+    fetchAssets();
+
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % displayData.length);
       setActiveDropdown(null);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [displayData.length]);
+    }, 8000); // Increased interval so high-res images can be enjoyed
+    return () => {
+      clearInterval(interval);
+      isMounted = false;
+    };
+  }, [displayData]);
 
   // --- SMART SKELETON LOADER ---
   if (isLoading || displayData.length === 0) {
@@ -99,7 +136,7 @@ export default function Hero({ data = [], isLoading }) {
                 />
                 {/* Desktop/Tablet Banner Image (Centered correctly) */}
                 <img
-                  src={optimizeImage(anime.bannerImage || anime.coverImage?.extraLarge, 1920)}
+                  src={tmdbAssets[anime.id] && !tmdbAssets[anime.id].failed && tmdbAssets[anime.id].backdrop ? tmdbAssets[anime.id].backdrop : optimizeImage(anime.bannerImage || anime.coverImage?.extraLarge, 1920)}
                   alt={anime.title?.english}
                   fetchPriority={isFirst ? "high" : "auto"}
                   loading={isFirst ? "eager" : "lazy"}
@@ -115,9 +152,18 @@ export default function Hero({ data = [], isLoading }) {
                 <div className={`w-full md:max-w-[700px] flex flex-col items-center md:items-start text-center md:text-left transition-all duration-700 delay-200 ${i === currentIndex ? "translate-y-0 md:translate-x-0 opacity-100" : "translate-y-10 md:-translate-x-10 opacity-0"}`}>
 
                   {/* Anime Title (Premium Outfit Font) */}
-                  <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-[1.2] mb-3 drop-shadow-2xl line-clamp-2">
-                    {anime.title?.english || anime.title?.romaji}
-                  </h2>
+                  {/* Anime Title (Premium Outfit Font) or TMDB Logo */}
+                  {tmdbAssets[anime.id] ? (
+                    !tmdbAssets[anime.id].failed && tmdbAssets[anime.id].logo ? (
+                      <img src={tmdbAssets[anime.id].logo} alt={anime.title?.english} fetchPriority={isFirst ? "high" : "auto"} className="h-16 md:h-24 lg:h-28 object-contain mb-4 drop-shadow-2xl" />
+                    ) : (
+                      <h2 className="text-xl md:text-3xl lg:text-4xl font-bold text-white tracking-tight leading-[1.2] mb-3 drop-shadow-2xl line-clamp-2">
+                        {anime.title?.english || anime.title?.romaji}
+                      </h2>
+                    )
+                  ) : (
+                    <div className="h-16 md:h-24 lg:h-28 w-3/4 max-w-[400px] bg-white/10 animate-pulse rounded-lg mb-4" />
+                  )}
 
                   {/* Meta Row (Badges + Genres) */}
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-4 md:mb-6">
