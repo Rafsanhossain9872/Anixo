@@ -130,7 +130,7 @@ export default function Watch({ isWatch2GetherMode }) {
   useEffect(() => localStorage.setItem("episodeLayout", JSON.stringify(episodeLayout)), [episodeLayout]);
 
   const [playerLang, setPlayerLang] = useState("sub");
-  const [activeServer, setActiveServer] = useState(6);
+  const [activeServer, setActiveServer] = useState(1);
 
 
 
@@ -689,6 +689,15 @@ export default function Watch({ isWatch2GetherMode }) {
     id, anime, activeEpisode, playerLang, activeServer, autoPlay, autoNext,
     setPageLoading, isMal, initialTime, activeSubServer,
   });
+
+  // ── Auto Fallback Logic ──
+  useEffect(() => {
+    if (fetchError) {
+      if (activeServer === 1) setActiveServer(2);
+      else if (activeServer === 2) setActiveServer(3);
+      else if (activeServer === 3) setActiveServer(6);
+    }
+  }, [fetchError, activeServer]);
 
   const skipTimes = useAniSkip(anime?.idMal, activeEpisode, 0);
 
