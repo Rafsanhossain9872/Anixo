@@ -1108,10 +1108,7 @@ export default function Watch({ isWatch2GetherMode }) {
           )}
         </div>
 
-        {/* Seasons */}
-        {!isFocusMode && !wtRoom && (
-          <SeasonsSection stableSeasons={stableSeasons} getTitle={getTitle} />
-        )}
+
 
         {/* Anime Details */}
         {!isFocusMode && (
@@ -1144,6 +1141,9 @@ export default function Watch({ isWatch2GetherMode }) {
               relations={relations}
               recommendations={recommendations}
             />
+
+            {/* Seasons (Moved here below Comments) */}
+            <SeasonsSection stableSeasons={stableSeasons} getTitle={getTitle} />
 
             {/* Recommendations Section */}
             {recommendations && recommendations.length > 0 && (

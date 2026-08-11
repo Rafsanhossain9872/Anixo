@@ -28,45 +28,52 @@ export default function SeasonsSection({ stableSeasons, getTitle }) {
  </header>
 
  <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide px-6">
- {stableSeasons.map((item) => (
- <Link
- key={item.id}
- to={item.isActive ? "#" : getWatchUrl(item.id, item.title)}
- onClick={(e) => item.isActive && e.preventDefault()}
- className={`flex-shrink-0 relative group transition-all duration-500 rounded-[8px] overflow-hidden border ${item.isActive
- ? 'border-discord-600/60 '
- : 'border-white/15 hover:border-white/20'
- }`}
- style={{ width: '200px', height: '110px' }}
- >
- {/* Background Image */}
- <div className="absolute inset-0 z-0">
- <img
- src={item.coverImage?.large || item.coverImage?.medium}
- alt=""
- className={`w-full h-full object-cover transition-all duration-700 ${item.isActive ? 'scale-110 opacity-70' : 'opacity-40 group-hover:opacity-60'
- }`}
- />
- <div className={`absolute inset-0 bg-gradient-to-t ${item.isActive ? 'from-red-950/90 via-black/40 to-transparent' : 'from-black/90 via-black/20 to-transparent'}`} />
- </div>
+  {stableSeasons.map((item) => (
+    <Link
+      key={item.id}
+      to={item.isActive ? "#" : getWatchUrl(item.id, item.title)}
+      onClick={(e) => item.isActive && e.preventDefault()}
+      className={`flex-shrink-0 relative group transition-all duration-300 rounded-[8px] overflow-hidden border ${
+        item.isActive
+          ? 'border-discord-400 shadow-[0_0_15px_rgba(88,101,242,0.3)] z-10'
+          : 'border-white/10 hover:border-white/20'
+      }`}
+      style={{ width: '260px', height: '86px' }}
+    >
+      {/* Blurred Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={item.coverImage?.large || item.coverImage?.medium}
+          alt=""
+          className="w-full h-full object-cover opacity-30 blur-sm scale-110"
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        {/* Dotted pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '12px 12px' }} />
+      </div>
 
- {/* Content Overlay */}
- <div className="absolute inset-0 z-10 flex flex-col items-center justify-end p-4">
- <h3 className={`text-[12px] font-black uppercase tracking-tight mb-1 text-center line-clamp-1 transition-all ${item.isActive ? 'text-white' : 'text-white/60 group-hover:text-white'
- }`}>
- {getTitle(item.title)}
- </h3>
-
- {/* Episodes & Format Badge */}
- <div className={`px-3 py-0.5 rounded-full font-black text-[9px] uppercase tracking-wider transition-all ${item.isActive
- ? 'bg-discord-600 text-white shadow-lg'
- : 'bg-white/10 text-white/40 group-hover:bg-white/20'
- }`}>
- {item.format && !['TV', 'TV_SHORT'].includes(item.format) ? `${item.format.replace('_', ' ')} • ` : ''}{item.episodes || '?'} Eps
- </div>
- </div>
- </Link>
- ))}
+      {/* Content */}
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-3 text-center">
+        <span className={`text-[10px] font-black tracking-widest uppercase mb-1 ${item.isActive ? 'text-discord-400' : 'text-discord-400'}`}>
+          {item.relationToMain ? item.relationToMain.replace('_', ' ') : 'RELATED'}
+        </span>
+        
+        <h3 className={`text-[13.5px] font-bold leading-tight line-clamp-1 w-full ${item.isActive ? 'text-white' : 'text-white/90 group-hover:text-white'}`}>
+          {getTitle(item.title)}
+        </h3>
+        
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium text-white/50 uppercase tracking-wider">
+          {item.format && !['TV', 'TV_SHORT'].includes(item.format) ? <span>{item.format.replace('_', ' ')}</span> : <span>TV</span>}
+          {item.startDate?.year && (
+            <>
+              <span className="text-[8px]">•</span>
+              <span>{item.startDate.year}</span>
+            </>
+          )}
+        </div>
+      </div>
+    </Link>
+  ))}
  </div>
  </section>
  );

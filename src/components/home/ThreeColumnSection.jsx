@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tv, Heart, Star, ArrowUpRight } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getWatchUrl } from "../../utils/url";
+import { getTmdbAssets } from "../../services/api";
 
 /* ── Skeleton Loaders ── */
 function SkeletonListItem() {
@@ -67,23 +68,33 @@ function ListItem({ anime }) {
         <p className="text-[13.5px] font-bold text-[#e5e5e5] truncate group-hover:text-discord-400 transition-colors leading-snug">
           {getTitle(anime.title)}
         </p>
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          <span className="text-[9px] font-bold text-white/60 bg-white/5 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider">
-            {anime.format || "TV"}
-          </span>
-          {anime.averageScore && (
-            <span className="text-[9px] font-bold text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded-[3px] flex items-center gap-1">
-              <Star size={9} fill="currentColor" /> {anime.averageScore}%
-            </span>
+        <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] font-medium text-white/50">
+          {anime.format && <span className="uppercase font-bold text-white/80">{anime.format}</span>}
+          
+          {anime.averageScore > 0 && (
+            <>
+              {anime.format && <span className="text-[8px] text-white/30">•</span>}
+              <span className="flex items-center gap-1">
+                <Star size={11} className="text-[#F5C518]" fill="currentColor" />
+                <span className="text-white/90 font-bold tracking-tight mt-[1px]">
+                  {anime.averageScore}%
+                </span>
+              </span>
+            </>
           )}
+
           {anime.status === "NOT_YET_RELEASED" ? (
-            <span className="text-[9px] font-black bg-discord-500/10 text-discord-400 px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider">
-              {t('threeColumn.upcoming')}
-            </span>
+            <>
+              {(anime.format || anime.averageScore > 0) && <span className="text-[8px] text-white/30">•</span>}
+              <span className="text-discord-400 font-bold uppercase tracking-wider">{t('threeColumn.upcoming')}</span>
+            </>
           ) : (
-            <span className="text-[9px] text-white/60 font-medium flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px]">
-              <Tv size={9} /> {anime.episodes || "?"}
-            </span>
+            anime.episodes > 0 && (
+              <>
+                {(anime.format || anime.averageScore > 0) && <span className="text-[8px] text-white/30">•</span>}
+                <span>{anime.episodes} EPS</span>
+              </>
+            )
           )}
         </div>
       </div>
@@ -97,12 +108,26 @@ function RankedItem({ anime, rank, featured }) {
   const { getTitle } = useLanguage();
   const navigate = useNavigate();
 
+  const [tmdbAssets, setTmdbAssets] = useState(null);
+
+  useEffect(() => {
+    if (featured && anime.title) {
+      let isMounted = true;
+      getTmdbAssets(anime.title).then(assets => {
+        if (isMounted && assets && !assets.failed) {
+          setTmdbAssets(assets);
+        }
+      });
+      return () => { isMounted = false; };
+    }
+  }, [featured, anime.title]);
+
   if (featured) {
     return (
       <div className="cursor-pointer group mb-4 relative rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10 hover:ring-discord-500/50 transition-all duration-500" onClick={() => navigate(getWatchUrl(anime.id, anime.title))}>
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#1a1a1a]">
           <img
-            src={anime.coverImage?.large}
+            src={tmdbAssets?.backdrop || anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large}
             alt={getTitle(anime.title)}
             loading="lazy"
             onLoad={(e) => e.target.classList.remove("opacity-0")}
@@ -116,18 +141,39 @@ function RankedItem({ anime, rank, featured }) {
           <span className="text-[64px] font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 leading-none italic drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
             {rank}
           </span>
-          <div className="pb-1.5 flex-1 min-w-0">
-            <p className="text-[14px] font-black text-white leading-tight uppercase group-hover:text-discord-400 transition-colors drop-shadow-md truncate">
-              {getTitle(anime.title)}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[9px] font-bold uppercase tracking-wider text-white/80">
+          <div className="pb-1.5 flex-1 min-w-0 flex flex-col justify-end">
+            {tmdbAssets?.logo ? (
+              <img src={tmdbAssets.logo} alt={getTitle(anime.title)} className="h-10 md:h-12 object-contain object-left mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
+            ) : (
+              <p className="text-[14px] font-black text-white leading-tight uppercase group-hover:text-discord-400 transition-colors drop-shadow-md truncate mb-1">
+                {getTitle(anime.title)}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-[11px] font-medium text-white/70">
+              {anime.format && <span className="uppercase font-bold text-white/90">{anime.format}</span>}
+              
               {anime.status === "NOT_YET_RELEASED" ? (
-                <span className="bg-discord-500/30 text-discord-100 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md">{t('threeColumn.upcoming')}</span>
+                <>
+                  {anime.format && <span className="text-[8px] text-white/30">•</span>}
+                  <span className="text-discord-400 font-bold uppercase tracking-wider">{t('threeColumn.upcoming')}</span>
+                </>
               ) : (
-                <span className="flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md"><Tv size={10} className="text-white" /> {anime.episodes || "?"}</span>
+                anime.episodes > 0 && (
+                  <>
+                    {anime.format && <span className="text-[8px] text-white/30">•</span>}
+                    <span>{anime.episodes} EPS</span>
+                  </>
+                )
               )}
-              <span className="flex items-center gap-1 bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md"><Heart size={10} fill="currentColor" className="text-discord-400" /> {anime.favourites || "?"}</span>
-              <span className="bg-white/20 px-1.5 py-0.5 rounded-[3px] backdrop-blur-md">{anime.format}</span>
+              
+              {anime.favourites > 0 && (
+                <>
+                  <span className="text-[8px] text-white/30">•</span>
+                  <span className="flex items-center gap-0.5 text-rose-400 font-bold">
+                    <Heart size={10} fill="currentColor" /> {anime.favourites}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -157,14 +203,31 @@ function RankedItem({ anime, rank, featured }) {
         <p className="text-[13.5px] font-bold text-[#e5e5e5] truncate group-hover:text-discord-400 transition-colors leading-tight uppercase">
           {getTitle(anime.title)}
         </p>
-        <div className="flex flex-wrap items-center gap-2 mt-2 text-[9px] font-bold uppercase tracking-wider text-white/60">
+        <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-medium text-white/50">
+          {anime.format && <span className="uppercase font-bold text-white/80">{anime.format}</span>}
+          
           {anime.status === "NOT_YET_RELEASED" ? (
-             <span className="bg-discord-500/10 text-discord-400 px-1.5 py-0.5 rounded-[3px]">{t('threeColumn.upcoming')}</span>
+            <>
+              {anime.format && <span className="text-[8px] text-white/30">•</span>}
+              <span className="text-discord-400 font-bold uppercase tracking-wider">{t('threeColumn.upcoming')}</span>
+            </>
           ) : (
-             <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px]"><Tv size={9} /> {anime.episodes || "?"}</span>
+             anime.episodes > 0 && (
+               <>
+                 {anime.format && <span className="text-[8px] text-white/30">•</span>}
+                 <span>{anime.episodes} EPS</span>
+               </>
+             )
           )}
-          <span className="flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded-[3px] text-white/80"><Heart size={9} fill="currentColor" className="text-discord-500/80" /> {anime.favourites || "?"}</span>
-          <span className="bg-white/5 px-1.5 py-0.5 rounded-[3px]">{anime.format}</span>
+          
+          {anime.favourites > 0 && (
+            <>
+              <span className="text-[8px] text-white/30">•</span>
+              <span className="flex items-center gap-0.5 text-rose-400 font-bold">
+                <Heart size={10} fill="currentColor" /> {anime.favourites}
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>
