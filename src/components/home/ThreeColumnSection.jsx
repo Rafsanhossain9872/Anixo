@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { getMostViewedAnime } from "../../services/api";
 import { getWatchUrl } from "../../utils/url";
+import AnimeCard from "../common/AnimeCard";
 
 /* ── Skeleton Loaders ── */
 function SkeletonListItem() {
@@ -194,12 +195,27 @@ export default function ThreeColumnSection({ newReleases, justCompleted, isLoadi
             path="/browse?sort=START_DATE_DESC"
           />
           <div className="w-full">
-            {isLoading
-              ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
-              : newReleases?.slice(0, 10)?.map((anime, i) => (
-                <ListItem key={`nr-${anime.id}-${i}`} anime={anime} />
-              ))
-            }
+            {/* MOBILE: Horizontal Scroll */}
+            <div className="md:hidden flex flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-3 pb-4 min-h-[100px]">
+              {isLoading
+                ? Array.from({ length: 10 }).map((_, i) => <div key={i} className="w-[140px] shrink-0 snap-start bg-white/5 rounded-xl animate-pulse h-[200px]" />)
+                : newReleases?.slice(0, 10)?.map((anime, i) => (
+                  <div key={`nr-mob-${anime.id}-${i}`} className="w-[140px] shrink-0 snap-start">
+                    <AnimeCard anime={anime} />
+                  </div>
+                ))
+              }
+            </div>
+            
+            {/* DESKTOP: Vertical List */}
+            <div className="hidden md:block w-full">
+              {isLoading
+                ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
+                : newReleases?.slice(0, 10)?.map((anime, i) => (
+                  <ListItem key={`nr-${anime.id}-${i}`} anime={anime} />
+                ))
+              }
+            </div>
           </div>
         </div>
 
@@ -256,12 +272,27 @@ export default function ThreeColumnSection({ newReleases, justCompleted, isLoadi
             path="/browse?status=FINISHED"
           />
           <div className="w-full">
-            {isLoading
-              ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
-              : justCompleted?.slice(0, 10)?.map((anime, i) => (
-                <ListItem key={`jc-${anime.id}-${i}`} anime={anime} />
-              ))
-            }
+            {/* MOBILE: Horizontal Scroll */}
+            <div className="md:hidden flex flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-3 pb-4 min-h-[100px]">
+              {isLoading
+                ? Array.from({ length: 10 }).map((_, i) => <div key={i} className="w-[140px] shrink-0 snap-start bg-white/5 rounded-xl animate-pulse h-[200px]" />)
+                : justCompleted?.slice(0, 10)?.map((anime, i) => (
+                  <div key={`jc-mob-${anime.id}-${i}`} className="w-[140px] shrink-0 snap-start">
+                    <AnimeCard anime={anime} />
+                  </div>
+                ))
+              }
+            </div>
+            
+            {/* DESKTOP: Vertical List */}
+            <div className="hidden md:block w-full">
+              {isLoading
+                ? Array.from({ length: 10 }).map((_, i) => <SkeletonListItem key={i} />)
+                : justCompleted?.slice(0, 10)?.map((anime, i) => (
+                  <ListItem key={`jc-${anime.id}-${i}`} anime={anime} />
+                ))
+              }
+            </div>
           </div>
         </div>
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from "../../context/LanguageContext";
 import { getWatchUrl } from "../../utils/url";
-import { Play } from "lucide-react";
+import { Play, X } from "lucide-react";
 
 export default function GlobalHoverManager() {
   const [hoverData, setHoverData] = useState({ anime: null, rect: null });
@@ -67,12 +67,21 @@ export default function GlobalHoverManager() {
       className={`w-[320px] bg-bg/95 backdrop-blur-xl border border-border shadow-2xl rounded-xl p-5 font-senpai transition-all duration-200 pointer-events-auto ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <h2 className="text-white text-lg font-bold leading-tight">{title}</h2>
-        {anime.averageScore && (
-          <div className="flex items-center gap-1 bg-surfaceHover px-1.5 py-0.5 rounded text-primary font-bold text-xs">
-            ★ {anime.averageScore}
-          </div>
-        )}
+        <h2 className="text-white text-lg font-bold leading-tight pr-6">{title}</h2>
+        <div className="flex items-center gap-2 shrink-0">
+          {anime.averageScore && (
+            <div className="flex items-center gap-1 bg-surfaceHover px-1.5 py-0.5 rounded text-primary font-bold text-xs">
+              ★ {anime.averageScore}
+            </div>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsHovered(false); setHoverData({ anime: null, rect: null }); }}
+            className="w-6 h-6 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-white/40 hover:text-white transition-all duration-200 cursor-pointer"
+            title="Close"
+          >
+            <X size={12} />
+          </button>
+        </div>
       </div>
       
       {anime.title?.native && (

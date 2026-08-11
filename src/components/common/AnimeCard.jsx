@@ -48,6 +48,8 @@ const AnimeCard = memo(({ anime }) => {
   // Hover Events for GlobalHoverManager
   let hoverTimeout;
   const handleMouseEnter = (e) => {
+    // Don't show hover card on touch devices (phones/tablets without a mouse)
+    if (!window.matchMedia('(hover: hover)').matches) return;
     const rect = cardRef.current.getBoundingClientRect();
     hoverTimeout = setTimeout(() => {
       window.dispatchEvent(new CustomEvent('show-anime-hover', { 

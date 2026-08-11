@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowUpRight, Calendar, Star } from "lucide-react";
+import { ArrowUpRight, Play, Calendar, ListVideo, Star } from "lucide-react";
+import AnimeCard from "../common/AnimeCard";
 import { getTopMovies } from "../../services/api";
 import { optimizeImage } from "../../utils/image";
 import { useLanguage } from "../../context/LanguageContext";
@@ -81,7 +82,25 @@ export default function TopMovies() {
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
+      {/* MOBILE: Horizontal Scroll */}
+      <div className="md:hidden flex flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-3 pb-4 min-h-[100px]">
+        {isLoading ? (
+          Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="w-[140px] shrink-0 snap-start bg-white/5 rounded-xl animate-pulse h-[200px]" />
+          ))
+        ) : error || !data?.media ? (
+          <div className="text-red-400 text-sm py-4 w-full">Failed to load top movies.</div>
+        ) : (
+          data.media.slice(0, 10).map((anime) => (
+            <div key={anime?.id} className="w-[140px] shrink-0 snap-start">
+              <AnimeCard anime={anime} />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* DESKTOP: Vertical List */}
+      <div className="hidden md:flex flex-col gap-2">
         {isLoading ? (
           Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="h-[84px] bg-white/5 rounded-xl animate-pulse" />

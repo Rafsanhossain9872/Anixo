@@ -140,6 +140,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  {link.label}
  </Link>
  ))}
+
  {/* Random Anime */}
  <button
    onClick={async () => {

@@ -58,7 +58,7 @@ const lastGreetingIndices = { tsundere: -1, hype: -1, friendly: -1 };
 const getGreeting = (p) => {
   const greetings = {
     tsundere: [
-      "H-Hmph! 😤 I am AniXo. What kind of logical fallacy led you to seek my help? I-It's not like I care about your subpar taste, baka!",
+      "H-Hmph! 😤 I am Tenzora. What kind of logical fallacy led you to seek my help? I-It's not like I care about your subpar taste, baka!",
       "Ugh, you again? 🙄 Based on your psychological profile, your taste is tragically predictable. But fine, I'll fix it.",
       "W-What are you staring at?! Just tell me your favorite genres so I can objectively analyze your flawed preferences! 😳",
       "Are you just going to stare, or are we going to find an anime? Objectively speaking, you need my help. Baka! 💢",
@@ -70,7 +70,7 @@ const getGreeting = (p) => {
       "Y-You want my psychological analysis of your taste? *Sigh* Fine. But only this once! Don't make me repeat myself, baka! 😡"
     ],
     hype: [
-      "YOOO! 🔥 What's good bro?! AniXo here! Ready to watch some absolute PEAK fiction?! Let's gooo! 🚀",
+      "YOOO! 🔥 What's good bro?! Tenzora here! Ready to watch some absolute PEAK fiction?! Let's gooo! 🚀",
       "LET'S GOOO! 💯 You want action? You want hype? Tell me what you're craving and I'll give you an absolute banger! 🔥",
       "BRO! Stop wasting time! 🕒 Tell me your favorite anime right now and I'll bless you with some legendary recommendations! ⚡",
       "Get ready to binge! 🍿 Drop a genre or an anime you love, and let's find your next obsession! WOOOO! 💥",
@@ -79,10 +79,10 @@ const getGreeting = (p) => {
       "NO CAP! 🧢 I'm about to put you on to the best anime you've ever seen in your life! Tell me what you like! 😤",
       "WAKE UP BRO! ⏰ It's time to watch some peak cinema! Action? Romance? Thriller? Give me something! 🎬",
       "Let's get this bread! 🍞 Tell me what you're looking for, and I'll give straight fire, no misses! 🔥",
-      "YESSIR! 🫡 AniXo in the building! Drop your favorite show right now and let's find your next GOAT! 🐐"
+      "YESSIR! 🫡 Tenzora in the building! Drop your favorite show right now and let's find your next GOAT! 🐐"
     ],
     friendly: [
-      "Hi there! 😊 I am AniXo. What kind of anime are we watching today?",
+      "Hi there! 😊 I am Tenzora. What kind of anime are we watching today?",
       "Welcome back! ✨ I'm so happy to see you. Any specific anime mood you're in right now? 🌸",
       "Hello friend! 💖 Tell me what anime you usually enjoy, and I'll find something perfect just for you!",
       "Hey! 👋 Grab some snacks! Let me know what you want to watch, and I'll give you the best recommendations. 🍿",
@@ -420,7 +420,7 @@ const AiChat = () => {
                 </div>
               </div>
               <div className="flex flex-col justify-center">
-                <h3 className="font-bold text-white text-[15px] sm:text-base tracking-wide leading-tight">AniXo</h3>
+                <h3 className="font-bold text-white text-[15px] sm:text-base tracking-wide leading-tight">Tenzora</h3>
                 <p className="text-[11px] font-medium text-green-500/90 tracking-wider mt-0.5">Online</p>
               </div>
             </div>
@@ -492,7 +492,7 @@ const AiChat = () => {
           <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {!user ? (
               <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center space-y-4">
-                <h2 className="text-xl font-semibold text-white mb-1">Chat with AniXo AI</h2>
+                <h2 className="text-xl font-semibold text-white mb-1">Chat with Tenzora AI</h2>
                 <p className="text-gray-400 text-sm mb-6">for anime recommendation</p>
                 
                 <h3 className="text-base font-bold text-white">Login Required</h3>

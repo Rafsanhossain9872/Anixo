@@ -23,6 +23,7 @@ import { AdNativeBanner } from "../components/common/AdBanner";
 import { AdsterraSmartLinkBanner } from "../components/common/AdsterraSmartLink";
 import TopMovies from "../components/home/TopMovies";
 import ThreeColumnSection from "../components/home/ThreeColumnSection";
+import AnimeCard from "../components/common/AnimeCard";
 import HorizontalProgressCard from "../components/home/HorizontalProgressCard";
 import SidebarListCard from "../components/home/SidebarListCard";
 import { removeProgress } from "../services/progressService";
@@ -61,7 +62,20 @@ function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
           <ChevronRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
-      <div className="flex flex-col gap-2">
+      {/* MOBILE: Horizontal Scroll */}
+      <div className="md:hidden flex flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-3 pb-4 min-h-[100px]">
+        {isLoading 
+          ? Array.from({length: 5}).map((_,i) => <div key={i} className="w-[140px] shrink-0 snap-start bg-white/5 rounded-xl animate-pulse h-[200px]" />)
+          : data?.slice(0, 10).map(anime => (
+              <div key={anime.id} className="w-[140px] shrink-0 snap-start">
+                <AnimeCard anime={anime} />
+              </div>
+            ))
+        }
+      </div>
+
+      {/* DESKTOP: Vertical List */}
+      <div className="hidden md:flex flex-col gap-2">
         {isLoading 
           ? Array.from({length: 5}).map((_,i) => <div key={i} className="h-[104px] bg-white/5 rounded-xl animate-pulse" />)
           : data?.slice(0, 10).map(anime => <SidebarListCard key={anime.id} anime={anime} />)

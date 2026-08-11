@@ -56,21 +56,21 @@ export default function AnimeRow({
   return (
     <section className="mt-12 w-full mx-auto px-4 md:px-8 overflow-hidden font-sans">
       {/* Header Area */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+      <div className="flex flex-row items-center justify-between mb-4 md:mb-6 gap-2">
         
-        <div className="flex flex-col items-start gap-1 w-full md:w-auto">
+        <div className="flex flex-col items-start gap-1">
           {subtitle && (
-            <p className="text-xs font-senpai font-bold text-accent uppercase tracking-widest">{subtitle}</p>
+            <p className="text-[10px] md:text-xs font-senpai font-bold text-accent uppercase tracking-widest">{subtitle}</p>
           )}
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl md:text-2xl font-black text-white leading-none tracking-tight uppercase">
+          <div className="flex items-center gap-2 md:gap-3">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-none tracking-tight uppercase">
               {title}
             </h2>
             {headerAction}
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+        <div className="flex flex-row items-center gap-3 md:gap-4 shrink-0">
           {/* Tabs */}
           {tabs && tabs.length > 0 && (
             <div className="flex items-center gap-1 bg-surface rounded p-1 overflow-x-auto scrollbar-hide">
@@ -78,7 +78,7 @@ export default function AnimeRow({
                 <button
                   key={tab}
                   onClick={() => onTabChange?.(tab)}
-                  className={`text-xs font-senpai font-bold transition-colors whitespace-nowrap px-4 py-1.5 rounded uppercase tracking-wider ${
+                  className={`text-[10px] md:text-xs font-senpai font-bold transition-colors whitespace-nowrap px-3 md:px-4 py-1 md:py-1.5 rounded uppercase tracking-wider ${
                     activeTab === tab
                       ? "text-black bg-white"
                       : "text-textMuted hover:text-white hover:bg-white/5"
@@ -90,44 +90,43 @@ export default function AnimeRow({
             </div>
           )}
 
-          {/* Navigation Controls (Desktop) */}
-          <div className="hidden md:flex items-center gap-3">
-            {viewAllLink && (
-              <Link
-                to={viewAllLink}
-                className="text-xs font-senpai font-bold text-textMuted hover:text-white uppercase tracking-widest transition-colors duration-200"
+          {/* View All Link — visible on ALL breakpoints */}
+          {viewAllLink && (
+            <Link
+              to={viewAllLink}
+              className="text-[10px] md:text-xs font-senpai font-bold text-textMuted hover:text-white uppercase tracking-widest transition-colors duration-200 flex items-center gap-1 whitespace-nowrap"
+            >
+              View All <ChevronRight size={12} className="opacity-60" />
+            </Link>
+          )}
+
+          {/* Scroll Navigation Controls (Desktop only) */}
+          {isScrollable && (
+            <div className="hidden md:flex items-center gap-1">
+              <button
+                onClick={() => scroll("left")}
+                disabled={!canScrollLeft}
+                className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-200 ${
+                  canScrollLeft 
+                    ? "border-white/20 bg-surfaceHover text-white hover:border-white/40 cursor-pointer" 
+                    : "border-border bg-surface text-textMuted cursor-not-allowed opacity-50"
+                }`}
               >
-                View All
-              </Link>
-            )}
-            
-            {isScrollable && (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => scroll("left")}
-                  disabled={!canScrollLeft}
-                  className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-200 ${
-                    canScrollLeft 
-                      ? "border-white/20 bg-surfaceHover text-white hover:border-white/40 cursor-pointer" 
-                      : "border-border bg-surface text-textMuted cursor-not-allowed opacity-50"
-                  }`}
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button
-                  onClick={() => scroll("right")}
-                  disabled={!canScrollRight}
-                  className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-200 ${
-                    canScrollRight 
-                      ? "border-white/20 bg-surfaceHover text-white hover:border-white/40 cursor-pointer" 
-                      : "border-border bg-surface text-textMuted cursor-not-allowed opacity-50"
-                  }`}
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
-          </div>
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                disabled={!canScrollRight}
+                className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-200 ${
+                  canScrollRight 
+                    ? "border-white/20 bg-surfaceHover text-white hover:border-white/40 cursor-pointer" 
+                    : "border-border bg-surface text-textMuted cursor-not-allowed opacity-50"
+                }`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -163,51 +162,73 @@ export default function AnimeRow({
           </button>
         )}
 
-        <div
-          ref={isScrollable ? scrollRef : null}
-          className={`w-full ${
-            isScrollable 
-            ? "flex flex-nowrap overflow-x-auto scrollbar-hide pb-6 gap-3 md:gap-5" 
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-3 gap-y-8"
-          } min-h-[100px]`}
-        >
-          {isLoading ? (
-            Array.from({ length: limit }).map((_, i) => (
-              <div key={i} className={`${isScrollable ? 'w-[140px] md:w-[180px] shrink-0' : 'block'}`}>
-                <SkeletonCard />
+        {/* --- SCROLLABLE ROW (Watch History / Continue Watching) --- */}
+        {isScrollable ? (
+          <div
+            ref={scrollRef}
+            className="w-full flex flex-nowrap overflow-x-auto scrollbar-hide pb-6 gap-3 md:gap-5 min-h-[100px]"
+          >
+            {isLoading ? (
+              Array.from({ length: limit }).map((_, i) => (
+                <div key={i} className="w-[140px] md:w-[180px] shrink-0">
+                  <SkeletonCard />
+                </div>
+              ))
+            ) : hasData ? (
+              data.slice(0, data.length).map((anime, i) => (
+                <div key={`${anime.id}-${i}`} className="relative group/card shrink-0 w-[140px] md:w-[180px]">
+                  <Card anime={anime} />
+                  {onRemove && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onRemove(anime.id);
+                      }}
+                      className="absolute top-2 left-2 z-30 bg-bg/80 backdrop-blur-md text-white hover:text-red-500 hover:bg-black p-1.5 rounded-full shadow-2xl transition-all duration-300 opacity-100 md:opacity-0 md:group-hover/card:opacity-100 border border-white/10"
+                      title="Remove from history"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v6M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-12 flex flex-col items-center justify-center text-textMuted font-senpai w-full">
+                <p className="text-xs font-bold uppercase tracking-widest border border-white/10 px-6 py-2 rounded text-center leading-relaxed">
+                  {emptyMessage || "No Data Available"}
+                </p>
               </div>
-            ))
-          ) : hasData ? (
-            data.slice(0, isScrollable ? data.length : limit).map((anime, i) => (
-              <div key={`${anime.id}-${i}`} className={`relative group/card shrink-0 ${
-                isScrollable ? 'w-[140px] md:w-[180px]' : 'block'
-              }`}>
-                <Card anime={anime} />
-                {onRemove && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onRemove(anime.id);
-                    }}
-                    className="absolute top-2 left-2 z-30 bg-bg/80 backdrop-blur-md text-white hover:text-red-500 hover:bg-black p-1.5 rounded-full shadow-2xl transition-all duration-300 opacity-100 md:opacity-0 md:group-hover/card:opacity-100 border border-white/10"
-                    title="Remove from history"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v6M10 11v6M14 11v6" />
-                    </svg>
-                  </button>
-                )}
+            )}
+          </div>
+        ) : (
+          /* --- NON-SCROLLABLE ROW (Newest, Popular, Top Rated) --- */
+          <div
+            className="w-full flex flex-nowrap overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-3 pb-4 md:grid md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 md:gap-x-3 md:gap-y-8 md:overflow-visible md:pb-0 md:snap-none min-h-[100px]"
+          >
+            {isLoading ? (
+              Array.from({ length: limit }).map((_, i) => (
+                <div key={i} className="w-[130px] shrink-0 snap-start md:w-auto md:shrink md:snap-align-none">
+                  <SkeletonCard />
+                </div>
+              ))
+            ) : hasData ? (
+              data.slice(0, limit).map((anime, i) => (
+                <div key={`${anime.id}-${i}`} className="relative group/card shrink-0 w-[130px] snap-start md:w-auto md:shrink md:snap-align-none">
+                  <Card anime={anime} />
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-12 flex flex-col items-center justify-center text-textMuted font-senpai">
+                <p className="text-xs font-bold uppercase tracking-widest border border-white/10 px-6 py-2 rounded text-center leading-relaxed">
+                  {emptyMessage || "No Data Available"}
+                </p>
               </div>
-            ))
-          ) : (
-            <div className="col-span-full py-12 flex flex-col items-center justify-center text-textMuted font-senpai">
-              <p className="text-xs font-bold uppercase tracking-widest border border-white/10 px-6 py-2 rounded text-center leading-relaxed">
-                {emptyMessage || "No Data Available"}
-              </p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

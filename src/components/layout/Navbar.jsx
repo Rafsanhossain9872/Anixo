@@ -4,7 +4,7 @@ import NavSidebar from "./NavSidebar";
 import { useLanguage } from "../../context/LanguageContext";
 import { searchAnime } from "../../services/api";
 import { getWatchUrl } from "../../utils/url";
-import { Search, Shuffle, Menu, Bell, X } from "lucide-react";
+import { Search, Shuffle, Menu, Bell, X, MessageSquare } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import LoginModal from "../auth/LoginModal";
 import AvatarDropdown from "../user/AvatarDropdown";
@@ -101,17 +101,30 @@ export default function Navbar() {
   return (
     <>
       <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[98%] max-w-[1600px] z-[110] font-senpai">
-        <nav className="flex items-center justify-between bg-bg/95 backdrop-blur-xl border border-white/5 rounded-full px-3 py-2.5 shadow-2xl">
+        <nav className="flex items-center justify-between bg-bg/95 backdrop-blur-xl border border-white/5 rounded-full px-2 py-2 sm:px-3 sm:py-2.5 shadow-2xl">
           
           {/* LOGO */}
-          <div className="flex-shrink-0 mr-4 pl-2">
+          <div className="flex-shrink-0 mr-1 sm:mr-4 pl-1 sm:pl-2">
             <Link to="/home" className="flex items-center gap-1">
-              <span className="text-white font-black text-xl tracking-tighter uppercase">Tenzora</span>
+              <span className="text-white font-black text-lg sm:text-xl tracking-tighter uppercase">Tenzora</span>
             </Link>
           </div>
 
+          {/* COMPACT MOBILE STRIP (Hidden on sm and above) */}
+          <div className="flex sm:hidden items-center gap-1.5 sm:gap-3 px-1 sm:px-2 flex-1 justify-end">
+            <Link to="/home" className="text-textMuted hover:text-white text-[10px] font-semibold transition-colors">Home</Link>
+            <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="flex items-center gap-1 text-textMuted hover:text-discord-400 transition-colors h-7 px-1">
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-semibold">AI</span>
+            </button>
+            <button onClick={toggleLanguage} className="flex items-center bg-surface rounded-full p-0.5 border border-border cursor-pointer shrink-0">
+              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${language === 'EN' ? 'bg-white/10 text-white' : 'text-textMuted'}`}>EN</span>
+              <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full transition-colors ${language === 'JP' ? 'bg-white/10 text-white' : 'text-textMuted'}`}>JP</span>
+            </button>
+          </div>
+
           {/* SCROLLABLE LINKS (Tenzora Hybrid Menu) */}
-          <div className="flex-1 overflow-x-auto scrollbar-hide flex items-center gap-5 px-4 mask-linear-fade">
+          <div className="hidden sm:flex flex-1 overflow-x-auto scrollbar-hide items-center gap-5 px-4 mask-linear-fade">
              <Link to="/home" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Home</Link>
              <Link to="/browse" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Browse</Link>
              <Link to="/browse?sort=POPULARITY_DESC" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Popular</Link>
@@ -125,11 +138,11 @@ export default function Navbar() {
           </div>
 
           {/* RIGHT SIDE ICONS */}
-          <div className="flex-shrink-0 flex items-center gap-2 ml-4 relative" ref={searchContainerRef}>
+          <div className="flex-shrink-0 flex items-center gap-1 sm:gap-2 ml-1 sm:ml-4 relative" ref={searchContainerRef}>
              
              {/* Search Icon / Bar */}
              {isSearchOpen ? (
-               <form onSubmit={handleSearchSubmit} className="flex items-center bg-surface border border-border rounded-full px-3 h-10 w-[200px] animate-in fade-in slide-in-from-right-4">
+               <form onSubmit={handleSearchSubmit} className="flex items-center bg-surface border border-border rounded-full px-3 h-8 sm:h-10 w-[140px] sm:w-[200px] animate-in fade-in slide-in-from-right-4">
                  <Search size={14} className="text-textMuted mr-2 shrink-0" />
                  <input
                    autoFocus
@@ -144,8 +157,8 @@ export default function Navbar() {
                  </button>
                </form>
              ) : (
-               <button onClick={() => setIsSearchOpen(true)} className="w-10 h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer">
-                  <Search size={16} />
+               <button onClick={() => setIsSearchOpen(true)} className="w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer shrink-0">
+                  <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                </button>
              )}
 
@@ -189,14 +202,14 @@ export default function Navbar() {
              </button>
 
              {/* Notifications */}
-             <div className="relative">
+             <div className="relative shrink-0">
                 <button
                   onClick={() => { if(!isNotifOpen) fetchNotifications(); setIsNotifOpen(!isNotifOpen); }}
-                  className={`w-10 h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${isNotifOpen ? 'bg-surfaceHover border-white/10 text-white' : 'bg-surface border-white/5 text-textMuted hover:text-white hover:bg-surfaceHover'}`}
+                  className={`w-7 h-7 sm:w-10 sm:h-10 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${isNotifOpen ? 'bg-surfaceHover border-white/10 text-white' : 'bg-surface border-white/5 text-textMuted hover:text-white hover:bg-surfaceHover'}`}
                 >
-                  <Bell size={16} />
+                  <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full border-2 border-bg"></span>
+                    <span className="absolute top-0 right-0 w-2 h-2 sm:w-3 sm:h-3 bg-primary rounded-full border-2 border-bg"></span>
                   )}
                 </button>
                 <NotificationDropdown isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
@@ -206,12 +219,12 @@ export default function Navbar() {
              {user ? (
                <AvatarDropdown />
              ) : (
-               <button onClick={() => setShowLoginModal(true)} className="flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded transition-colors backdrop-blur-sm">LOGIN</button>
+               <button onClick={() => setShowLoginModal(true)} className="flex items-center shrink-0 px-2 py-1 sm:px-5 sm:py-2 bg-white/10 hover:bg-white/20 text-white text-[9px] sm:text-xs font-bold uppercase tracking-wide sm:tracking-widest rounded transition-colors backdrop-blur-sm">LOGIN</button>
              )}
 
              {/* Hamburger */}
-             <button onClick={() => { setSidebarTab("menu"); setShowSidebar(true); }} className="w-10 h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer">
-                <Menu size={16} />
+             <button onClick={() => { setSidebarTab("menu"); setShowSidebar(true); }} className="w-7 h-7 sm:w-10 sm:h-10 rounded-full bg-surface hover:bg-surfaceHover border border-white/5 flex items-center justify-center text-textMuted hover:text-white transition-colors cursor-pointer shrink-0">
+                <Menu className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
              </button>
           </div>
         </nav>
