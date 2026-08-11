@@ -4,7 +4,7 @@
 // Backend URL is now pulled from Cloudflare Environment Variables (context.env.VITE_BACKEND_API)
 
 // Routes that should be proxied to the backend
-const PROXY_PATHS = ['/auth', '/watchlist', '/progress', '/settings', '/notifications', '/users', '/ai', '/community'];
+const PROXY_PATHS = ['/api', '/auth', '/watchlist', '/progress', '/settings', '/notifications', '/users', '/ai', '/community'];
 
 // Frontend page routes that overlap with backend routes
 const FRONTEND_OVERLAPS = ['/settings', '/watchlist', '/notifications', '/community'];
