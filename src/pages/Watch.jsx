@@ -202,51 +202,6 @@ export default function Watch({ isWatch2GetherMode }) {
   const [wtTypingUsers, setWtTypingUsers] = useState([]);
   const wtRoomParam = isWatch2GetherMode ? new URLSearchParams(location.search).get("room") : null;
 
-  // Resume Prompt State
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [resumeData, setResumeData] = useState(null);
-
-  useEffect(() => {
-    if (globalProgress && id && !isWatch2GetherMode) {
-      const saved = globalProgress.find(p => p.animeId === String(id) && p.episode === activeEpisode);
-      // Only prompt if watched more than 30 seconds
-      if (saved && saved.currentTime > 30) {
-        setTimeout(() => {
-          setResumeData(saved);
-          setShowResumePrompt(true);
-        }, 0);
-        const timer = setTimeout(() => setShowResumePrompt(false), 10000);
-        return () => clearTimeout(timer);
-      } else {
-        setTimeout(() => {
-          setShowResumePrompt(false);
-        }, 0);
-      }
-    }
-  }, [globalProgress, id, activeEpisode, isWatch2GetherMode]);
-
-  const formatTime = (seconds) => {
-    if (!seconds) return "0:00";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const handleResume = () => {
-    if (resumeData) {
-      if (videoRef.current) {
-        videoRef.current.seek(resumeData.currentTime);
-        videoRef.current.play();
-      } else {
-        const newParams = new URLSearchParams(queryParams.toString());
-        newParams.set("t", resumeData.currentTime);
-        navigate({ search: newParams.toString() }, { replace: true });
-      }
-    }
-    setShowResumePrompt(false);
-  };
 
   // AniSkip integration (extracted to custom hook) — called after useQuery below
 
@@ -1008,8 +963,8 @@ export default function Watch({ isWatch2GetherMode }) {
               />
             </section>
 
-            {/* Sub-Server Selector for Server 1 and 6 */}
-            {!(wtRoom && !wtRoom.isHost) && (activeServer === 1 || activeServer === 6) && streamData?.all_streams && streamData.all_streams.length > 1 && (
+            {/* Sub-Server Selector for Server 1 and 4 */}
+            {!(wtRoom && !wtRoom.isHost) && (activeServer === 1 || activeServer === 4) && streamData?.all_streams && streamData.all_streams.length > 1 && (
               <div className="bg-[#0a0a0a] border-b border-x border-white/15">
                 <button
                   onClick={() => setShowSubServers(prev => !prev)}
@@ -1115,17 +1070,17 @@ export default function Watch({ isWatch2GetherMode }) {
           )}
         </div>
 
-        {/* Seasons */}
-        {!isFocusMode && !wtRoom && (
-          <SeasonsSection stableSeasons={stableSeasons} getTitle={getTitle} />
-        )}
+
 
         {/* Anime Details */}
         {!isFocusMode && (
           <AnimeDetailsSection
-            anime={anime} resolvedInfo={resolvedInfo} getTitle={getTitle}
-            id={id} activeServer={activeServer} streamUrl={streamUrl}
-            userRating={userRating} setUserRating={setUserRating}
+            anime={anime}
+            resolvedInfo={resolvedInfo}
+            getTitle={getTitle}
+            streamUrl={streamUrl}
+            userRating={userRating}
+            setUserRating={setUserRating}
           />
         )}
 
@@ -1137,6 +1092,7 @@ export default function Watch({ isWatch2GetherMode }) {
               animeId={id}
               animeTitle={getTitle(anime.title)}
               episode={activeEpisode}
+              onLoginRequired={() => setShowLoginModal(true)}
               onTimestampClick={(seconds) => {
                 if (videoRef.current) {
                   videoRef.current.seek(seconds);
@@ -1147,6 +1103,9 @@ export default function Watch({ isWatch2GetherMode }) {
               relations={relations}
               recommendations={recommendations}
             />
+
+            {/* Seasons (Moved here below Comments) */}
+            <SeasonsSection stableSeasons={stableSeasons} getTitle={getTitle} />
 
             {/* Recommendations Section */}
             {recommendations && recommendations.length > 0 && (
@@ -1191,31 +1150,6 @@ export default function Watch({ isWatch2GetherMode }) {
         </div>
       )}
 
-      {/* Resume Prompt Toast */}
-      {showResumePrompt && resumeData && (
-        <div className="fixed bottom-10 left-10 z-[100] flex flex-col gap-3 bg-[#0a0a0a]/90 backdrop-blur-xl border border-discord-500/30 text-white px-5 py-4 rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-left duration-500 max-w-sm">
-          <div>
-            <p className="text-[14px] font-bold text-white leading-tight">Resume Episode {activeEpisode}?</p>
-            <p className="text-[12px] text-white/60 font-medium mt-1">
-              You left off at <span className="text-discord-400 font-bold">{formatTime(resumeData.currentTime)}</span>
-            </p>
-          </div>
-          <div className="flex gap-2 w-full mt-1">
-            <button
-              onClick={handleResume}
-              className="flex-1 bg-discord-600 hover:bg-discord-700 text-white text-[11px] font-bold uppercase tracking-wider py-2 rounded-sm transition-colors"
-            >
-              Resume
-            </button>
-            <button
-              onClick={() => setShowResumePrompt(false)}
-              className="flex-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold uppercase tracking-wider py-2 rounded-sm transition-colors"
-            >
-              Start Over
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Report Modal */}
       {showReportModal && (

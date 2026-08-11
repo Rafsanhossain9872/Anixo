@@ -28,9 +28,9 @@ const CACHE_TTL = {
   GENRES: 1000 * 60 * 60 * 24 * 30, // 30 days
   RECENT_DUBS: 1000 * 60 * 60 * 2,  // 2 hours
   BROWSE: 1000 * 60 * 60 * 24,      // 24 hours
-  TRENDING: 1000 * 60 * 60 * 2,     // 2 hours
-  POPULAR: 1000 * 60 * 60 * 24,     // 24 hours
-  DETAILS: 1000 * 60 * 60 * 2,      // 2 hours
+  TRENDING: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
+  POPULAR: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
+  DETAILS: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
   SCHEDULE: 1000 * 60 * 60 * 6,     // 6 hours
 };
 
@@ -1764,6 +1764,82 @@ export async function getKitsuEpisodes(anilistId) {
     return data || null;
   } catch (error) {
     console.error("Error fetching Kitsu episodes:", error);
+    return null;
+  }
+}
+
+export async function getTmdbAssets(titleObj) {
+  const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+  if (!TMDB_API_KEY || !titleObj) return null;
+  
+  const primaryTitle = titleObj.english || titleObj.romaji || titleObj.native || "Unknown";
+  const cacheKey = `tmdb_assets_v2_${primaryTitle.replace(/\s+/g, '_')}`;
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) return cachedData;
+  
+  // Helper function to sanitize and search
+  const searchTmdb = async (queryStr) => {
+    if (!queryStr) return null;
+    const cleanQuery = queryStr
+      .replace(/season \d+/i, '')
+      .replace(/part \d+/i, '')
+      .replace(/cour \d+/i, '')
+      .replace(/:/g, ' ')
+      .replace(/\(.*?\)/g, '')
+      .replace(/[^\w\s-]/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+      
+    if (!cleanQuery) return null;
+    
+    const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanQuery)}`;
+    try {
+      const { data } = await axios.get(searchUrl, { timeout: 8000 });
+      if (data.results && data.results.length > 0) {
+        return data.results.find(r => r.backdrop_path && (r.media_type === 'tv' || r.media_type === 'movie'));
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  };
+  
+  try {
+    let match = await searchTmdb(titleObj.english);
+    if (!match && titleObj.romaji && titleObj.romaji !== titleObj.english) {
+      match = await searchTmdb(titleObj.romaji);
+    }
+    // Fallback to splitting by colon or dash if it has a subtitle that confuses TMDB
+    if (!match && primaryTitle.includes(':')) {
+      match = await searchTmdb(primaryTitle.split(':')[0]);
+    }
+    
+    if (match) {
+      const backdrop = `https://image.tmdb.org/t/p/original${match.backdrop_path}`;
+      let logo = null;
+      
+      try {
+        const imagesUrl = `https://api.themoviedb.org/3/${match.media_type}/${match.id}/images?api_key=${TMDB_API_KEY}`;
+        const { data: imagesData } = await axios.get(imagesUrl, { timeout: 8000 });
+        
+        if (imagesData.logos && imagesData.logos.length > 0) {
+          const enLogo = imagesData.logos.find(l => l.iso_639_1 === 'en');
+          const bestLogo = enLogo || imagesData.logos[0];
+          logo = `https://image.tmdb.org/t/p/w500${bestLogo.file_path}`;
+        }
+      } catch (imgErr) {
+        console.warn("TMDB logo fetch failed:", imgErr.message);
+      }
+      
+      const result = { backdrop, logo };
+      cache.set(cacheKey, result, 1000 * 60 * 60 * 24 * 7); // Cache for 7 days
+      return result;
+    }
+    
+    cache.set(cacheKey, { failed: true }, 1000 * 60 * 60 * 24);
+    return null;
+  } catch (error) {
+    console.warn("TMDB assets fetch failed:", error.message);
     return null;
   }
 }
