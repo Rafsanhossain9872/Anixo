@@ -166,7 +166,7 @@ export default function Hero({ data = [], isLoading }) {
                   {/* Primary Actions (Mobile Centered) */}
                   <div className="flex items-center justify-center md:justify-start gap-3 md:gap-5">
                     <Link to={getWatchUrl(anime.id, anime.title)} className="group flex items-center justify-center gap-3 md:px-10 py-3 md:py-4 bg-discord-600 text-white text-[13px] font-bold uppercase tracking-[0.15em] rounded-full hover:bg-discord-700 transition-all transform active:scale-95 shadow-xl min-w-[50px] md:min-w-0">
-                      <Play size={20} md:size={18} fill="currentColor" className="group-hover:scale-110 transition-transform" />
+                      <Play size={20} fill="currentColor" className="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:scale-110 transition-transform" />
                       <span className="hidden md:block">Watch Now</span>
                     </Link>
 
@@ -186,7 +186,7 @@ export default function Hero({ data = [], isLoading }) {
                           : "bg-white/[0.05] border-white/10 text-white hover:bg-white/10"
                           }`}
                       >
-                        <Bookmark size={18} md:size={20} fill={currentStatus ? "currentColor" : "none"} className="group-hover:scale-110 transition-transform" />
+                        <Bookmark size={18} fill={currentStatus ? "currentColor" : "none"} className="w-[18px] h-[18px] md:w-5 md:h-5 group-hover:scale-110 transition-transform" />
                       </button>
 
                       {/* Dropdown Menu (Opens Upwards) */}

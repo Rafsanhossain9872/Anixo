@@ -258,7 +258,7 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
             {isLoading ? (
               <>
                 <SkeletonRankedItem featured />
-                {Array.from({ length: 4 }).map((_, i) => <SkeletonRankedItem key={i} />)}
+                {Array.from({ length: 5 }).map((_, i) => <SkeletonRankedItem key={i} />)}
               </>
             ) : (
               <>
@@ -269,7 +269,7 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
                   )
                   .slice(0, 6)
                   .map((anime, i) => (
-                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} />
+                    <RankedItem key={`mv-${activeTab}-${anime.id}-${i}`} anime={anime} rank={i + 1} featured={i === 0} />
                   ))}
               </>
             )}
@@ -277,7 +277,7 @@ export default function ThreeColumnSection({ newReleases, mostViewed, justComple
         </div>
 
         {/* ── RIGHT: Just Completed ── */}
-        <div className="w-full hidden lg:block">
+        <div className="w-full">
           <SectionHeader
             title={t('threeColumn.justCompleted')}
             hasArrow

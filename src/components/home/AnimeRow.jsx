@@ -149,7 +149,7 @@ export default function AnimeRow({ title, data, isLoading, limit = 6, tabs = [],
         >
           {isLoading ? (
             Array.from({ length: limit }).map((_, i) => (
-              <div key={i} className={`${isScrollable ? 'w-[160px] md:w-[200px] shrink-0' : (i >= 20 ? 'hidden sm:block' : 'block')}`}>
+              <div key={i} className={`${isScrollable ? 'w-[160px] md:w-[200px] shrink-0' : 'block'}`}>
                 <SkeletonCard />
               </div>
             ))
@@ -158,7 +158,7 @@ export default function AnimeRow({ title, data, isLoading, limit = 6, tabs = [],
               <div key={`${anime.id}-${i}`} className={`relative group/card shrink-0 ${
                 isScrollable 
                 ? 'w-[160px] md:w-[200px]' 
-                : (i >= 20 ? 'hidden sm:block' : 'block')
+                : 'block'
               }`}>
                 <Card anime={anime} />
                 {onRemove && (

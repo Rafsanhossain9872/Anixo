@@ -498,7 +498,7 @@ export default function Navbar() {
                         </div>
                         <div className="flex-1 pr-2">
                           <p className="text-[12px] text-white/90 font-medium leading-relaxed">
-                            Now you can sign in or login using your Gmail acc direct
+                            Sign in with your Google account to sync your watchlist.
                           </p>
                         </div>
                       </div>
