@@ -47,9 +47,12 @@ const AnimeCard = memo(({ anime }) => {
 
   // Hover Events for GlobalHoverManager
   let hoverTimeout;
-  const handleMouseEnter = (e) => {
-    // Don't show hover card on touch devices (phones/tablets without a mouse)
-    if (!window.matchMedia('(hover: hover)').matches) return;
+  const handlePointerEnter = (e) => {
+    // Completely disable hover card on touch/mobile devices
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    if (window.innerWidth < 768) return; // Strict guard for mobile screens
+    if (window.matchMedia('(hover: none)').matches) return; // Fallback CSS check
+
     const rect = cardRef.current.getBoundingClientRect();
     hoverTimeout = setTimeout(() => {
       window.dispatchEvent(new CustomEvent('show-anime-hover', { 
@@ -58,7 +61,8 @@ const AnimeCard = memo(({ anime }) => {
     }, 400); // 400ms delay to prevent accidental hovers
   };
 
-  const handleMouseLeave = () => {
+  const handlePointerLeave = (e) => {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
     clearTimeout(hoverTimeout);
     window.dispatchEvent(new CustomEvent('hide-anime-hover'));
   };
@@ -67,8 +71,8 @@ const AnimeCard = memo(({ anime }) => {
     <div 
       ref={cardRef} 
       className="relative flex flex-col w-full group"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
     >
       {/* Poster Container */}
       <Link 
