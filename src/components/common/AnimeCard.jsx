@@ -95,7 +95,7 @@ export default function AnimeCard({ anime }) {
                 <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg border border-white/10 shadow-sm group-hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-[transform,shadow,border-color] duration-300 group-hover:-translate-y-0.5 group-hover:border-white/20" style={{ backgroundColor: anime.color || '#181818', transform: 'translateZ(0)' }}>
                     {isVisible && !imgError ? (
                         <img
-                            src={optimizeImage(anime.coverImage?.large || anime.coverImage?.extraLarge || anime.coverImage?.medium, 300)}
+                            src={optimizeImage(anime.coverImage?.extraLarge || anime.coverImage?.large || anime.coverImage?.medium, 300)}
                             alt={getTitle(anime.title)}
                             loading="lazy"
                             onError={() => setImgError(true)}
