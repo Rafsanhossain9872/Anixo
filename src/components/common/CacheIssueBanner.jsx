@@ -1,46 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { X } from 'lucide-react';
 
 export default function CacheIssueBanner({ isOpen, onClose, onOpenCacheGuide }) {
-    // Initialize synchronously to avoid flicker on first render
-    const [imgSrc, setImgSrc] = useState(() => {
-        return localStorage.getItem('cached_problem_img') || "/problem.jpg";
-    });
-
-    useEffect(() => {
-        // Fetch and cache the image if not already cached
-        if (!localStorage.getItem('cached_problem_img')) {
-            fetch('/problem.jpg')
-                .then(res => res.blob())
-                .then(blob => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64data = reader.result;
-                        try {
-                            localStorage.setItem('cached_problem_img', base64data);
-                            setImgSrc(base64data);
-                        } catch (e) {
-                            console.error("Could not save image to localStorage:", e);
-                        }
-                    };
-                    reader.readAsDataURL(blob);
-                })
-                .catch(err => console.error("Failed to fetch problem image:", err));
-        }
-    }, []);
-
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
             <div className="relative bg-[#1A1D24] border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col max-w-[500px] w-full max-h-[95vh] animate-in zoom-in-95 duration-300">
                 
-                {/* Large Image on top */}
-                <div className="w-full bg-black border-b border-white/10 relative shrink-0">
-                    <img src={imgSrc} alt="Error Screen" className="w-full h-auto object-contain max-h-[180px] sm:max-h-[280px]" />
+                {/* Simulated Error Screen (Replaces problem.jpg) */}
+                <div className="w-full bg-[#0B0C10] border-b border-white/10 relative shrink-0 flex flex-col items-center justify-center py-12 px-6">
+                    <h3 className="text-[#5C6CFF] font-bold text-xl sm:text-2xl mb-4 text-center">Something went wrong</h3>
+                    <p className="text-white/50 text-xs sm:text-sm text-center mb-6 break-all max-w-[90%]">
+                        Failed to fetch dynamically imported module:<br/>
+                        https://tenzora.top/assets/Watch-CbHI0cHr.js
+                    </p>
+                    <div className="bg-[#4656E9] text-white font-bold py-2.5 px-6 rounded text-sm uppercase tracking-wider opacity-90">
+                        Reload Page
+                    </div>
+                    
                     <button 
                         onClick={onClose}
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/80 text-white/70 hover:text-white p-1.5 rounded-full backdrop-blur-sm transition-colors"
+                        className="absolute top-3 right-3 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white p-1.5 rounded-full backdrop-blur-sm transition-colors"
                     >
                         <X size={18} />
                     </button>
