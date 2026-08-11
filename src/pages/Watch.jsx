@@ -37,8 +37,8 @@ import ShareBanner from "../components/common/ShareBanner";
 import ReportModal from "../components/watch/ReportModal";
 import VideoPlayerSection from "../components/watch/VideoPlayerSection";
 import { AdBanner300x250 } from "../components/common/AdBanner";
-import { AdsterraSmartLinkBanner } from "../components/common/AdsterraSmartLink";
-import { useAdsterraSmartLink } from "../hooks/useAdsterraSmartLink";
+
+
 
 const getScheduledTime = (minutes) => Date.now() + (minutes * 60000);
 
@@ -64,7 +64,7 @@ export default function Watch({ isWatch2GetherMode }) {
       return () => clearTimeout(timer);
     }
   }, [location.hash]);
-  const { openSmartLink } = useAdsterraSmartLink();
+
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isMal = queryParams.get("mal") === "true";
   const initialEp = parseInt(queryParams.get("ep")) || 1;

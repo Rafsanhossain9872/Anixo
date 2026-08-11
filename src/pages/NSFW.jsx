@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Search, Tags, ArrowLeft, Star, Eye, ThumbsUp, X, Loader2, ChevronLeft, ChevronRight, Download, History, Bookmark, BookmarkCheck, ShieldAlert, ShieldCheck, Menu, ArrowDownAz, ChevronDown, Check, Home } from 'lucide-react';
 import { AdBanner728x90, AdBanner300x250, AdNativeBanner } from '../components/common/AdBanner';
-import { AdsterraSmartLinkBanner } from '../components/common/AdsterraSmartLink';
+
 
 const API_URL = import.meta.env.VITE_NSFW_API;
 
@@ -690,7 +690,7 @@ function NSFW() {
   </div>
 
   <div className="w-full flex justify-center py-4">
-    <AdsterraSmartLinkBanner />
+
   </div>
 
  {!selectedVideo ? (
@@ -747,7 +747,7 @@ function NSFW() {
   </div>
 
   <div className="w-full flex justify-center py-4">
-    <AdsterraSmartLinkBanner />
+
   </div>
   </div>
  ) : (
@@ -764,7 +764,7 @@ function NSFW() {
  />
 
   <div className="w-full flex justify-center py-4">
-    <AdsterraSmartLinkBanner />
+
   </div>
 
   <div className="w-full my-2">
@@ -781,7 +781,7 @@ function NSFW() {
  />
 
  <div className="w-full flex justify-center py-4">
-    <AdsterraSmartLinkBanner />
+
   </div>
  </div>
  )
@@ -841,7 +841,7 @@ function NSFW() {
   </div>
 
  <div className="w-full flex justify-center py-6">
-    <AdsterraSmartLinkBanner />
+
   </div>
 
  {renderPagination()}
@@ -891,7 +891,7 @@ function NSFW() {
  </div>
 
   <div className="w-full flex justify-center py-6">
-    <AdsterraSmartLinkBanner />
+
   </div>
 
  {/* BOTTOM: Info Section */}
@@ -1009,7 +1009,7 @@ function NSFW() {
  </div>
 
  <div className="w-full flex justify-center py-4">
-    <AdsterraSmartLinkBanner />
+
   </div>
 
  {/* Related List */}

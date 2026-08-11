@@ -20,7 +20,7 @@ import { useAuth } from "../hooks/useAuth";
 import ShareBanner from "../components/common/ShareBanner";
 import W2GNoticeBanner from "../components/common/W2GNoticeBanner";
 import { AdNativeBanner } from "../components/common/AdBanner";
-import { AdsterraSmartLinkBanner } from "../components/common/AdsterraSmartLink";
+
 import TopMovies from "../components/home/TopMovies";
 import ThreeColumnSection from "../components/home/ThreeColumnSection";
 import AnimeCard from "../components/common/AnimeCard";
@@ -310,7 +310,7 @@ export default function Home() {
           />
         </div>
 
-        <AdsterraSmartLinkBanner />
+
         <AdNativeBanner />
         <div className="max-w-[1720px] mx-auto px-4 mt-10 w-full mb-10">
           <EstimatedSchedule />
