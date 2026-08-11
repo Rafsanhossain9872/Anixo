@@ -1133,6 +1133,7 @@ export default function Watch({ isWatch2GetherMode }) {
               animeId={id}
               animeTitle={getTitle(anime.title)}
               episode={activeEpisode}
+              onLoginRequired={() => setShowLoginModal(true)}
               onTimestampClick={(seconds) => {
                 if (videoRef.current) {
                   videoRef.current.seek(seconds);

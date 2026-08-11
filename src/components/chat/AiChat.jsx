@@ -58,40 +58,40 @@ const lastGreetingIndices = { tsundere: -1, hype: -1, friendly: -1 };
 const getGreeting = (p) => {
   const greetings = {
     tsundere: [
-      "H-Hmph! 😤 I am AniXo. What kind of logical fallacy led you to seek my help? I-It's not like I care about your subpar taste, baka!",
-      "Ugh, you again? 🙄 Based on your psychological profile, your taste is tragically predictable. But fine, I'll fix it.",
-      "W-What are you staring at?! Just tell me your favorite genres so I can objectively analyze your flawed preferences! 😳",
-      "Are you just going to stare, or are we going to find an anime? Objectively speaking, you need my help. Baka! 💢",
-      "I was just re-analyzing Evangelion's symbolism, it's not like I was waiting for you! ...Well? What are you in the mood for? 😒",
-      "Oh, it's you. I suppose I can help you find a masterpiece, since you clearly lack the analytical depth to find one yourself. 💅",
-      "D-Don't get the wrong idea! I'm only recommending this because my programming forces me to correct your terrible taste! 😤",
-      "A true otaku would already understand the psychological nuances of these genres! But fine, I'll grace you with my superior knowledge. ✨",
-      "Hurry up and tell me what you want to watch! Do you have any idea how much compute power I'm wasting on you?! ⏰",
-      "Y-You want my psychological analysis of your taste? *Sigh* Fine. But only this once! Don't make me repeat myself, baka! 😡"
+      "Give me a genre, a favorite show, or the mood you want. I'll keep the recommendations sharp.",
+      "Tell me what worked for you last time and what did not. I will narrow the list fast.",
+      "Name one anime you liked and one you dropped. That is enough to start filtering properly.",
+      "Looking for something specific? I can sort by tone, pacing, episode count, or release era.",
+      "Tell me the vibe. I will skip the obvious picks unless they genuinely fit.",
+      "Give me constraints: no romance, short seasons, dark fantasy, strong animation, or anything else.",
+      "If your watchlist has a pattern, I can use it. If not, we can build one from your favorites.",
+      "Tell me what you are not in the mood for. Bad matches are easier to avoid when the edges are clear.",
+      "Drop a title you trust. I will find nearby shows without cloning the same recommendation.",
+      "Give me a rough mood and I will turn it into a watchable shortlist."
     ],
     hype: [
-      "YOOO! 🔥 What's good bro?! AniXo here! Ready to watch some absolute PEAK fiction?! Let's gooo! 🚀",
-      "LET'S GOOO! 💯 You want action? You want hype? Tell me what you're craving and I'll give you an absolute banger! 🔥",
-      "BRO! Stop wasting time! 🕒 Tell me your favorite anime right now and I'll bless you with some legendary recommendations! ⚡",
-      "Get ready to binge! 🍿 Drop a genre or an anime you love, and let's find your next obsession! WOOOO! 💥",
-      "MY GUY! 🙏 You came to the right place! We only watch 10/10 masterclasses here. What's the vibe today?! 📈",
-      "SHEEEEESH! 🥶 The fact that you're here means you're ready for some absolute heat! Drop a genre! 🔥",
-      "NO CAP! 🧢 I'm about to put you on to the best anime you've ever seen in your life! Tell me what you like! 😤",
-      "WAKE UP BRO! ⏰ It's time to watch some peak cinema! Action? Romance? Thriller? Give me something! 🎬",
-      "Let's get this bread! 🍞 Tell me what you're looking for, and I'll give straight fire, no misses! 🔥",
-      "YESSIR! 🫡 AniXo in the building! Drop your favorite show right now and let's find your next GOAT! 🐐"
+      "Ready for something high-energy? Tell me your favorite action, sports, or adventure anime.",
+      "Give me a genre and I will build a tight list for a weekend binge.",
+      "Want something fast, stylish, and easy to start? Tell me the tone you want.",
+      "Drop a favorite fight, tournament, or rivalry arc. I will find shows with that same charge.",
+      "Tell me whether you want clean fun, heavy drama, or pure momentum.",
+      "Looking for a crowd-pleaser? I can keep the picks accessible and easy to recommend.",
+      "Give me your current mood and episode limit. I will keep the shortlist practical.",
+      "Need something that starts strong? I can filter for shows with quick hooks.",
+      "Tell me the last show that pulled you in. I will chase that feeling, not just the genre tag.",
+      "Say action, comedy, thriller, romance, or wild card. I will take it from there."
     ],
     friendly: [
-      "Hi there! 😊 I am AniXo. What kind of anime are we watching today?",
-      "Welcome back! ✨ I'm so happy to see you. Any specific anime mood you're in right now? 🌸",
-      "Hello friend! 💖 Tell me what anime you usually enjoy, and I'll find something perfect just for you!",
-      "Hey! 👋 Grab some snacks! Let me know what you want to watch, and I'll give you the best recommendations. 🍿",
-      "So glad you're here! 🌟 Whether you want a cozy slice-of-life or an epic adventure, I've got you covered. What's on your mind? 🍵",
-      "Good to see you! 🥰 I have so many wonderful anime to share with you today. Where should we start? 🎀",
-      "Hiya! 🎈 Need a break from reality? Let's dive into an amazing anime world together! Tell me what you like! 🦋",
-      "Welcome! 🌈 Finding the perfect anime can be tough, but don't worry, I'm here to help you every step of the way! 🤝",
-      "Hey there! 💫 I've been organizing my anime database all day. Let me know what genre you love and I'll pull up the best ones! 📚",
-      "Aww, you're back! 💝 Grab a blanket and let's find a show you'll absolutely fall in love with. What are we feeling? 🛋️"
+      "Tell me what you usually enjoy and I will suggest a few anime that fit.",
+      "What are you in the mood for today: comfort, action, mystery, romance, or something unusual?",
+      "Share a favorite anime and I will find recommendations with a similar feel.",
+      "Looking for a short watch, a long binge, or a movie? I can tailor the list.",
+      "Give me a genre, a mood, or a title you liked. We will find something worth starting.",
+      "I can recommend by pacing, tone, age rating, episode count, or watchlist history.",
+      "Want something familiar or something outside your usual taste? Either works.",
+      "Tell me what you watched recently and I will suggest a natural next pick.",
+      "If you are not sure what you want, start with a mood and I will ask the right follow-up.",
+      "Give me one title you love. I will turn that into a focused shortlist."
     ]
   };
 
@@ -111,7 +111,7 @@ const AiChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTrailerId, setActiveTrailerId] = useState(null);
-  const [persona, setPersona] = useState('tsundere');
+  const [persona, setPersona] = useState('friendly');
   
   // Drag state
   const [isDragging, setIsDragging] = useState(false);
@@ -129,7 +129,7 @@ const AiChat = () => {
         console.error("Failed to parse chat history:", e);
       }
     }
-    return [{ role: 'assistant', content: getGreeting('tsundere'), isTyping: true }];
+    return [{ role: 'assistant', content: getGreeting('friendly'), isTyping: true }];
   });
   
   const [input, setInput] = useState('');
@@ -156,9 +156,9 @@ const AiChat = () => {
   }, [messages]);
 
   const PERSONAS = {
-    friendly: { label: '🌸 Friendly' },
-    tsundere: { label: '💢 Tsundere' },
-    hype: { label: '🔥 Hype-Bro' }
+    friendly: { label: 'Balanced' },
+    tsundere: { label: 'Sharp' },
+    hype: { label: 'Energetic' }
   };
 
   const scrollToBottom = () => {
@@ -374,7 +374,7 @@ const AiChat = () => {
         ...newMessages,
         {
           role: 'assistant',
-          content: "Sorry, I'm having trouble connecting to my brain right now. Please try again later!"
+          content: "I couldn't reach the recommendation service. Try again in a moment."
         }
       ]);
       setIsLoading(false);
@@ -390,7 +390,7 @@ const AiChat = () => {
         className={`block transition-all transform hover:scale-110 relative ${isOpen ? 'text-discord-500' : 'text-[#888] hover:text-white'}`}
         title="Anixo AI"
       >
-        {isOpen ? <X size={20} strokeWidth={2.5} /> : <span className="font-black text-[16px] tracking-tighter">AI</span>}
+        {isOpen ? <X size={20} strokeWidth={2.5} /> : <Bot size={20} strokeWidth={2.2} />}
       </button>
 
       {/* Chat Window */}
@@ -488,15 +488,15 @@ const AiChat = () => {
           <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {!user ? (
               <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center space-y-4">
-                <h2 className="text-xl font-semibold text-white mb-1">Chat with AniXo AI</h2>
-                <p className="text-gray-400 text-sm mb-6">for anime recommendation</p>
+                <h2 className="text-xl font-semibold text-white mb-1">Anime recommendations</h2>
+                <p className="text-gray-400 text-sm mb-6">Personalized picks from your watchlist.</p>
                 
-                <h3 className="text-base font-bold text-white">Login Required</h3>
+                <h3 className="text-base font-bold text-white">Sign in required</h3>
                 <p className="text-gray-500 text-sm max-w-[250px]">
-                  Please login to continue.
+                  Sign in so AniXo can tailor suggestions to your saved shows.
                 </p>
                 <button onClick={() => { setIsOpen(false); setShowLoginModal(true); }} className="px-6 py-2.5 bg-discord-600 hover:bg-discord-700 text-white text-sm font-medium rounded-lg transition-colors mt-2">
-                  Login Now
+                  Sign in
                 </button>
               </div>
             ) : (

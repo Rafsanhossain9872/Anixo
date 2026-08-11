@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "../../context/LanguageContext";
 import { Link } from "react-router-dom";
+import { ImageOff, Play } from "lucide-react";
 import { optimizeImage } from "../../utils/image";
 import { getWatchUrl } from "../../utils/url";
 
@@ -24,12 +25,13 @@ export default function AnimeCard({ anime }) {
             }
         );
 
-        if (cardRef.current) {
-            observer.observe(cardRef.current);
+        const node = cardRef.current;
+        if (node) {
+            observer.observe(node);
         }
 
         return () => {
-            if (cardRef.current) observer.unobserve(cardRef.current);
+            if (node) observer.unobserve(node);
         };
     }, []);
 
@@ -78,22 +80,19 @@ export default function AnimeCard({ anime }) {
         >
             {/* Poster image area */}
             <div className="relative">
-                {/* format Tag (e.g. TV, MOVIE) */}
-                <div className="absolute -top-1 left-0 flex flex-col items-start z-40 gap-1">
-                    <div className="bg-discord-600 text-white text-[9px] font-black px-1.5 py-[3px] flex items-center justify-center min-w-[28px]">
+                <div className="absolute top-2 left-2 z-40">
+                    <div className="bg-black/70 text-white/85 text-[9px] font-semibold px-1.5 py-1 rounded-[3px] border border-white/10 backdrop-blur-sm uppercase leading-none">
                         {format}
                     </div>
                 </div>
 
-                {/* 18+ Badge */}
                 {(anime.isAdult || anime.ageRating === "R" || anime.rating?.includes("18")) && (
-                    <div className="absolute top-1.5 right-1.5 z-40 bg-discord-600/90 text-white text-[10px] font-black px-1.5 py-[2px] rounded-[4px] shadow-lg flex items-center justify-center border border-white/10 tracking-widest">
+                    <div className="absolute top-2 right-2 z-40 bg-discord-600/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-[4px] flex items-center justify-center border border-white/10">
                         18+
                     </div>
                 )}
 
-                {/* Poster Container */}
-                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-2xl border border-white/15 shadow-lg group-hover:shadow-2xl transition-[transform,shadow] duration-500 group-hover:-translate-y-1" style={{ backgroundColor: anime.color || '#181818', transform: 'translateZ(0)' }}>
+                <div className="relative w-full aspect-[2/3] overflow-hidden rounded-lg border border-white/10 shadow-sm group-hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)] transition-[transform,shadow,border-color] duration-300 group-hover:-translate-y-0.5 group-hover:border-white/20" style={{ backgroundColor: anime.color || '#181818', transform: 'translateZ(0)' }}>
                     {isVisible && !imgError ? (
                         <img
                             src={optimizeImage(anime.coverImage?.large || anime.coverImage?.extraLarge || anime.coverImage?.medium, 300)}
@@ -107,17 +106,13 @@ export default function AnimeCard({ anime }) {
                         <div className="w-full h-full bg-[#111] animate-pulse" />
                     ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center bg-[#111] text-white/10 p-4 text-center">
-                            <svg className="w-8 h-8 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Missing Cover</span>
+                            <ImageOff className="w-7 h-7 mb-2 opacity-30" />
+                            <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">Cover unavailable</span>
                         </div>
                     )}
 
-                    {/* Smart Timeline Bar for Continue Watching */}
                     {anime.isProgress && (
                         <div className="absolute bottom-0 left-0 w-full z-50">
-                            {/* Glowing Timeline Bar */}
                             <div className="w-full h-1 bg-white/10 relative overflow-hidden">
                                 <div
                                     className="h-full bg-discord-600 transition-all duration-500 ease-out"
@@ -129,44 +124,30 @@ export default function AnimeCard({ anime }) {
                         </div>
                     )}
 
-
-                    {/* Hover Play Icon Overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-40 pointer-events-none">
-                        <div className="bg-white text-black p-3 rounded-2xl scale-75 group-hover:scale-100 transition-transform duration-500 shadow-2xl">
-                            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                {/* EP Badge (Universal style for both types) */}
-                <div className="flex justify-center -mt-[14px] relative z-40">
-                    <div className="flex items-stretch bg-[#0a0a0a] rounded-[4px] border border-white/10 overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.5)]">
+                    <div className="absolute bottom-2 left-2 right-2 z-40 flex">
                         {anime.status === "NOT_YET_RELEASED" ? (
-                            <span className="text-[9px] font-black bg-[#222] text-white/50 px-3 py-1 uppercase tracking-tighter flex items-center justify-center">
-                                Not Yet Released
+                            <span className="max-w-full rounded-[4px] bg-black/75 border border-white/10 px-2 py-1 text-[10px] font-semibold text-white/75 backdrop-blur-sm truncate">
+                                Not yet released
                             </span>
                         ) : (
-                            <>
-                                <span className="text-[9px] font-black bg-discord-600 text-white px-2 uppercase tracking-tighter flex items-center justify-center">EP</span>
-                                <div className="px-2 py-1 flex items-center gap-1.5">
-                                    <span className="text-[11px] font-medium text-white">
-                                        {anime.isProgress ? anime.episode : (releasedEpisodes || "0")}
-                                    </span>
-                                    {showTotal && (
-                                        <span className="text-[10px] font-bold text-white/30">/ {totalEpisodes}</span>
-                                    )}
-                                </div>
-                            </>
+                            <div className="flex items-center gap-1.5 rounded-[4px] bg-black/75 border border-white/10 px-2 py-1 text-[10px] font-semibold text-white/85 backdrop-blur-sm">
+                                <span className="text-white/45">EP</span>
+                                <span>{anime.isProgress ? anime.episode : (releasedEpisodes || "0")}</span>
+                                {showTotal && <span className="text-white/35">/ {totalEpisodes}</span>}
+                            </div>
                         )}
+                    </div>
+
+                    <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-30 pointer-events-none">
+                        <div className="bg-white/95 text-black p-2.5 rounded-full scale-90 group-hover:scale-100 transition-transform duration-300 shadow-xl">
+                            <Play size={22} fill="currentColor" className="ml-0.5" />
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Info Section - Identical for all cards */}
-            <div className="w-full mt-3 text-center px-1">
-                <h3 className="text-[13px] font-medium text-white/80 group-hover:text-white transition-colors line-clamp-2 leading-tight uppercase tracking-tight">
+            <div className="w-full mt-2 text-left px-0.5">
+                <h3 className="text-[13px] font-semibold text-white/85 group-hover:text-white transition-colors line-clamp-2 leading-snug">
                     {getTitle(anime.title)}
                 </h3>
             </div>
