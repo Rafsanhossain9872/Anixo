@@ -33,7 +33,6 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
     const replyBoxRef = useRef(null);
     const [isSpoiler, setIsSpoiler] = useState(false);
     const [replyIsSpoiler, setReplyIsSpoiler] = useState(false);
-    const [isInputExpanded, setIsInputExpanded] = useState(false);
     const [showMainEmojiPicker, setShowMainEmojiPicker] = useState(false);
     const [showMainGifPicker, setShowMainGifPicker] = useState(false);
     const [sortBy, setSortBy] = useState('Newest');
@@ -232,7 +231,6 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
         
         setCommentText(""); // clear immediately for better UX
         setIsSpoiler(false);
-        setIsInputExpanded(false);
         
         socketRef.current.emit("post_comment", {
             animeId,
@@ -693,11 +691,11 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
                 </div>
                 <div className="flex-1 w-full">
                     {!user && (
-                        <p className="text-xs sm:text-sm text-white/50 mb-2">
+                        <p className="text-[13px] sm:text-[14px] text-white/60 mb-2.5 ml-1 font-medium tracking-wide">
                             <button
                                 type="button"
                                 onClick={onLoginRequired}
-                                className="text-[#00B4D8] font-semibold hover:underline"
+                                className="text-[#00d2ff] font-bold hover:text-white hover:underline underline-offset-[3px] transition-all cursor-pointer"
                             >
                                 Sign in
                             </button>{" "}
@@ -706,7 +704,7 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
                     )}
                     <div className="bg-[#1A1D24] border border-white/10 rounded-lg flex flex-col focus-within:border-[#00B4D8]/50 transition-colors relative">
                         {/* Toolbar */}
-                        {isInputExpanded && (
+                        {!!user && (
                             <div className="flex items-center gap-2 px-4 py-2 border-b border-white/15 bg-[#12151C] rounded-t-lg animate-in slide-in-from-top-2 duration-200">
                                 <button type="button" onClick={() => insertMarkdown('**', '**', 'bold text')} className="w-8 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer" title="Bold" aria-label="Bold"><Bold size={14} /></button>
                                 <button type="button" onClick={() => insertMarkdown('*', '*', 'italic text')} className="w-8 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer" title="Italic" aria-label="Italic"><Italic size={14} /></button>
@@ -723,14 +721,13 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
                             <textarea
                                 id="main-comment-input"
                                 value={commentText}
-                                onFocus={() => setIsInputExpanded(true)}
                                 onChange={(e) => setCommentText(e.target.value)}
                                 placeholder="Leave a comment"
                                 disabled={!user}
-                                className={`w-full bg-transparent px-4 pt-4 pb-12 ${isInputExpanded ? 'min-h-[100px]' : 'min-h-[50px]'} text-sm text-white/90 placeholder:text-white/30 focus:outline-none resize-none transition-all duration-300`}
+                                className={`w-full bg-transparent px-4 pt-4 pb-12 ${user ? 'min-h-[100px]' : 'min-h-[50px]'} text-sm text-white/90 placeholder:text-white/30 focus:outline-none resize-none transition-all duration-300`}
                             />
                             {/* Smiley & Media icons */}
-                            {isInputExpanded && (
+                            {!!user && (
                                 <div className="absolute bottom-2 right-2 flex items-center gap-3 text-white/40 animate-in fade-in duration-300 bg-[#12151C] border border-white/10 px-3 py-1.5 rounded-lg shadow-lg">
                                     <div className="relative hidden sm:block">
                                         <Smile size={18} onClick={() => setShowMainEmojiPicker(prev => !prev)} className="hover:text-white cursor-pointer transition-colors" />
@@ -766,7 +763,7 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
                     </div>
                     
                     {/* Footer Actions */}
-                    {isInputExpanded && (
+                    {!!user && (
                         <div className="flex items-center justify-between mt-3 animate-in slide-in-from-top-2 fade-in duration-300">
                             <label className="flex items-center gap-2 text-white/50 text-xs sm:text-sm cursor-pointer hover:text-white/80 transition-colors">
                                 <input 
@@ -780,14 +777,8 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
                             </label>
                             <div className="flex items-center gap-3">
                                 <button 
-                                    onClick={() => { setIsInputExpanded(false); setCommentText(''); setIsSpoiler(false); }}
-                                    className="text-white/50 hover:text-white text-xs sm:text-sm font-medium transition-colors cursor-pointer"
-                                >
-                                    Close
-                                </button>
-                                <button 
                                     onClick={handlePost}
-                                    disabled={!commentText.trim() || !user}
+                                    disabled={!commentText.trim()}
                                     className="bg-[#00B4D8] hover:bg-[#0096B4] disabled:bg-white/10 disabled:text-white/30 disabled:cursor-not-allowed text-white px-5 py-1.5 rounded-full text-xs sm:text-sm font-bold shadow-lg transition-colors cursor-pointer"
                                 >
                                     Comment
