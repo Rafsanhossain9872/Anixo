@@ -113,13 +113,7 @@ export default function Watch({ isWatch2GetherMode }) {
       search: newParams.toString(),
     }, { replace: true });
 
-    // Optional: Open smart link every 3 episodes
-    if (activeEpisode !== lastOpenedEpisode.current && (activeEpisode - lastOpenedEpisode.current) % 3 === 0) {
-      lastOpenedEpisode.current = activeEpisode;
-      // You can uncomment the line below to enable
-      // openSmartLink();
-    }
-  }, [activeEpisode, navigate, location.pathname, openSmartLink, location.search, queryParams]);
+  }, [activeEpisode, navigate, location.pathname, location.search, queryParams]);
 
   const [episodeLayout, setEpisodeLayout] = useState(() => {
     try {
