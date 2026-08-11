@@ -10,12 +10,12 @@ const steps = [
     {
         title: "Step 2: Go to Cookies and Site Data",
         description: "Select 'Cookies and site data' from the dropdown menu.",
-        image: "/setp2.png" 
+        image: "/step2.png" 
     },
     {
         title: "Step 3: Manage Site Data",
         description: "Click on the 'Manage on-device site data' button.",
-        image: "/setp3.png" 
+        image: "/step3.png" 
     },
     {
         title: "Step 4: Confirm",
