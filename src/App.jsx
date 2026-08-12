@@ -139,7 +139,11 @@ function AppRoutes() {
 export default function App() {
   useEffect(() => {
     // Master toggle switch for the security shield
-    if (import.meta.env.VITE_SECURITY_SHIELD_ENABLED === 'true' || (import.meta.env.PROD && import.meta.env.VITE_SECURITY_SHIELD_ENABLED !== 'false')) {
+    const envVar = import.meta.env.VITE_SECURITY_SHIELD_ENABLED || import.meta.env.VITE_SECURITY_SHIELD || '';
+    const isExplicitlyFalse = envVar.toLowerCase() === 'false';
+    const isExplicitlyTrue = envVar.toLowerCase() === 'true';
+    
+    if (isExplicitlyTrue || (import.meta.env.PROD && !isExplicitlyFalse)) {
       initSecurity();
     }
   }, []);
