@@ -113,9 +113,13 @@ const OnlineUsers = () => {
         displayName: user?.displayName || user?.username || '',
         avatar: user?.avatar || '',
         profileId: user?.profileId || ''
-      });
-    }
   }, [user]);
+
+  const showToAll = import.meta.env.VITE_SHOW_ONLINE_COUNTER === 'true';
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const shouldShow = showToAll || isAdmin;
+
+  if (!shouldShow) return null;
 
   return (
     <>
