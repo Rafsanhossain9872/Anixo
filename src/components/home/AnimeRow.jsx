@@ -54,9 +54,9 @@ export default function AnimeRow({
   };
 
   return (
-    <section className="mt-12 w-full mx-auto px-4 md:px-8 overflow-hidden font-sans">
+    <section className="mt-4 md:mt-12 w-full mx-auto px-4 md:px-8 overflow-hidden font-sans">
       {/* Header Area */}
-      <div className="flex flex-row items-center justify-between mb-4 md:mb-6 gap-2">
+      <div className="flex flex-row items-center justify-between mb-2 md:mb-6 gap-2">
         
         <div className="flex flex-col items-start gap-1">
           {subtitle && (

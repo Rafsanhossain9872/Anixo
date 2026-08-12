@@ -40,7 +40,7 @@ const ShareBanner = () => {
   };
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 mb-10 mt-6">
+    <div className="w-full max-w-[1500px] mx-auto px-4 md:px-8 my-4 md:mb-10 md:mt-6">
       <div className="bg-[#1a1217] border border-white/10 rounded-xl p-4 md:p-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5">
 
         {/* Brand Info */}

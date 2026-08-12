@@ -77,9 +77,9 @@ const LiveComments = () => {
   };
 
   return (
-    <section className="mt-8 max-w-[1720px] mx-auto px-2 md:px-4">
+    <section className="mt-2 md:mt-8 max-w-[1720px] mx-auto px-2 md:px-4">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-3 md:mb-6">
         {/* Vertical Accent Bar */}
         <div className="w-[3.5px] h-6 bg-discord-600 rounded-full" />
         <h2 className="text-xl md:text-2xl font-bold text-white uppercase leading-none tracking-tighter">

@@ -193,10 +193,10 @@ export default function Home() {
         <Hero data={trendingData?.media} isLoading={loadingTrending} />
         <GenreNav />
 
-        <div className="max-w-[1720px] mx-auto px-4 mt-8 flex flex-col xl:flex-row gap-8 items-start">
+        <div className="max-w-[1720px] mx-auto px-4 mt-4 md:mt-8 flex flex-col xl:flex-row gap-4 md:gap-8 items-start">
           
           {/* ─── LEFT COLUMN (MAIN CONTENT) ─── */}
-          <div className="w-full xl:w-[70%] flex flex-col gap-8 min-w-0">
+          <div className="w-full xl:w-[70%] flex flex-col gap-4 md:gap-8 min-w-0">
             
             {/* Watch History */}
             <div id="continue-watching" className="w-full">
@@ -249,7 +249,7 @@ export default function Home() {
               </div>
             
             {/* Live Comments */}
-            <div className="w-full mt-4">
+            <div className="w-full mt-0 md:mt-4">
               <LiveComments />
             </div>
 
@@ -257,7 +257,7 @@ export default function Home() {
             <W2GNoticeBanner />
 
             {/* Main Anime Grids */}
-            <div id="main-grid" className="w-full mt-4 flex flex-col gap-12">
+            <div id="main-grid" className="w-full mt-4 flex flex-col gap-6 md:gap-12">
               <AnimeRow
                 title="Newest"
                 data={newReleasesData?.media || []}
