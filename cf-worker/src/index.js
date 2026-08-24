@@ -250,7 +250,7 @@ export default {
                 method: request.method,
                 headers: proxyHeaders,
                 body: request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined,
-                redirect: 'follow',
+                redirect: 'manual',
             });
 
             // ADD CORS HEADERS TO RESPONSE
