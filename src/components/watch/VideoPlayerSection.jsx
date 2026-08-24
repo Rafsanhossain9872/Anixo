@@ -33,6 +33,7 @@ export default function VideoPlayerSection({
     onPlay,
     onPause,
     onSeeked,
+    onPlaybackError,
     isWatch2GetherMode,
     isW2GHost,
 }) {
@@ -340,6 +341,7 @@ export default function VideoPlayerSection({
                                                 if (nextEp) setActiveEpisode(nextEp.number);
                                             }
                                         }}
+                                        onError={onPlaybackError}
                                         ref={videoRef}
                                         onPlay={onPlay}
                                         onPause={onPause}

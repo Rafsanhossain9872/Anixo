@@ -17,6 +17,7 @@ const AnikoPlayer = React.forwardRef(({
   onPlay,
   onPause,
   onSeeked,
+  onError,
   initialTime = 0,
   className,
   skipTimes,
@@ -31,10 +32,10 @@ const AnikoPlayer = React.forwardRef(({
   const cleanupRef = useRef(null);
 
   // Keep latest callbacks in a ref to avoid reinitializing
-  const callbacksRef = useRef({ onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked });
+  const callbacksRef = useRef({ onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked, onError });
   useEffect(() => {
-    callbacksRef.current = { onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked };
-  }, [onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked]);
+    callbacksRef.current = { onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked, onError };
+  }, [onEnded, onReady, onTimeUpdate, onPlay, onPause, onSeeked, onError]);
 
   // Keep skipTimes in a ref
   const skipTimesRef = useRef(skipTimes);
@@ -1152,6 +1153,7 @@ const AnikoPlayer = React.forwardRef(({
                 hls.startLoad();
               } else {
                 showError('Network error. Please check your connection and retry.');
+                callbacksRef.current.onError?.('network');
               }
             } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
               if (mediaRecoveryAttempts < 2) {
@@ -1164,6 +1166,7 @@ const AnikoPlayer = React.forwardRef(({
               }
             } else {
               showError('Playback error');
+              callbacksRef.current.onError?.('playback');
             }
           }
         });

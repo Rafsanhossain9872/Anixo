@@ -640,13 +640,44 @@ export default function Watch({ isWatch2GetherMode }) {
   });
 
   // ── Auto Fallback Logic ──
+  // Fallback chain: Server 1 → 2 → 3 → 6 (stop)
+  const fallbackChain = [1, 2, 3, 6];
+  const isAutoFallingBack = useRef(false); // prevents infinite loops
+  const lastManualServer = useRef(activeServer); // tracks user's manual choice
+
+  // Reset the fallback flag when user manually changes server or episode changes
+  useEffect(() => {
+    // If the server changed but NOT because of our auto-fallback, reset the flag
+    if (!isAutoFallingBack.current) {
+      lastManualServer.current = activeServer;
+    }
+    isAutoFallingBack.current = false;
+  }, [activeServer, activeEpisode]);
+
+  const doFallback = useCallback(() => {
+    const currentIndex = fallbackChain.indexOf(activeServer);
+    if (currentIndex >= 0 && currentIndex < fallbackChain.length - 1) {
+      const nextServer = fallbackChain[currentIndex + 1];
+      console.warn(`[AutoFallback] Server ${activeServer} failed → trying Server ${nextServer}`);
+      isAutoFallingBack.current = true;
+      setActiveServer(nextServer);
+    } else {
+      console.warn(`[AutoFallback] All servers exhausted. Staying on Server ${activeServer}.`);
+    }
+  }, [activeServer, setActiveServer]);
+
+  // Fallback on API fetch error
   useEffect(() => {
     if (fetchError) {
-      if (activeServer === 1) setActiveServer(2);
-      else if (activeServer === 2) setActiveServer(3);
-      else if (activeServer === 3) setActiveServer(6);
+      doFallback();
     }
-  }, [fetchError, activeServer]);
+  }, [fetchError, doFallback]);
+
+  // Fallback on HLS playback error (called from AnikoPlayer via VideoPlayerSection)
+  const handlePlaybackError = useCallback((errorType) => {
+    console.warn(`[AutoFallback] Playback error (${errorType}) on Server ${activeServer}`);
+    doFallback();
+  }, [activeServer, doFallback]);
 
   const skipTimes = useAniSkip(anime?.idMal, activeEpisode, 0);
 
@@ -952,6 +983,7 @@ export default function Watch({ isWatch2GetherMode }) {
                 onPlay={onPlay}
                 onPause={onPause}
                 onSeeked={onSeeked}
+                onPlaybackError={handlePlaybackError}
                 isWatch2GetherMode={!!wtRoom}
                 isW2GHost={!!wtRoom?.isHost}
               />
