@@ -198,6 +198,15 @@ export default function Home() {
           {/* ─── LEFT COLUMN (MAIN CONTENT) ─── */}
           <div className="w-full xl:w-[70%] flex flex-col gap-4 md:gap-8 min-w-0">
             
+            {/* Announcement Banner */}
+            {new Date() < new Date('2026-09-03') && (
+              <div className="w-full text-center py-3 px-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-lg shadow-[0_0_20px_rgba(99,102,241,0.1)]">
+                <span className="whitespace-normal text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
+                  All bugs have been fixed and we are working on upcoming updates.
+                </span>
+              </div>
+            )}
+
             {/* Watch History */}
             <div id="continue-watching" className="w-full">
                 {showContinueWatching ? (
