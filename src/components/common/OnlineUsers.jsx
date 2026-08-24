@@ -129,22 +129,24 @@ const OnlineUsers = () => {
         onClick={() => setIsModalOpen(true)}
         className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
       >
-        <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
+        <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500 animate-pulse'}`} />
         <Users size={14} className="text-white/70" />
         <span className="text-xs font-medium text-white/90">
-          {onlineStats.total} Online
+          {isConnected ? `${onlineStats.total} Online` : 'Connecting...'}
         </span>
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center gap-1">
-            <User size={9} className="text-discord-400" />
-            <span className="text-white/70">{onlineStats.registered}</span>
+        {isConnected && (
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <User size={9} className="text-discord-400" />
+              <span className="text-white/70">{onlineStats.registered}</span>
+            </div>
+            <span className="text-white/30">|</span>
+            <div className="flex items-center gap-1">
+              <User size={9} className="text-white/50" />
+              <span className="text-white/50">{onlineStats.guests}</span>
+            </div>
           </div>
-          <span className="text-white/30">|</span>
-          <div className="flex items-center gap-1">
-            <User size={9} className="text-white/50" />
-            <span className="text-white/50">{onlineStats.guests}</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Modal */}

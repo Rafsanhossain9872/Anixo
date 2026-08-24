@@ -292,7 +292,7 @@ export default function VideoPlayerSection({
                                                 <button
                                                     onClick={() =>
                                                         setActiveServer((prev) =>
-                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : prev === 4 ? 5 : 1
+                                                            prev === 1 ? 2 : prev === 2 ? 3 : prev === 3 ? 4 : prev === 4 ? 5 : prev === 5 ? 6 : prev === 6 ? 7 : 1
                                                         )
                                                     }
                                                     className="px-5 py-2 bg-discord-600 hover:bg-discord-700 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all shadow-lg"

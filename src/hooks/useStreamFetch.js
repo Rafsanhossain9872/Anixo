@@ -245,6 +245,61 @@ export function useStreamFetch({
           }
         }
 
+        // --- SERVER 7: TELEGRAM HLS (Dynamic via Aniko API) ---
+        else if (activeServer === 7) {
+          const langParam = playerLang.toLowerCase() === "dub" ? "dub" : "sub";
+          const anilistId = anime?.id || (!isMal ? id : null);
+          const anikoBase = import.meta.env.VITE_ANIKO_SERVER_API;
+          const edgeBase = import.meta.env.VITE_TELEGRAM_EDGE_URL || "https://tenzora-edge.hossainrafsan046.workers.dev";
+
+          if (anilistId && anikoBase) {
+            const res = await fetch(`${anikoBase}/api/watch/${anilistId}/${langParam}/${activeEpisode}`);
+            if (!res.ok) throw new Error("API failed for Server 7");
+            const json = await res.json();
+            const key = Object.keys(json)[0];
+            const data = json[key];
+
+            if (data && data.streams && data.streams.length > 0) {
+              // Priority: 'telegram' type → URL containing 'tenzora-edge' → first HLS stream
+              const telegramStream =
+                data.streams.find(s => s.type === "telegram") ||
+                data.streams.find(s => s.url && s.url.includes("tenzora-edge")) ||
+                data.streams.find(s => s.type === "hls" || (s.url && s.url.includes('.m3u8')));
+
+              if (telegramStream) {
+                // If the API returns a file_id instead of a full URL, construct the edge URL
+                const streamUrl = telegramStream.url.startsWith("http")
+                  ? telegramStream.url
+                  : `${edgeBase}/stream/${telegramStream.url}`;
+
+                const apiSkipTimes = {};
+                if (data.intro && data.intro.end > 0) {
+                  apiSkipTimes.op = [data.intro.start, data.intro.end];
+                }
+                if (data.outro && data.outro.end > 0) {
+                  apiSkipTimes.ed = [data.outro.start, data.outro.end];
+                }
+                const hasSkipData = Object.keys(apiSkipTimes).length > 0;
+
+                setStreamData({
+                  server_name: "SERVER 7 (Telegram)",
+                  lang: langParam,
+                  sources: [{ url: streamUrl, type: 'hls' }],
+                  subtitles: data.subtitles || [],
+                  ...(hasSkipData ? { skipTimes: apiSkipTimes } : {}),
+                });
+                url = streamUrl;
+              } else {
+                setFetchError("No Telegram stream found for this episode. Try another server.");
+              }
+            } else {
+              setFetchError("No streams found on Server 7 for this episode.");
+            }
+          } else {
+            setFetchError("AniList ID or Server Config missing for Server 7.");
+          }
+        }
+
         if (url) {
           if (activeServer === 2 || activeServer === 3) {
             // Inject Autoplay and premium params for Megaplay
@@ -269,8 +324,8 @@ export function useStreamFetch({
               setStreamUrl(finalUrl);
             }
           } else {
-            // Keep Vidnest, Tryembed, Anineko URLs clean without Megaplay-specific parameters
-            setStreamUrl(activeServer === 1 ? "aniko-stream" : url);
+            // Keep Vidnest, Tryembed, Anineko, Telegram URLs clean without Megaplay-specific parameters
+            setStreamUrl((activeServer === 1 || activeServer === 7) ? "aniko-stream" : url);
           }
         } else {
           setFetchError("Stream link not found for this server.");
