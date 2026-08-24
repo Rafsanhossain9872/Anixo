@@ -124,7 +124,7 @@ export default function Watch({ isWatch2GetherMode }) {
   useEffect(() => localStorage.setItem("episodeLayout", JSON.stringify(episodeLayout)), [episodeLayout]);
 
   const [playerLang, setPlayerLang] = useState("sub");
-  const [activeServer, setActiveServer] = useState(1);
+  const [activeServer, setActiveServer] = useState(2);
 
 
 
@@ -640,8 +640,8 @@ export default function Watch({ isWatch2GetherMode }) {
   });
 
   // ── Auto Fallback Logic ──
-  // Fallback chain: Server 1 → 2 → 3 → 6 (stop)
-  const fallbackChain = [1, 2, 3, 6];
+  // Fallback chain: Server 2 → 3 → 1 → 6 (stop)
+  const fallbackChain = [2, 3, 1, 6];
   const isAutoFallingBack = useRef(false); // prevents infinite loops
   const lastManualServer = useRef(activeServer); // tracks user's manual choice
 
