@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Eye, EyeOff, ChevronRight, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -199,10 +199,11 @@ export default function Home() {
           <div className="w-full xl:w-[70%] flex flex-col gap-4 md:gap-8 min-w-0">
             
             {/* Announcement Banner */}
-            {new Date() < new Date('2026-09-03') && (
-              <div className="w-full text-center py-3 px-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-lg shadow-[0_0_20px_rgba(99,102,241,0.1)]">
-                <span className="whitespace-normal text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
-                  All the bugs and errors have been fixed, and we are currently working on the next updates.
+            {new Date() < new Date('2026-10-25') && (
+              <div className="w-fit mx-auto flex items-center justify-center gap-2 py-2 px-6 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] mb-2">
+                <Info size={16} className="text-indigo-400 flex-shrink-0" />
+                <span className="whitespace-normal md:whitespace-nowrap text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
+                  System stabilized and bugs resolved. We are currently developing the next update
                 </span>
               </div>
             )}
