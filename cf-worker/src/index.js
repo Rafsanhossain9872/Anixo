@@ -299,6 +299,12 @@ export default {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` }
                 });
+            } else if (event.cron === "*/15 * * * *") {
+                console.log('Running 15m cron: triggering episode comments');
+                await fetch(`${backendUrl}/ai-bot/cron/episode-comment`, { 
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` }
+                });
             }
         } catch (error) {
             console.error('Scheduled cron proxy failed:', error);

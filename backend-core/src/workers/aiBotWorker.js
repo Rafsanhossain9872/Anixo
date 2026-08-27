@@ -6,7 +6,8 @@ import {
   createBotPost, 
   createBotReply, 
   shouldReplyToPost,
-  addRandomBotLikes
+  addRandomBotLikes,
+  createBotEpisodeComment
 } from '../services/aiBotService.js';
 import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
@@ -131,3 +132,35 @@ export const checkAndReply = async () => {
   }
 };
 
+// Check and have random bots comment on anime episodes
+export const checkAndCommentEpisode = async () => {
+  try {
+    const bots = await getAllActiveBots();
+    if (bots.length === 0) {
+      console.log('[AI Bots] No active bots for episode comments');
+      return;
+    }
+
+    // Pick 1-3 random bots to comment this cycle
+    const numComments = Math.floor(Math.random() * 3) + 1;
+    const shuffledBots = [...bots].sort(() => 0.5 - Math.random());
+
+    for (let i = 0; i < Math.min(numComments, shuffledBots.length); i++) {
+      try {
+        await createBotEpisodeComment(shuffledBots[i]);
+        // Delay between comments to avoid rate limits
+        if (i < numComments - 1) {
+          await new Promise(r => setTimeout(r, 4000));
+        }
+      } catch (err) {
+        if (err.response?.status === 429) {
+          console.warn(`[AI Bots] Rate limit hit for episode comment. Stopping this cycle.`);
+          break;
+        }
+        console.error(`[AI Bots] Episode comment failed for ${shuffledBots[i].username}:`, err.message);
+      }
+    }
+  } catch (error) {
+    console.error('[AI Bots] Check and comment episode error:', error);
+  }
+};

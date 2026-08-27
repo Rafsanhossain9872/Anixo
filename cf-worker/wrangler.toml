@@ -7,4 +7,4 @@ compatibility_flags = ["nodejs_compat"]
 CF_WORKER = "true"
 
 [triggers]
-crons = ["*/10 * * * *", "*/30 * * * *"]
+crons = ["*/10 * * * *", "*/15 * * * *", "*/30 * * * *"]

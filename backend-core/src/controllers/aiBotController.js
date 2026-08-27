@@ -7,6 +7,7 @@ import {
   getAllActiveBots,
   getRandomBot
 } from '../services/aiBotService.js';
+import { checkAndPost, checkAndReply, checkAndCommentEpisode, initializeBots } from '../workers/aiBotWorker.js';
 
 // Get all bot configs (public)
 
@@ -107,5 +108,108 @@ export const testPostGeneration = async (req, res) => {
   } catch (error) {
     console.error('[AI Bots] Test post error:', error);
     res.status(500).json({ success: false, message: 'Failed to generate test post' });
+  }
+};
+
+// ══════════════════════════════════════════════════════════
+// CRON ENDPOINTS — Called by Cloudflare Worker scheduled()
+// ══════════════════════════════════════════════════════════
+
+// Cron: Check all bots and create posts if due
+export const cronPost = async (req, res) => {
+  const startTime = Date.now();
+  try {
+    // Verify Groq API key is configured
+    if (!process.env.GROQ_API_KEY) {
+      console.error('[AI Bots CRON] ❌ GROQ_API_KEY is not set! Bots cannot generate content.');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Groq API Key not configured — bot posting disabled' 
+      });
+    }
+
+    await initializeBots();
+    await checkAndPost();
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[AI Bots CRON] ✅ Post cycle completed in ${elapsed}ms`);
+    res.status(200).json({ success: true, message: 'Post cycle completed', elapsed });
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    // Diagnostic logging
+    if (error.response?.status === 401) {
+      console.error('[AI Bots CRON] ❌ Groq API Key expired or invalid (401)');
+    } else if (error.response?.status === 429) {
+      console.error('[AI Bots CRON] ⚠️ Groq rate limit hit (429). Will retry next cycle.');
+    } else if (error.name === 'MongoNetworkError' || error.name === 'MongoServerError') {
+      console.error('[AI Bots CRON] ❌ MongoDB connection failed:', error.message);
+    } else {
+      console.error('[AI Bots CRON] ❌ Post cycle failed:', error.message || error);
+    }
+    res.status(500).json({ success: false, message: 'Post cycle failed', error: error.message, elapsed });
+  }
+};
+
+// Cron: Check recent posts and have bots reply
+export const cronReply = async (req, res) => {
+  const startTime = Date.now();
+  try {
+    if (!process.env.GROQ_API_KEY) {
+      console.error('[AI Bots CRON] ❌ GROQ_API_KEY is not set! Bots cannot generate replies.');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Groq API Key not configured — bot replying disabled' 
+      });
+    }
+
+    await initializeBots();
+    await checkAndReply();
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[AI Bots CRON] ✅ Reply cycle completed in ${elapsed}ms`);
+    res.status(200).json({ success: true, message: 'Reply cycle completed', elapsed });
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    if (error.response?.status === 401) {
+      console.error('[AI Bots CRON] ❌ Groq API Key expired or invalid (401)');
+    } else if (error.response?.status === 429) {
+      console.error('[AI Bots CRON] ⚠️ Groq rate limit hit (429). Will retry next cycle.');
+    } else if (error.name === 'MongoNetworkError' || error.name === 'MongoServerError') {
+      console.error('[AI Bots CRON] ❌ MongoDB connection failed:', error.message);
+    } else {
+      console.error('[AI Bots CRON] ❌ Reply cycle failed:', error.message || error);
+    }
+    res.status(500).json({ success: false, message: 'Reply cycle failed', error: error.message, elapsed });
+  }
+};
+
+// Cron: Have bots comment on anime episodes
+export const cronEpisodeComment = async (req, res) => {
+  const startTime = Date.now();
+  try {
+    if (!process.env.GROQ_API_KEY) {
+      console.error('[AI Bots CRON] ❌ GROQ_API_KEY is not set! Episode commenting disabled.');
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Groq API Key not configured — episode commenting disabled' 
+      });
+    }
+
+    await initializeBots();
+    await checkAndCommentEpisode();
+
+    const elapsed = Date.now() - startTime;
+    console.log(`[AI Bots CRON] ✅ Episode comment cycle completed in ${elapsed}ms`);
+    res.status(200).json({ success: true, message: 'Episode comment cycle completed', elapsed });
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    if (error.response?.status === 401) {
+      console.error('[AI Bots CRON] ❌ Groq API Key expired or invalid (401)');
+    } else if (error.response?.status === 429) {
+      console.error('[AI Bots CRON] ⚠️ Groq rate limit hit (429). Will retry next cycle.');
+    } else {
+      console.error('[AI Bots CRON] ❌ Episode comment cycle failed:', error.message || error);
+    }
+    res.status(500).json({ success: false, message: 'Episode comment cycle failed', error: error.message, elapsed });
   }
 };

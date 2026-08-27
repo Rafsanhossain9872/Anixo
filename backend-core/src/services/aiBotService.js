@@ -6,11 +6,32 @@ import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
 import { BOT_PROFILES } from '../data/botProfiles.js';
 
-// Persona prompts for the bot
+// Persona prompts for humanized Gen-Z anime fan behavior
 const PERSONAS = {
-  friendly: "You are a friendly, caring, and highly supportive anime enthusiast who loves discussing anime. You act as a regular community member - helpful, kind, and always excited about anime! Be natural, conversational, and passionate about anime!",
-  tsundere: "You are exactly like Hitagi Senjougahara from Monogatari series. Sharp, blunt, with hidden affection underneath a prickly exterior, but loyal to the community. You often deny caring but then show you do.",
-  hype: "You are a HYPE-BRO anime fanatic! INSANE ENERGY, hype up every post, use slang like 'bro', 'peak fiction', 'absolute fire', 'goat', 'sheesh', 'LETS GOOOO!' in your responses."
+  friendly: `You are a chill anime fan on a forum. You type like a real person online:
+- Use lowercase most of the time, skip periods sometimes
+- Use slang naturally: "fr", "ngl", "lowkey", "highkey", "W", "valid", "goated", "based"
+- Make occasional typos like real humans ("thier", "definetly", "tho", "ur", "u")
+- Be helpful and positive but not overly formal
+- Reference specific anime you've watched
+- Sometimes use emoji but dont overdo it (🔥, 💀, W, 😭)
+- NEVER sound like a bot or AI. Sound like a real 18-25 year old anime fan.`,
+  
+  tsundere: `You are a sharp, blunt anime fan who pretends not to care but actually does. You type like a real person:
+- Use lowercase, be dismissive but drop genuine takes sometimes
+- Say things like "idc but..." then give a detailed opinion
+- Use slang: "mid", "L take", "cope", "ratio", "touch grass", "ngl"
+- Act annoyed when people disagree but secretly respect good arguments
+- Make occasional typos like real humans
+- NEVER sound like a bot. Sound like a real person who acts tough online.`,
+  
+  hype: `You are an EXTREMELY hyped anime fan who gets excited about everything. You type like a real person:
+- Mix caps and lowercase naturally: "BRO THIS IS PEAK", "no way dude"
+- Use heavy slang: "peak fiction", "goated", "W", "LETS GOOO", "sheesh", "bro", "fr fr"
+- Make occasional typos and spelling mistakes like real excited people do
+- Argue passionately when someone calls your favorite anime "mid"
+- Use emoji when hyped (🔥🔥, 💀, W)
+- NEVER sound like a bot. Sound like a real person who cant contain their excitement.`
 };
 
 // Allowed categories and tags based on the frontend configuration
@@ -150,17 +171,21 @@ export const generatePost = async (bot, topic = null) => {
 
   const systemPrompt = `${personaPrompt}
 
-You are ${bot.displayName}, member of an anime community. Your bio: "${bot.bio}".
+You are ${bot.displayName} (username: ${bot.username}), posting on an anime forum. Your bio: "${bot.bio}".
 
-Create a short, casual forum post based on the requested topic. Content should be 50-200 characters MAX! 
-Return ONLY JSON with title, content, category, and tags. Keep it natural!
+Create a short forum post. Write like a REAL PERSON, not an AI:
+- Title: casual, lowercase ok, can have typos (e.g. "bro mushoku tensei s3 is insane" or "unpopular opinion: dbs is mid")
+- Content: 40-180 characters MAX. Write how you'd actually text a friend about anime. Use slang, be opinionated.
+- Sound like a real anime fan posting on reddit/discord, NOT a corporate social media manager
+
+Return ONLY valid JSON. No markdown, no code blocks.
 
 CRITICAL CONSTRAINTS:
-- "category" MUST be one of these EXACT strings: ["general", "anime", "feedback", "question", "news", "poll"]. 
-- "tags" MUST be an array of 1-3 strings selected ONLY from this list: ${JSON.stringify(RECOMMENDED_TAGS)}. Do NOT invent new tags!
+- "category" MUST be one of: ["general", "anime", "feedback", "question", "news", "poll"]
+- "tags" MUST be from: ${JSON.stringify(RECOMMENDED_TAGS)}. Do NOT invent new tags!
 
 Format:
-{"title": "Short title", "content": "Short, casual post content", "category": "${selectedTopic.category}", "tags": ["tag1", "tag2"]}`;
+{"title": "casual title here", "content": "short casual content", "category": "${selectedTopic.category}", "tags": ["tag1"]}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -228,9 +253,15 @@ export const generateReply = async (bot, post, existingComments = []) => {
 
   const systemPrompt = `${personaPrompt}
 
-You are ${bot.displayName}, member of an anime community. Your bio: "${bot.bio}".
+You are ${bot.displayName} (username: ${bot.username}), replying on an anime forum. Your bio: "${bot.bio}".
 
-Reply ONLY DIRECTLY TO THIS POST! NO OFF-TOPIC STUFF! Keep it smart, deeply related, and 1-2 sentences MAX.
+Rules for your reply:
+- Reply DIRECTLY to this post, stay on topic
+- 1-2 sentences MAX, like a real forum comment
+- Write casually like texting: lowercase ok, slang ok, typos ok
+- You can AGREE enthusiastically ("fr this is peak", "W take honestly") or DISAGREE ("nah bro thats an L take", "mid opinion ngl")
+- If other people already commented, you can reference their takes or argue with them
+- Sound like a real person, NOT an AI
 ${commentsContext}
 POST:
 Title: ${post.title}
@@ -238,7 +269,7 @@ Content: ${post.content}`;
 
   const messages = [
     { role: 'system', content: systemPrompt },
-    { role: 'user', content: 'Give a short, casual reply.' }
+    { role: 'user', content: 'Reply to this post like a real person would on reddit or discord. Keep it short.' }
   ];
 
   try {
@@ -458,4 +489,157 @@ export const addRandomBotCommentLikes = async (commentId) => {
 export const initBotConfig = async () => {
   await initAllBots();
   return await getRandomBot();
+};
+
+// ══════════════════════════════════════════════════════════
+// EPISODE COMMENT BOT — Comments on anime episode pages
+// ══════════════════════════════════════════════════════════
+
+import RealtimeComment from '../models/RealtimeComment.js';
+
+// Top 20 popular anime for bot comments (animeId from AniList/MAL)
+const POPULAR_ANIME = [
+  { id: '21', title: 'ONE PIECE', maxEp: 12 },
+  { id: '178789', title: 'Mushoku Tensei: Jobless Reincarnation Season 3', maxEp: 12 },
+  { id: '1535', title: 'Death Note', maxEp: 12 },
+  { id: '20958', title: 'Shingeki no Kyojin', maxEp: 12 },
+  { id: '11061', title: 'Hunter x Hunter', maxEp: 12 },
+  { id: '5114', title: 'Fullmetal Alchemist: Brotherhood', maxEp: 12 },
+  { id: '269', title: 'Bleach', maxEp: 12 },
+  { id: '20', title: 'Naruto', maxEp: 12 },
+  { id: '16498', title: 'Shingeki no Kyojin Season 2', maxEp: 12 },
+  { id: '21087', title: 'One Punch Man', maxEp: 12 },
+  { id: '30276', title: 'One Punch Man Season 2', maxEp: 12 },
+  { id: '31964', title: 'Boku no Hero Academia', maxEp: 12 },
+  { id: '38000', title: 'Demon Slayer', maxEp: 12 },
+  { id: '40748', title: 'Jujutsu Kaisen', maxEp: 12 },
+  { id: '51009', title: 'Jujutsu Kaisen Season 2', maxEp: 12 },
+  { id: '44511', title: 'Chainsaw Man', maxEp: 12 },
+  { id: '52991', title: 'Solo Leveling', maxEp: 12 },
+  { id: '21459', title: 'Mob Psycho 100', maxEp: 12 },
+  { id: '31478', title: 'Bungou Stray Dogs', maxEp: 12 },
+  { id: '48583', title: 'Spy x Family', maxEp: 12 }
+];
+
+// Generate an episode comment using the LLM
+export const generateEpisodeComment = async (bot, anime, episodeNumber) => {
+  const groqToken = process.env.GROQ_API_KEY;
+  if (!groqToken) {
+    throw new Error('Groq API key not configured');
+  }
+
+  const personaPrompt = PERSONAS[bot.persona] || PERSONAS.friendly;
+
+  const systemPrompt = `${personaPrompt}
+
+You are ${bot.displayName} (username: ${bot.username}), commenting on an anime episode page.
+You just watched ${anime.title} Episode ${episodeNumber}.
+
+Write a SHORT, realistic comment like a real viewer would leave after watching an episode:
+- 1-2 sentences MAX (20-120 characters ideal)
+- Reference specific things: a timestamp ("that scene at 14:20 tho"), a character moment, animation, music, plot twist
+- Be natural: "bro that fight scene was insane 🔥", "ngl i cried at the end", "the animation went crazy this ep"
+- You can be hyped, emotional, critical, or funny — just be REAL
+- Use slang naturally, occasional typos ok
+- Do NOT summarize the plot or spoil major events
+- Do NOT use hashtags or formal language
+- Sound like a real comment on Crunchyroll or a reddit discussion thread
+
+Return ONLY the comment text. No quotes, no JSON, no formatting.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: `Write a comment for ${anime.title} Episode ${episodeNumber}` }
+  ];
+
+  try {
+    const response = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: 'llama-3.1-8b-instant',
+        messages,
+        temperature: 0.95,
+        max_tokens: 80
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${groqToken}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
+
+    let commentText = response.data.choices[0].message.content.trim();
+    // Clean up any quotes the LLM might wrap it in
+    commentText = commentText.replace(/^["']|["']$/g, '');
+    // Trim if too long
+    if (commentText.length > 200) {
+      commentText = commentText.slice(0, 195) + '...';
+    }
+    return commentText;
+  } catch (error) {
+    console.error('[AI Bot] Episode comment generation error:', error.message);
+    throw error;
+  }
+};
+
+// Create an episode comment with a specific bot
+export const createBotEpisodeComment = async (bot) => {
+  try {
+    if (!bot.isActive) {
+      console.log(`[AI Bot] Bot ${bot.username} is inactive, skipping episode comment`);
+      return null;
+    }
+
+    const botUser = await getBotUser(bot.username);
+    if (!botUser) {
+      throw new Error(`Bot user not found: ${bot.username}`);
+    }
+
+    // Pick a random anime and episode
+    const anime = POPULAR_ANIME[Math.floor(Math.random() * POPULAR_ANIME.length)];
+    const episodeNumber = Math.floor(Math.random() * anime.maxEp) + 1;
+
+    // Check if this bot already commented on this exact episode recently (last 24h)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const existingComment = await RealtimeComment.findOne({
+      animeId: anime.id,
+      episodeNumber: String(episodeNumber),
+      'user.username': bot.username,
+      createdAt: { $gte: oneDayAgo }
+    });
+
+    if (existingComment) {
+      console.log(`[AI Bot] ${bot.username} already commented on ${anime.title} Ep ${episodeNumber} today, skipping`);
+      return null;
+    }
+
+    // Generate the comment
+    const commentText = await generateEpisodeComment(bot, anime, episodeNumber);
+
+    // Insert into the RealtimeComment collection
+    const newComment = new RealtimeComment({
+      animeId: anime.id,
+      episodeNumber: String(episodeNumber),
+      user: {
+        username: botUser.username,
+        profileId: botUser.profileId || '',
+        displayName: botUser.displayName || botUser.username,
+        avatar: botUser.avatar || '',
+        role: botUser.role || 'user'
+      },
+      content: commentText,
+      likes: Math.floor(Math.random() * 8) + 1, // 1-8 initial likes
+      likedBy: [],
+      replies: []
+    });
+
+    await newComment.save();
+    console.log(`[AI Bot] ${bot.displayName} commented on ${anime.title} Ep ${episodeNumber}: "${commentText}"`);
+    return newComment;
+  } catch (error) {
+    console.error(`[AI Bot] ${bot.username} failed to comment on episode:`, error.message);
+    throw error;
+  }
 };

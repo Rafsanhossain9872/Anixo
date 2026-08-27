@@ -1,28 +1,30 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, cronAuth } from '../middleware/authMiddleware.js';
 import {
   getBotConfig,
   updateBotConfig,
   manualCreatePost,
   manualCreateReply,
-  testPostGeneration
+  testPostGeneration,
+  cronPost,
+  cronReply,
+  cronEpisodeComment
 } from '../controllers/aiBotController.js';
 
 const router = express.Router();
 
-// Get all bot configs (public)
+// ── Cron endpoints (called by Cloudflare Worker scheduled triggers) ──
+router.post('/cron/post', cronAuth, cronPost);
+router.post('/cron/reply', cronAuth, cronReply);
+router.post('/cron/episode-comment', cronAuth, cronEpisodeComment);
+
+// ── Public endpoints ──
 router.get('/config', getBotConfig);
 
-// Test post generation with random bot (admin only)
+// ── Admin endpoints (require JWT auth) ──
 router.get('/test-post', protect, testPostGeneration);
-
-// Manual trigger a random bot to post (admin only)
 router.post('/manual-post', protect, manualCreatePost);
-
-// Manual trigger a random bot to reply (admin only)
 router.post('/manual-reply/:postId', protect, manualCreateReply);
-
-// Update a specific bot config (admin only)
 router.put('/config/:username', protect, updateBotConfig);
 
 export default router;

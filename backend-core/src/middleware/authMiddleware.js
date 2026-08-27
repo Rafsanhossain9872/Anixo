@@ -36,3 +36,26 @@ export const adminOnly = (req, res, next) => {
     res.status(403).json({ success: false, message: 'Not authorized as an admin' });
   }
 };
+
+// Cron authentication — validates CRON_SECRET from CF Worker scheduled triggers
+export const cronAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    console.error('[CronAuth] CRON_SECRET not configured in environment');
+    return res.status(500).json({ success: false, message: 'Cron secret not configured' });
+  }
+
+  if (!authHeader || !authHeader.startsWith('Bearer')) {
+    return res.status(401).json({ success: false, message: 'No cron authorization' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (token !== cronSecret) {
+    console.warn('[CronAuth] Invalid cron secret received');
+    return res.status(403).json({ success: false, message: 'Invalid cron secret' });
+  }
+
+  next();
+};
