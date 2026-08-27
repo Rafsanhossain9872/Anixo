@@ -4,6 +4,7 @@ import AIBot from '../models/AIBot.js';
 import User from '../models/User.js';
 import CommunityPost from '../models/CommunityPost.js';
 import CommunityComment from '../models/CommunityComment.js';
+import RealtimeComment from '../models/RealtimeComment.js';
 import { BOT_PROFILES } from '../data/botProfiles.js';
 
 // Persona prompts for humanized Gen-Z anime fan behavior
@@ -494,8 +495,6 @@ export const initBotConfig = async () => {
 // ══════════════════════════════════════════════════════════
 // EPISODE COMMENT BOT — Comments on anime episode pages
 // ══════════════════════════════════════════════════════════
-
-import RealtimeComment from '../models/RealtimeComment.js';
 
 // Top 20 popular anime for bot comments (animeId from AniList/MAL)
 const POPULAR_ANIME = [
