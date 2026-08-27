@@ -183,7 +183,7 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
     }, [animeId, episode, page]);
 
     useEffect(() => {
-        // Socket.IO Setup
+        // Socket.IO Setup — reads auth from localStorage so it's always current
         const token = localStorage.getItem("token");
         const storedUser = JSON.parse(localStorage.getItem("cached_user") || "{}");
         const newSocket = io(SOCKET_URL, {
@@ -195,6 +195,7 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
         }
         
         newSocket.on("connect", () => {
+            // Re-join room on connect and auto-reconnect
             newSocket.emit("join_episode", { animeId, episodeNumber: episode });
         });
 
@@ -219,7 +220,7 @@ export default function CommentSection({ animeId, episode, onTimestampClick, onL
             newSocket.emit("leave_episode", { animeId, episodeNumber: episode });
             newSocket.disconnect();
         };
-    }, [animeId, episode, user]);
+    }, [animeId, episode]);
 
     const handlePost = () => {
         if (!commentText.trim() || !user || !socketRef.current) return;

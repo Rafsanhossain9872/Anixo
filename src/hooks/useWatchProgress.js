@@ -169,8 +169,9 @@ export function useWatchProgress({
 
       const token = localStorage.getItem("token");
       if (!token) return;
+      const backendBase = import.meta.env.VITE_BACKEND_API || "";
       try {
-        fetch("/progress/save", {
+        fetch(`${backendBase}/progress/save`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

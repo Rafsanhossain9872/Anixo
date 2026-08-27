@@ -52,7 +52,17 @@ const SuspenseLoader = () => (
 );
 
 const ErrorFallback = ({ error }) => {
-  const { t } = useTranslation();
+  // Use hardcoded fallback strings in case i18n itself failed to load
+  let errorTitle = "Something went wrong";
+  let reloadText = "Reload Page";
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { t } = useTranslation();
+    errorTitle = t('app.somethingWentWrong') || errorTitle;
+    reloadText = t('app.reloadPage') || reloadText;
+  } catch {
+    // i18n not available — use hardcoded strings above
+  }
   
   // Catch dynamic import chunk failures in Vite
   const isChunkError = error.name === 'ChunkLoadError' ||
@@ -77,10 +87,10 @@ const ErrorFallback = ({ error }) => {
 
   return (
     <div className="min-h-screen bg-[#0B0B0E] flex flex-col items-center justify-center text-white p-6 text-center">
-      <h2 className="text-xl font-bold text-discord-400 mb-2">{t('app.somethingWentWrong')}</h2>
+      <h2 className="text-xl font-bold text-discord-400 mb-2">{errorTitle}</h2>
       <p className="text-white/30 mb-6 max-w-md text-sm">{error.message}</p>
       <button onClick={() => window.location.reload()} className="px-6 py-2 bg-discord-600 hover:bg-discord-700 transition-colors rounded-md font-bold text-xs uppercase tracking-widest">
-        {t('app.reloadPage')}
+        {reloadText}
       </button>
     </div>
   );

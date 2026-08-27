@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import { useAuth } from "../hooks/useAuth";
-import { getWatchlist } from "../services/watchlistService";
+import { getWatchlist, clearWatchlist } from "../services/watchlistService";
 import { syncAnilist } from "../services/authService";
 import { User, Clock, Heart, Bell, Download, Settings, RefreshCw, Trash2, BarChart2, Bookmark } from "lucide-react";
 import AnimeCard from "../components/common/AnimeCard";
@@ -33,12 +33,8 @@ export default function Watchlist() {
   const handleClearAll = async () => {
     setIsClearing(true);
     try {
-      const { backendApi } = await import("../services/api");
-      const res = await backendApi.post("/watchlist/import", {
-        items: [],
-        mode: "Replace"
-      });
-      if (res.data.success) {
+      const res = await clearWatchlist();
+      if (res.success) {
         setWatchlist([]);
         setShowClearModal(false);
       }

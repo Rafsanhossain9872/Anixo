@@ -10,6 +10,7 @@ const OnlineUsers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user } = useAuth();
   const socketRef = useRef(null);
+  const userRef = useRef(user);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -51,17 +52,18 @@ const OnlineUsers = () => {
 
     socket.on('connect', () => {
       setIsConnected(true);
-      // Identify user type on connect
-      const isRegistered = !!user;
-      const isAdmin = !!user && (user.role === 'admin');
+      // Identify user type on connect (and auto-reconnect)
+      const currentUser = userRef.current;
+      const isRegistered = !!currentUser;
+      const isAdmin = !!currentUser && (currentUser.role === 'admin');
       socket.emit('identify-user', {
         token: localStorage.getItem('token'),
         isRegistered,
         isAdmin,
-        username: user?.username || '',
-        displayName: user?.displayName || user?.username || '',
-        avatar: user?.avatar || '',
-        profileId: user?.profileId || ''
+        username: currentUser?.username || '',
+        displayName: currentUser?.displayName || currentUser?.username || '',
+        avatar: currentUser?.avatar || '',
+        profileId: currentUser?.profileId || ''
       });
     });
 
@@ -100,8 +102,9 @@ const OnlineUsers = () => {
     };
   }, []);
 
-  // Update user type when auth status changes
+  // Update user ref and re-identify when auth status changes
   useEffect(() => {
+    userRef.current = user;
     if (socketRef.current && socketRef.current.connected) {
       const isRegistered = !!user;
       const isAdmin = !!user && (user.role === 'admin');
