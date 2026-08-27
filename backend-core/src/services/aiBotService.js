@@ -197,7 +197,7 @@ Format:
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages,
         temperature: 0.9,
         max_tokens: 250,
@@ -277,7 +277,7 @@ Content: ${post.content}`;
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages,
         temperature: 0.9,
         max_tokens: 120
@@ -555,7 +555,7 @@ Return ONLY the comment text. No quotes, no JSON, no formatting.`;
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         messages,
         temperature: 0.95,
         max_tokens: 80
