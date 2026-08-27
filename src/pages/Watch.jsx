@@ -74,7 +74,7 @@ export default function Watch({ isWatch2GetherMode }) {
   const { setPageLoading } = useLoading();
 
   const [activeEpisode, setActiveEpisode] = useState(initialEp);
-  const lastOpenedEpisode = useRef(initialEp);
+  const _lastOpenedEpisode = useRef(initialEp);
   const [recPage, setRecPage] = useState(1);
 
   // --- Real Watch History Tracking ---
@@ -664,12 +664,13 @@ export default function Watch({ isWatch2GetherMode }) {
     } else {
       console.warn(`[AutoFallback] All servers exhausted. Staying on Server ${activeServer}.`);
     }
-  }, [activeServer, setActiveServer]);
+  }, [activeServer, fallbackChain, setActiveServer]);
 
   // Fallback on API fetch error
   useEffect(() => {
     if (fetchError) {
-      doFallback();
+      // Use a microtask to avoid synchronous setState within effect body
+      queueMicrotask(() => doFallback());
     }
   }, [fetchError, doFallback]);
 

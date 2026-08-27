@@ -694,7 +694,7 @@ export async function fetchAnimeLogo(anilistId, title, lang = "en") {
     }
     
     return null;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
@@ -1547,7 +1547,7 @@ export async function getFillerEpisodes(malId, title) {
               params: { path: `/v4/anime/${malId}/episodes?page=${p}` }
             });
             pageData = res.data?.data;
-          } catch (err) {
+          } catch {
             const res = await axios.get(`${JIKAN_BASE_URL}/anime/${malId}/episodes?page=${p}`);
             pageData = res.data?.data;
           }

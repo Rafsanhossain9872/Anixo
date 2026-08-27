@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, ChevronRight, Info } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+
 import {
   getTrendingAnime,
   getPopularAnime,
@@ -86,9 +86,7 @@ function SidebarList({ title, data, isLoading, tabs, activeTab, onTabChange }) {
 }
 
 export default function Home() {
-  const { t } = useTranslation();
   const { globalProgress, setGlobalProgress, user } = useAuth();
-  const queryClient = useQueryClient();
   
   const [activeSidebarTab, setActiveSidebarTab] = useState("TOP AIRING");
 

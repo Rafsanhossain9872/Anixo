@@ -13,6 +13,21 @@ export default defineConfig({
     react(),
     tailwindcss()
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split heavy vendor libraries into separate cached chunks
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-hls': ['hls.js'],
+          'vendor-socket': ['socket.io-client'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-i18n': ['i18next', 'react-i18next'],
+          'vendor-axios': ['axios'],
+        }
+      }
+    }
+  },
   server: {
     watch: {
       ignored: ['**/api/**']

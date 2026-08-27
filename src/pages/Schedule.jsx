@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getTrendingAnime } from "../services/api";
 import AnimeCard from "../components/common/AnimeCard";
 import SkeletonCard from "../components/common/SkeletonCard";
@@ -28,6 +28,18 @@ export default function Schedule() {
     };
     fetchSchedule();
   }, []);
+
+  // Pre-compute stable fallback values so we don't call Math.random() during render
+  const fallbackScheduleInfo = useMemo(() => {
+    const map = {};
+    scheduleData.forEach(anime => {
+      map[anime.id] = {
+        ep: Math.floor(Math.random() * 12) + 1,
+        hour: Math.floor(Math.random() * 12) + 1,
+      };
+    });
+    return map;
+  }, [scheduleData]);
 
   return (
     <div className="w-full min-h-screen bg-bg pb-20 font-sans pt-24">
@@ -75,7 +87,7 @@ export default function Schedule() {
                 <div key={anime.id} className="relative group">
                   <AnimeCard anime={anime} />
                   <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-md px-2 py-1 rounded text-[10px] font-senpai font-bold text-primary border border-white/10 z-10">
-                    Ep {anime.nextAiringEpisode?.episode || Math.floor(Math.random() * 12) + 1} • {Math.floor(Math.random() * 12) + 1}:00 PM
+                    Ep {anime.nextAiringEpisode?.episode || fallbackScheduleInfo[anime.id]?.ep || 1} • {fallbackScheduleInfo[anime.id]?.hour || 1}:00 PM
                   </div>
                 </div>
               ))}

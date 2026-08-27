@@ -1135,7 +1135,7 @@ const AnikoPlayer = React.forwardRef(({
           }
 
           video.play().catch(() => {
-            console.log('Autoplay blocked, waiting for user interaction.');
+            // Autoplay blocked, waiting for user interaction.
           });
 
           callbacksRef.current.onReady?.();

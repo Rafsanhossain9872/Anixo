@@ -1,4 +1,3 @@
-import axios from "axios";
 import { authApi, backendApi } from "./api";
 
 export const login = async (email, password) => {

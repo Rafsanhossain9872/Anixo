@@ -55,7 +55,7 @@ export function initSecurity() {
 
   // 3. Anti-Scraping / Debugger Trap
   // Continuously triggers debugger statement so if someone opens devtools, their browser freezes
-  const debuggerTrap = () => {
+  const _debuggerTrap = () => {
     // A small obfuscated function so it doesn't look obvious
     // (function () { return false; })["constructor"]("debugger")["call"]();
   };

@@ -144,9 +144,9 @@ export const AuthProvider = ({ children }) => {
       // User logged out: fallback to localStorage guest history
       try {
         const cached = localStorage.getItem("guest_watch_history");
-        setGlobalProgress(cached ? JSON.parse(cached) : []);
+        queueMicrotask(() => setGlobalProgress(cached ? JSON.parse(cached) : []));
       } catch {
-        setGlobalProgress([]);
+        queueMicrotask(() => setGlobalProgress([]));
       }
     }
   }, [user]);

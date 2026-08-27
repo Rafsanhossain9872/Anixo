@@ -98,13 +98,13 @@ export default function Hero({ data = [], isLoading }) {
       const newMuted = !isMuted;
       
       if (!newMuted) {
-        console.log("Native unmute triggered via postMessage");
+
         iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":[]}', '*');
         iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":[100]}', '*');
         iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
         setIsMuted(false);
       } else {
-        console.log("Native mute triggered via postMessage");
+
         iframe.contentWindow.postMessage('{"event":"command","func":"mute","args":[]}', '*');
         setIsMuted(true);
       }
