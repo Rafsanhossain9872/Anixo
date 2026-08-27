@@ -7,6 +7,9 @@ import CommunityComment from '../models/CommunityComment.js';
 import RealtimeComment from '../models/RealtimeComment.js';
 import { BOT_PROFILES } from '../data/botProfiles.js';
 
+// Groq model to use for all bot AI generation
+const GROQ_MODEL = 'qwen/qwen3.8-27b';
+
 // Persona prompts for humanized Gen-Z anime fan behavior
 const PERSONAS = {
   friendly: `You are a chill anime fan on a forum. You type like a real person online:
@@ -197,11 +200,10 @@ Format:
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'openai/gpt-oss-20b',
+        model: GROQ_MODEL,
         messages,
         temperature: 0.9,
-        max_tokens: 250,
-        response_format: { type: 'json_object' }
+        max_tokens: 250
       },
       {
         headers: {
@@ -277,7 +279,7 @@ Content: ${post.content}`;
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'openai/gpt-oss-20b',
+        model: GROQ_MODEL,
         messages,
         temperature: 0.9,
         max_tokens: 120
@@ -555,7 +557,7 @@ Return ONLY the comment text. No quotes, no JSON, no formatting.`;
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'openai/gpt-oss-20b',
+        model: GROQ_MODEL,
         messages,
         temperature: 0.95,
         max_tokens: 80

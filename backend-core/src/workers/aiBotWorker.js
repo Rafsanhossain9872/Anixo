@@ -40,7 +40,13 @@ export const checkAndPost = async () => {
 
       if (hoursSinceLastPost >= bot.postFrequency) {
         console.log(`[AI Bots] ${bot.displayName} is posting...`);
-        await createBotPost(bot);
+        try {
+          await createBotPost(bot);
+          console.log(`[AI Bots] ${bot.displayName} posted successfully`);
+        } catch (postErr) {
+          console.error(`[AI Bots] ${bot.displayName} failed to post:`, postErr.message || postErr);
+          // Continue to next bot instead of crashing entire cycle
+        }
         // Small delay to avoid rate limits
         await new Promise(r => setTimeout(r, 2000));
       }
@@ -49,6 +55,7 @@ export const checkAndPost = async () => {
     console.error('[AI Bots] Check and post error:', error);
   }
 };
+
 
 // Check for new posts and have multiple bots reply (for bot-bot interaction!
 export const checkAndReply = async () => {
