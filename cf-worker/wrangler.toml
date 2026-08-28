@@ -6,5 +6,10 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 CF_WORKER = "true"
 
+# KV Namespace for pre-computed sitemaps
+[[kv_namespaces]]
+binding = "SEO_KV"
+id = "c5e03baf065540d3acbdd10b590d80bf"
+
 [triggers]
-crons = ["*/10 * * * *", "*/15 * * * *", "*/30 * * * *"]
+crons = ["*/10 * * * *", "*/15 * * * *", "*/30 * * * *", "0 0 * * *"]

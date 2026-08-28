@@ -1,17 +1,19 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * Anixo/Tenzora Cloudflare Worker — Programmatic SEO Engine + Edge Proxy
+ * Anixo/Tenzora Cloudflare Worker — Programmatic SEO Engine v2.0
  * ══════════════════════════════════════════════════════════════════════════════
  *
  * Architecture:
- *   1. SEO ENGINE — HTMLRewriter injects dynamic meta/JSON-LD for /anime/* and /watch/*
- *   2. SITEMAP ENGINE — Generates dynamic XML sitemaps from AniList API data
- *   3. EDGE PROXY — Caches AniList & Jikan responses, proxies API calls to Render
- *   4. CRON SCHEDULER — Triggers AI bot post/reply/episode-comment cycles
+ *   1. SEO ENGINE    — HTMLRewriter injects dynamic meta/JSON-LD for /anime/* and /watch/*
+ *   2. SITEMAP ENGINE — KV-backed pre-computed sitemaps (built by daily cron)
+ *   3. EDGE PROXY    — Caches AniList & Jikan responses, proxies API calls to Render
+ *   4. CRON SCHEDULER — AI bot triggers + sitemap pre-computation
  *
- * Performance: All HTMLRewriter operations are streaming (no buffering).
- *              AniList fetches are edge-cached 24h. Sitemap XML cached 24-48h.
- *              SEO-rewritten pages cached 4h at the edge.
+ * v2.0 Improvements:
+ *   - KV-backed sitemaps (pre-computed by cron, sub-10ms response)
+ *   - Streaming response teeing (zero-copy caching, minimal memory)
+ *   - Exponential backoff retry for AniList API resilience
+ *   - Exact slug matching with frontend slugify() logic
  */
 
 // ═══════════════════════════════════════════
@@ -27,7 +29,7 @@ const SITE_URL = 'https://tenzora.top';
 const ANILIST_CACHE_TTL = 60 * 60 * 24;     // 24h — anime metadata rarely changes
 const JIKAN_CACHE_TTL = 60 * 60;             // 1h  — Jikan data is fairly static
 const SEO_PAGE_CACHE_TTL = 60 * 60 * 4;      // 4h  — rewritten HTML pages
-const SITEMAP_CACHE_TTL = 60 * 60 * 24;      // 24h — sitemap XML
+const SITEMAP_CACHE_TTL = 60 * 60 * 48;      // 48h — sitemap XML (KV-backed)
 
 // Hreflang target languages (global audience)
 const HREFLANG_LANGS = [
@@ -37,6 +39,35 @@ const HREFLANG_LANGS = [
 
 // Total sitemap pages to generate (50 anime per page = 500 anime coverage)
 const SITEMAP_ANIME_PAGES = 10;
+
+// Retry configuration for AniList API
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 400;
+
+// ═══════════════════════════════════════════
+//  EXACT FRONTEND SLUG MATCHING
+// ═══════════════════════════════════════════
+// Mirror of src/utils/url.js — slugify() and getWatchUrl()
+// Must be a 1:1 match to avoid sitemap URLs 404-ing
+
+function slugify(text) {
+  if (!text) return '';
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w-]+/g, '')        // Remove all non-word chars (keeps underscores via \w)
+    .replace(/--+/g, '-')           // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start
+    .replace(/-+$/, '');            // Trim - from end
+}
+
+function getWatchSlug(id, titleObj) {
+  if (!id) return '';
+  if (!titleObj) return '';
+  const titleStr = typeof titleObj === 'string'
+    ? titleObj
+    : (titleObj.english || titleObj.romaji || titleObj.native || 'anime');
+  return slugify(titleStr);
+}
 
 // ═══════════════════════════════════════════
 //  ROUTE MATCHING
@@ -56,6 +87,7 @@ function matchSEORoute(pathname) {
 
 function matchSitemapRoute(pathname) {
   if (pathname === '/sitemap.xml') return { type: 'sitemap-index' };
+  if (pathname === '/sitemap-static.xml') return { type: 'sitemap-static' };
   if (pathname === '/sitemap-recent.xml') return { type: 'sitemap-recent' };
   const pageMatch = pathname.match(/^\/sitemap-anime-(\d+)\.xml$/);
   if (pageMatch) return { type: 'sitemap-anime', page: parseInt(pageMatch[1]) };
@@ -63,7 +95,38 @@ function matchSitemapRoute(pathname) {
 }
 
 // ═══════════════════════════════════════════
-//  ANILIST DATA FETCHER (with edge caching)
+//  RESILIENT FETCH (Exponential Backoff)
+// ═══════════════════════════════════════════
+
+async function fetchWithRetry(url, options, retries = MAX_RETRIES) {
+  let lastError = null;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      // Success or client error (4xx except 429) — don't retry
+      if (res.ok) return res;
+      if (res.status === 429 || res.status >= 500) {
+        // Rate limited or server error — retry after backoff
+        lastError = new Error(`HTTP ${res.status}`);
+        if (attempt < retries - 1) {
+          await new Promise(r => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+          continue;
+        }
+        return res; // Return the last failed response
+      }
+      return res; // 4xx client error — return immediately
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, RETRY_BASE_MS * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastError || new Error('fetchWithRetry exhausted all attempts');
+}
+
+// ═══════════════════════════════════════════
+//  ANILIST DATA FETCHER (with edge caching + retry)
 // ═══════════════════════════════════════════
 
 const ANILIST_MEDIA_QUERY = `
@@ -89,7 +152,7 @@ const ANILIST_PAGE_QUERY = `
     Page(page: $page, perPage: $perPage) {
       pageInfo { total lastPage hasNextPage }
       media(type: ANIME, sort: $sort, format_in: [TV, TV_SHORT, MOVIE, OVA, ONA, SPECIAL]) {
-        id title { romaji english }
+        id title { romaji english native }
         episodes updatedAt
       }
     }
@@ -104,9 +167,9 @@ async function fetchAnimeData(animeId) {
   const cached = await cache.match(cacheKey);
   if (cached) return cached.json();
 
-  // 2. Fetch from AniList
+  // 2. Fetch from AniList with retry
   try {
-    const res = await fetch('https://graphql.anilist.co', {
+    const res = await fetchWithRetry('https://graphql.anilist.co', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ query: ANILIST_MEDIA_QUERY, variables: { id: parseInt(animeId) } }),
@@ -116,7 +179,7 @@ async function fetchAnimeData(animeId) {
     const media = json?.data?.Media;
     if (!media) return null;
 
-    // 3. Store in edge cache (non-blocking)
+    // 3. Store in edge cache
     const cacheRes = new Response(JSON.stringify(media), {
       headers: {
         'Content-Type': 'application/json',
@@ -125,7 +188,8 @@ async function fetchAnimeData(animeId) {
     });
     await cache.put(cacheKey, cacheRes);
     return media;
-  } catch {
+  } catch (err) {
+    console.error(`[AniList] fetchAnimeData(${animeId}) failed after retries:`, err.message);
     return null;
   }
 }
@@ -138,7 +202,7 @@ async function fetchAnimeList(page, sort = 'POPULARITY_DESC') {
   if (cached) return cached.json();
 
   try {
-    const res = await fetch('https://graphql.anilist.co', {
+    const res = await fetchWithRetry('https://graphql.anilist.co', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
@@ -159,7 +223,8 @@ async function fetchAnimeList(page, sort = 'POPULARITY_DESC') {
     });
     await cache.put(cacheKey, cacheRes);
     return pageData;
-  } catch {
+  } catch (err) {
+    console.error(`[AniList] fetchAnimeList(page=${page}) failed after retries:`, err.message);
     return null;
   }
 }
@@ -439,7 +504,7 @@ class JsonLdRemover {
 }
 
 // ═══════════════════════════════════════════
-//  SEO PAGE HANDLER (HTMLRewriter Engine)
+//  SEO PAGE HANDLER (Streaming HTMLRewriter)
 // ═══════════════════════════════════════════
 
 async function handleSEOPage(request, route, ctx) {
@@ -479,7 +544,7 @@ async function handleSEOPage(request, route, ctx) {
   const seoImage = getImage(anime);
 
   // 4. Build the HTML to append into <head>
-  let appendHtml = '\n<!-- Tenzora SEO Engine -->\n';
+  let appendHtml = '\n<!-- Tenzora SEO Engine v2.0 -->\n';
 
   // Hreflang tags
   appendHtml += buildHreflangTags(canonicalUrl);
@@ -500,10 +565,10 @@ async function handleSEOPage(request, route, ctx) {
     ])}</script>\n`;
   }
   appendHtml += `<script type="application/ld+json">${buildSearchActionLD()}</script>\n`;
-  appendHtml += '<!-- /Tenzora SEO Engine -->\n';
+  appendHtml += '<!-- /Tenzora SEO Engine v2.0 -->\n';
 
-  // 5. Apply HTMLRewriter (streaming — no buffering)
-  const rewritten = new HTMLRewriter()
+  // 5. Apply HTMLRewriter (streaming)
+  const rewrittenResponse = new HTMLRewriter()
     .on('title', new TitleRewriter(seoTitle))
     .on('meta', new MetaRewriter({
       title: seoTitle,
@@ -518,25 +583,55 @@ async function handleSEOPage(request, route, ctx) {
     .on('head', new HeadAppender(appendHtml))
     .transform(originRes);
 
-  // 6. Read the rewritten body and cache it
-  const body = await rewritten.text();
-  const finalResponse = new Response(body, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/html; charset=UTF-8',
-      'Cache-Control': `s-maxage=${SEO_PAGE_CACHE_TTL}, public`,
-      'X-SEO-Engine': 'Tenzora/1.0',
-    },
-  });
+  // 6. STREAMING RESPONSE TEEING
+  //    Stream the rewritten HTML directly to the user while simultaneously
+  //    piping a copy into the Cache API in the background.
+  //    This keeps memory near zero — no .text() buffering.
+  const { readable: userStream, writable: userWritable } = new TransformStream();
+  const { readable: cacheStream, writable: cacheWritable } = new TransformStream();
 
-  ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
-  console.log(`[SEO] Rewritten & cached: ${url.pathname} → "${seoTitle}"`);
-  return finalResponse;
+  // Tee the HTMLRewriter output into both streams
+  ctx.waitUntil(
+    rewrittenResponse.body.pipeTo(new WritableStream({
+      write(chunk) {
+        const userWriter = userWritable.getWriter();
+        const cacheWriter = cacheWritable.getWriter();
+        return Promise.all([
+          userWriter.write(chunk).then(() => userWriter.releaseLock()),
+          cacheWriter.write(chunk).then(() => cacheWriter.releaseLock()),
+        ]);
+      },
+      close() {
+        return Promise.all([userWritable.close(), cacheWritable.close()]);
+      },
+      abort(reason) {
+        userWritable.abort(reason);
+        cacheWritable.abort(reason);
+      },
+    }))
+  );
+
+  // Background: put the cache stream copy into the CF edge cache
+  const responseHeaders = {
+    'Content-Type': 'text/html; charset=UTF-8',
+    'Cache-Control': `s-maxage=${SEO_PAGE_CACHE_TTL}, public`,
+    'X-SEO-Engine': 'Tenzora/2.0',
+  };
+
+  ctx.waitUntil(
+    cache.put(cacheKey, new Response(cacheStream, { status: 200, headers: responseHeaders }))
+  );
+
+  console.log(`[SEO] Streaming & caching: ${url.pathname} → "${seoTitle}"`);
+  return new Response(userStream, { status: 200, headers: responseHeaders });
 }
 
 // ═══════════════════════════════════════════
-//  DYNAMIC SITEMAP ENGINE
+//  KV-BACKED SITEMAP ENGINE
 // ═══════════════════════════════════════════
+// Sitemaps are pre-computed by the daily cron and stored in KV.
+// The fetch handler reads from KV for sub-10ms responses.
+// Fallback: on-the-fly generation + edge cache if KV is empty.
 
 function xmlResponse(body) {
   return new Response(body, {
@@ -549,125 +644,165 @@ function xmlResponse(body) {
   });
 }
 
-async function handleSitemapIndex(ctx) {
-  const cache = caches.default;
-  const cacheKey = `${SITE_URL}/cache/sitemap-index`;
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+const EMPTY_SITEMAP = `<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>`;
 
+// ─── Sitemap XML Builders ───
+
+function buildSitemapIndexXml() {
   const today = new Date().toISOString().split('T')[0];
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
-
-  // Static pages sitemap
   xml += `  <sitemap>\n    <loc>${SITE_URL}/sitemap-static.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
-
-  // Recent / trending anime sitemap
   xml += `  <sitemap>\n    <loc>${SITE_URL}/sitemap-recent.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
-
-  // Paginated anime sitemaps
   for (let i = 1; i <= SITEMAP_ANIME_PAGES; i++) {
     xml += `  <sitemap>\n    <loc>${SITE_URL}/sitemap-anime-${i}.xml</loc>\n    <lastmod>${today}</lastmod>\n  </sitemap>\n`;
   }
-
   xml += `</sitemapindex>`;
-  const res = xmlResponse(xml);
-  ctx.waitUntil(cache.put(cacheKey, res.clone()));
-  return res;
+  return xml;
 }
 
-async function handleSitemapStatic(ctx) {
-  const cache = caches.default;
-  const cacheKey = `${SITE_URL}/cache/sitemap-static`;
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
-
+function buildStaticSitemapXml() {
   const today = new Date().toISOString().split('T')[0];
   const staticPages = [
     '/', '/home', '/browse', '/popular', '/movies',
     '/schedule', '/community', '/random',
   ];
-
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   for (const path of staticPages) {
     xml += `  <url>\n    <loc>${escXml(SITE_URL + path)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
   }
   xml += `</urlset>`;
-
-  const res = xmlResponse(xml);
-  ctx.waitUntil(cache.put(cacheKey, res.clone()));
-  return res;
+  return xml;
 }
 
-async function handleSitemapRecent(ctx) {
-  const cache = caches.default;
-  const cacheKey = `${SITE_URL}/cache/sitemap-recent`;
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
-
-  const data = await fetchAnimeList(1, 'TRENDING_DESC');
-  if (!data?.media) return xmlResponse(`<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>`);
-
+function buildAnimeListSitemapXml(animeList, priority = 0.7) {
   const today = new Date().toISOString().split('T')[0];
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-  for (const anime of data.media) {
-    const slug = (anime.title.english || anime.title.romaji || 'anime')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  for (const anime of animeList) {
+    const slug = getWatchSlug(anime.id, anime.title);
 
     // Anime info page
-    xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/anime/${anime.id}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/anime/${anime.id}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${(priority + 0.1).toFixed(1)}</priority>\n  </url>\n`;
 
-    // Episode pages
-    const eps = Math.min(anime.episodes || 24, 100);
+    // Episode pages (use exact frontend slug)
+    const eps = Math.min(anime.episodes || 12, 100);
     for (let ep = 1; ep <= eps; ep++) {
-      xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/watch/${anime.id}/${slug}?ep=${ep}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+      const loc = slug
+        ? `${SITE_URL}/watch/${anime.id}/${slug}?ep=${ep}`
+        : `${SITE_URL}/watch/${anime.id}?ep=${ep}`;
+      xml += `  <url>\n    <loc>${escXml(loc)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>${priority.toFixed(1)}</priority>\n  </url>\n`;
     }
   }
 
   xml += `</urlset>`;
+  return xml;
+}
+
+// ─── KV Read / Fallback ───
+
+async function serveSitemap(kvKey, buildFallbackFn, env, ctx) {
+  // 1. Try KV first (sub-10ms)
+  if (env.SEO_KV) {
+    const kvValue = await env.SEO_KV.get(kvKey);
+    if (kvValue) {
+      console.log(`[Sitemap] KV HIT: ${kvKey}`);
+      return xmlResponse(kvValue);
+    }
+  }
+
+  // 2. Fallback: edge cache
+  const cache = caches.default;
+  const edgeCacheKey = `${SITE_URL}/cache/${kvKey}`;
+  const cached = await cache.match(edgeCacheKey);
+  if (cached) {
+    console.log(`[Sitemap] Edge cache HIT: ${kvKey}`);
+    return cached;
+  }
+
+  // 3. Final fallback: build on-the-fly
+  console.log(`[Sitemap] KV + cache MISS: ${kvKey}, building on-the-fly`);
+  const xml = await buildFallbackFn();
   const res = xmlResponse(xml);
-  ctx.waitUntil(cache.put(cacheKey, res.clone()));
+  ctx.waitUntil(cache.put(edgeCacheKey, res.clone()));
   return res;
 }
 
-async function handleSitemapAnimePage(page, ctx) {
+// ─── Sitemap Route Handlers ───
+
+async function handleSitemapIndex(env, ctx) {
+  return serveSitemap('sitemap-index', () => buildSitemapIndexXml(), env, ctx);
+}
+
+async function handleSitemapStatic(env, ctx) {
+  return serveSitemap('sitemap-static', () => buildStaticSitemapXml(), env, ctx);
+}
+
+async function handleSitemapRecent(env, ctx) {
+  return serveSitemap('sitemap-recent', async () => {
+    const data = await fetchAnimeList(1, 'TRENDING_DESC');
+    if (!data?.media) return EMPTY_SITEMAP;
+    return buildAnimeListSitemapXml(data.media, 0.9);
+  }, env, ctx);
+}
+
+async function handleSitemapAnimePage(page, env, ctx) {
   if (page < 1 || page > SITEMAP_ANIME_PAGES) {
     return new Response('Not Found', { status: 404 });
   }
+  return serveSitemap(`sitemap-anime-${page}`, async () => {
+    const data = await fetchAnimeList(page, 'POPULARITY_DESC');
+    if (!data?.media) return EMPTY_SITEMAP;
+    return buildAnimeListSitemapXml(data.media, 0.6);
+  }, env, ctx);
+}
 
-  const cache = caches.default;
-  const cacheKey = `${SITE_URL}/cache/sitemap-anime-${page}`;
-  const cached = await cache.match(cacheKey);
-  if (cached) return cached;
+// ─── CRON: Pre-compute all sitemaps into KV ───
 
-  const data = await fetchAnimeList(page, 'POPULARITY_DESC');
-  if (!data?.media) return xmlResponse(`<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>`);
+async function precomputeSitemaps(env) {
+  if (!env.SEO_KV) {
+    console.error('[Sitemap Cron] SEO_KV binding not found, skipping pre-computation');
+    return;
+  }
 
-  const today = new Date().toISOString().split('T')[0];
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
+  console.log('[Sitemap Cron] Starting sitemap pre-computation...');
+  const kvTtl = 60 * 60 * 48; // 48h expiration
 
-  for (const anime of data.media) {
-    const slug = (anime.title.english || anime.title.romaji || 'anime')
-      .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  // 1. Sitemap index (pure computation, no API call)
+  await env.SEO_KV.put('sitemap-index', buildSitemapIndexXml(), { expirationTtl: kvTtl });
+  console.log('[Sitemap Cron] ✓ sitemap-index');
 
-    // Anime info page
-    xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/anime/${anime.id}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+  // 2. Static sitemap
+  await env.SEO_KV.put('sitemap-static', buildStaticSitemapXml(), { expirationTtl: kvTtl });
+  console.log('[Sitemap Cron] ✓ sitemap-static');
 
-    // Episode pages
-    const eps = Math.min(anime.episodes || 12, 50);
-    for (let ep = 1; ep <= eps; ep++) {
-      xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/watch/${anime.id}/${slug}?ep=${ep}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+  // 3. Recent/trending sitemap
+  const recentData = await fetchAnimeList(1, 'TRENDING_DESC');
+  if (recentData?.media) {
+    await env.SEO_KV.put('sitemap-recent', buildAnimeListSitemapXml(recentData.media, 0.9), { expirationTtl: kvTtl });
+    console.log('[Sitemap Cron] ✓ sitemap-recent');
+  }
+
+  // 4. Paginated anime sitemaps (with 1s delay between pages to respect AniList rate limits)
+  for (let page = 1; page <= SITEMAP_ANIME_PAGES; page++) {
+    const pageData = await fetchAnimeList(page, 'POPULARITY_DESC');
+    if (pageData?.media) {
+      await env.SEO_KV.put(
+        `sitemap-anime-${page}`,
+        buildAnimeListSitemapXml(pageData.media, 0.6),
+        { expirationTtl: kvTtl }
+      );
+      console.log(`[Sitemap Cron] ✓ sitemap-anime-${page}`);
+    }
+    // Rate limit: 1s between AniList API calls
+    if (page < SITEMAP_ANIME_PAGES) {
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
-  xml += `</urlset>`;
-  const res = xmlResponse(xml);
-  ctx.waitUntil(cache.put(cacheKey, res.clone()));
-  return res;
+  console.log('[Sitemap Cron] ✅ All sitemaps pre-computed and stored in KV');
 }
 
 // ═══════════════════════════════════════════
@@ -857,18 +992,15 @@ export default {
       return handleRobotsTxt();
     }
 
-    // ── 2. SITEMAP ENGINE ──
+    // ── 2. SITEMAP ENGINE (KV-backed) ──
     const sitemapRoute = matchSitemapRoute(url.pathname);
     if (sitemapRoute) {
       switch (sitemapRoute.type) {
-        case 'sitemap-index': return handleSitemapIndex(ctx);
-        case 'sitemap-recent': return handleSitemapRecent(ctx);
-        case 'sitemap-anime': return handleSitemapAnimePage(sitemapRoute.page, ctx);
+        case 'sitemap-index':  return handleSitemapIndex(env, ctx);
+        case 'sitemap-static': return handleSitemapStatic(env, ctx);
+        case 'sitemap-recent': return handleSitemapRecent(env, ctx);
+        case 'sitemap-anime':  return handleSitemapAnimePage(sitemapRoute.page, env, ctx);
       }
-    }
-    // Static sitemap
-    if (url.pathname === '/sitemap-static.xml') {
-      return handleSitemapStatic(ctx);
     }
 
     // ── 3. ANILIST PROXY (edge-cached) ──
@@ -889,7 +1021,6 @@ export default {
           return await handleSEOPage(request, seoRoute, ctx);
         } catch (err) {
           console.error('[SEO] Rewrite failed, falling back to origin:', err.message);
-          // Fallback: serve raw origin page
           return fetch(`${FRONTEND_URL}${url.pathname}${url.search}`);
         }
       }
@@ -941,13 +1072,14 @@ export default {
   },
 
   // ═══════════════════════════════════════════
-  //  CRON SCHEDULER (AI Bot Triggers)
+  //  CRON SCHEDULER
   // ═══════════════════════════════════════════
 
   async scheduled(event, env, ctx) {
     const backendUrl = env.RENDER_BACKEND_URL || RENDER_BACKEND_URL;
 
     try {
+      // ── AI Bot Crons ──
       if (event.cron === '*/30 * * * *') {
         console.log('Running 30m cron: triggering checkAndPost');
         await fetch(`${backendUrl}/ai-bot/cron/post`, {
@@ -966,6 +1098,12 @@ export default {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` },
         });
+      }
+
+      // ── Sitemap Pre-computation Cron (daily at midnight UTC) ──
+      if (event.cron === '0 0 * * *') {
+        console.log('Running daily cron: pre-computing sitemaps into KV');
+        await precomputeSitemaps(env);
       }
     } catch (error) {
       console.error('Scheduled cron proxy failed:', error);
