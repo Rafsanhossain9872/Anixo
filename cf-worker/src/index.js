@@ -1,19 +1,21 @@
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * Anixo/Tenzora Cloudflare Worker — Programmatic SEO Engine v2.0
+ * Anixo/Tenzora Cloudflare Worker — Programmatic SEO Engine v2.1
  * ══════════════════════════════════════════════════════════════════════════════
  *
  * Architecture:
  *   1. SEO ENGINE    — HTMLRewriter injects dynamic meta/JSON-LD for /anime/* and /watch/*
- *   2. SITEMAP ENGINE — KV-backed pre-computed sitemaps (built by daily cron)
+ *   2. SITEMAP ENGINE — Edge-cached sitemaps (built on-demand, 48h TTL)
  *   3. EDGE PROXY    — Caches AniList & Jikan responses, proxies API calls to Render
- *   4. CRON SCHEDULER — AI bot triggers + sitemap pre-computation
+ *   4. CRON SCHEDULER — AI bot triggers
  *
- * v2.0 Improvements:
- *   - KV-backed sitemaps (pre-computed by cron, sub-10ms response)
- *   - Streaming response teeing (zero-copy caching, minimal memory)
- *   - Exponential backoff retry for AniList API resilience
- *   - Exact slug matching with frontend slugify() logic
+ * v2.1 Improvements over v2.0:
+ *   - Fixed streaming tee race condition (uses native .tee())
+ *   - Fixed watch route matching for URLs without slug
+ *   - Fixed Twitter meta tags (check both name and property)
+ *   - Cache key sanitization (strips tracking params like utm_source, fbclid)
+ *   - Missing meta tags (keywords, robots) now always injected
+ *   - Removed dead KV code paths for cleaner edge-cache-only architecture
  */
 
 // ═══════════════════════════════════════════
@@ -75,7 +77,7 @@ function getWatchSlug(id, titleObj) {
 
 function matchSEORoute(pathname) {
   // /watch/:animeId/:slug  (episode page)
-  const watchMatch = pathname.match(/^\/watch\/(\d+)\//);
+  const watchMatch = pathname.match(/^\/watch\/(\d+)/);
   if (watchMatch) return { type: 'watch', animeId: watchMatch[1] };
 
   // /anime/:animeId  (anime info page)
@@ -461,14 +463,15 @@ class MetaRewriter {
     if (prop === 'og:type' && this.o.ogType)
       el.setAttribute('content', this.o.ogType);
 
-    // Twitter
-    if (prop === 'twitter:title' && this.o.title)
+    // Twitter — standard uses name= but some frameworks use property=
+    const key = name || prop;
+    if (key === 'twitter:title' && this.o.title)
       el.setAttribute('content', this.o.title);
-    if (prop === 'twitter:description' && this.o.description)
+    if (key === 'twitter:description' && this.o.description)
       el.setAttribute('content', this.o.description);
-    if (prop === 'twitter:image' && this.o.image)
+    if (key === 'twitter:image' && this.o.image)
       el.setAttribute('content', this.o.image);
-    if (prop === 'twitter:url' && this.o.url)
+    if (key === 'twitter:url' && this.o.url)
       el.setAttribute('content', this.o.url);
   }
 }
@@ -509,11 +512,21 @@ class JsonLdRemover {
 
 async function handleSEOPage(request, route, ctx) {
   const url = new URL(request.url);
-  const canonicalUrl = `${SITE_URL}${url.pathname}${url.search}`;
+
+  // Sanitize: only keep SEO-relevant query params (ep, mal)
+  // Strips tracking params (utm_source, fbclid, ref, etc.) to prevent
+  // cache pollution and canonical URL fragmentation.
+  const seoParams = new URLSearchParams();
+  const epParam = url.searchParams.get('ep');
+  const malParam = url.searchParams.get('mal');
+  if (epParam) seoParams.set('ep', epParam);
+  if (malParam) seoParams.set('mal', malParam);
+  const cleanSearch = seoParams.toString() ? `?${seoParams.toString()}` : '';
+  const canonicalUrl = `${SITE_URL}${url.pathname}${cleanSearch}`;
 
   // 1. Check edge cache for the rewritten page
   const cache = caches.default;
-  const cacheKey = `${SITE_URL}/cache/seo-page${url.pathname}${url.search}`;
+  const cacheKey = `${SITE_URL}/cache/seo-page${url.pathname}${cleanSearch}`;
   const cached = await cache.match(cacheKey);
   if (cached) {
     console.log(`[SEO] Cache HIT: ${url.pathname}`);
@@ -544,7 +557,11 @@ async function handleSEOPage(request, route, ctx) {
   const seoImage = getImage(anime);
 
   // 4. Build the HTML to append into <head>
-  let appendHtml = '\n<!-- Tenzora SEO Engine v2.0 -->\n';
+  let appendHtml = '\n<!-- Tenzora SEO Engine v2.1 -->\n';
+
+  // Inject missing meta tags that React SPA might not have
+  appendHtml += `<meta name="keywords" content="${seoKeywords}" />\n`;
+  appendHtml += `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />\n`;
 
   // Hreflang tags
   appendHtml += buildHreflangTags(canonicalUrl);
@@ -565,7 +582,7 @@ async function handleSEOPage(request, route, ctx) {
     ])}</script>\n`;
   }
   appendHtml += `<script type="application/ld+json">${buildSearchActionLD()}</script>\n`;
-  appendHtml += '<!-- /Tenzora SEO Engine v2.0 -->\n';
+  appendHtml += '<!-- /Tenzora SEO Engine v2.1 -->\n';
 
   // 5. Apply HTMLRewriter (streaming)
   const rewrittenResponse = new HTMLRewriter()
@@ -583,55 +600,31 @@ async function handleSEOPage(request, route, ctx) {
     .on('head', new HeadAppender(appendHtml))
     .transform(originRes);
 
-  // 6. STREAMING RESPONSE TEEING
-  //    Stream the rewritten HTML directly to the user while simultaneously
-  //    piping a copy into the Cache API in the background.
-  //    This keeps memory near zero — no .text() buffering.
-  const { readable: userStream, writable: userWritable } = new TransformStream();
-  const { readable: cacheStream, writable: cacheWritable } = new TransformStream();
-
-  // Tee the HTMLRewriter output into both streams
-  ctx.waitUntil(
-    rewrittenResponse.body.pipeTo(new WritableStream({
-      write(chunk) {
-        const userWriter = userWritable.getWriter();
-        const cacheWriter = cacheWritable.getWriter();
-        return Promise.all([
-          userWriter.write(chunk).then(() => userWriter.releaseLock()),
-          cacheWriter.write(chunk).then(() => cacheWriter.releaseLock()),
-        ]);
-      },
-      close() {
-        return Promise.all([userWritable.close(), cacheWritable.close()]);
-      },
-      abort(reason) {
-        userWritable.abort(reason);
-        cacheWritable.abort(reason);
-      },
-    }))
-  );
-
-  // Background: put the cache stream copy into the CF edge cache
+  // 6. STREAMING RESPONSE TEEING (v2.1 — fixed race condition)
+  //    Uses the native ReadableStream.tee() to split the stream safely.
+  //    Previous v2.0 had a race condition with getWriter()/releaseLock() inside write().
   const responseHeaders = {
     'Content-Type': 'text/html; charset=UTF-8',
     'Cache-Control': `s-maxage=${SEO_PAGE_CACHE_TTL}, public`,
-    'X-SEO-Engine': 'Tenzora/2.0',
+    'X-SEO-Engine': 'Tenzora/2.1',
   };
 
+  const [userBody, cacheBody] = rewrittenResponse.body.tee();
+
+  // Background: put the cache copy into the CF edge cache
   ctx.waitUntil(
-    cache.put(cacheKey, new Response(cacheStream, { status: 200, headers: responseHeaders }))
+    cache.put(cacheKey, new Response(cacheBody, { status: 200, headers: responseHeaders }))
   );
 
   console.log(`[SEO] Streaming & caching: ${url.pathname} → "${seoTitle}"`);
-  return new Response(userStream, { status: 200, headers: responseHeaders });
+  return new Response(userBody, { status: 200, headers: responseHeaders });
 }
 
 // ═══════════════════════════════════════════
-//  KV-BACKED SITEMAP ENGINE
+//  EDGE-CACHED SITEMAP ENGINE
 // ═══════════════════════════════════════════
-// Sitemaps are pre-computed by the daily cron and stored in KV.
-// The fetch handler reads from KV for sub-10ms responses.
-// Fallback: on-the-fly generation + edge cache if KV is empty.
+// Sitemaps are built on-demand and edge-cached for 48h.
+// First request builds the XML, subsequent requests are served from cache.
 
 function xmlResponse(body) {
   return new Response(body, {
@@ -701,30 +694,21 @@ function buildAnimeListSitemapXml(animeList, priority = 0.7) {
   return xml;
 }
 
-// ─── KV Read / Fallback ───
+// ─── Edge Cache Read / Build ───
 
-async function serveSitemap(kvKey, buildFallbackFn, env, ctx) {
-  // 1. Try KV first (sub-10ms)
-  if (env.SEO_KV) {
-    const kvValue = await env.SEO_KV.get(kvKey);
-    if (kvValue) {
-      console.log(`[Sitemap] KV HIT: ${kvKey}`);
-      return xmlResponse(kvValue);
-    }
-  }
-
-  // 2. Fallback: edge cache
+async function serveSitemap(cacheId, buildFn, ctx) {
+  // 1. Check edge cache
   const cache = caches.default;
-  const edgeCacheKey = `${SITE_URL}/cache/${kvKey}`;
+  const edgeCacheKey = `${SITE_URL}/cache/${cacheId}`;
   const cached = await cache.match(edgeCacheKey);
   if (cached) {
-    console.log(`[Sitemap] Edge cache HIT: ${kvKey}`);
+    console.log(`[Sitemap] Edge cache HIT: ${cacheId}`);
     return cached;
   }
 
-  // 3. Final fallback: build on-the-fly
-  console.log(`[Sitemap] KV + cache MISS: ${kvKey}, building on-the-fly`);
-  const xml = await buildFallbackFn();
+  // 2. Cache miss: build on-the-fly and store
+  console.log(`[Sitemap] Cache MISS: ${cacheId}, building on-the-fly`);
+  const xml = await buildFn();
   const res = xmlResponse(xml);
   ctx.waitUntil(cache.put(edgeCacheKey, res.clone()));
   return res;
@@ -733,11 +717,11 @@ async function serveSitemap(kvKey, buildFallbackFn, env, ctx) {
 // ─── Sitemap Route Handlers ───
 
 async function handleSitemapIndex(env, ctx) {
-  return serveSitemap('sitemap-index', () => buildSitemapIndexXml(), env, ctx);
+  return serveSitemap('sitemap-index', () => buildSitemapIndexXml(), ctx);
 }
 
 async function handleSitemapStatic(env, ctx) {
-  return serveSitemap('sitemap-static', () => buildStaticSitemapXml(), env, ctx);
+  return serveSitemap('sitemap-static', () => buildStaticSitemapXml(), ctx);
 }
 
 async function handleSitemapRecent(env, ctx) {
@@ -745,7 +729,7 @@ async function handleSitemapRecent(env, ctx) {
     const data = await fetchAnimeList(1, 'TRENDING_DESC');
     if (!data?.media) return EMPTY_SITEMAP;
     return buildAnimeListSitemapXml(data.media, 0.9);
-  }, env, ctx);
+  }, ctx);
 }
 
 async function handleSitemapAnimePage(page, env, ctx) {
@@ -756,53 +740,7 @@ async function handleSitemapAnimePage(page, env, ctx) {
     const data = await fetchAnimeList(page, 'POPULARITY_DESC');
     if (!data?.media) return EMPTY_SITEMAP;
     return buildAnimeListSitemapXml(data.media, 0.6);
-  }, env, ctx);
-}
-
-// ─── CRON: Pre-compute all sitemaps into KV ───
-
-async function precomputeSitemaps(env) {
-  if (!env.SEO_KV) {
-    console.error('[Sitemap Cron] SEO_KV binding not found, skipping pre-computation');
-    return;
-  }
-
-  console.log('[Sitemap Cron] Starting sitemap pre-computation...');
-  const kvTtl = 60 * 60 * 48; // 48h expiration
-
-  // 1. Sitemap index (pure computation, no API call)
-  await env.SEO_KV.put('sitemap-index', buildSitemapIndexXml(), { expirationTtl: kvTtl });
-  console.log('[Sitemap Cron] ✓ sitemap-index');
-
-  // 2. Static sitemap
-  await env.SEO_KV.put('sitemap-static', buildStaticSitemapXml(), { expirationTtl: kvTtl });
-  console.log('[Sitemap Cron] ✓ sitemap-static');
-
-  // 3. Recent/trending sitemap
-  const recentData = await fetchAnimeList(1, 'TRENDING_DESC');
-  if (recentData?.media) {
-    await env.SEO_KV.put('sitemap-recent', buildAnimeListSitemapXml(recentData.media, 0.9), { expirationTtl: kvTtl });
-    console.log('[Sitemap Cron] ✓ sitemap-recent');
-  }
-
-  // 4. Paginated anime sitemaps (with 1s delay between pages to respect AniList rate limits)
-  for (let page = 1; page <= SITEMAP_ANIME_PAGES; page++) {
-    const pageData = await fetchAnimeList(page, 'POPULARITY_DESC');
-    if (pageData?.media) {
-      await env.SEO_KV.put(
-        `sitemap-anime-${page}`,
-        buildAnimeListSitemapXml(pageData.media, 0.6),
-        { expirationTtl: kvTtl }
-      );
-      console.log(`[Sitemap Cron] ✓ sitemap-anime-${page}`);
-    }
-    // Rate limit: 1s between AniList API calls
-    if (page < SITEMAP_ANIME_PAGES) {
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  console.log('[Sitemap Cron] ✅ All sitemaps pre-computed and stored in KV');
+  }, ctx);
 }
 
 // ═══════════════════════════════════════════
@@ -992,7 +930,7 @@ export default {
       return handleRobotsTxt();
     }
 
-    // ── 2. SITEMAP ENGINE (KV-backed) ──
+    // ── 2. SITEMAP ENGINE (edge-cached) ──
     const sitemapRoute = matchSitemapRoute(url.pathname);
     if (sitemapRoute) {
       switch (sitemapRoute.type) {
@@ -1013,7 +951,7 @@ export default {
       return handleJikanProxy(request, origin);
     }
 
-    // ── 5. SEO ENGINE — intercept /anime/:id and /watch/:id/:slug ──
+    // ── 5. SEO ENGINE — intercept /anime/:id and /watch/:id(/:slug) ──
     if (request.method === 'GET') {
       const seoRoute = matchSEORoute(url.pathname);
       if (seoRoute) {
@@ -1100,10 +1038,9 @@ export default {
         });
       }
 
-      // ── Sitemap Pre-computation Cron (daily at midnight UTC) ──
+      // ── Daily Cron (midnight UTC) — reserved for future use ──
       if (event.cron === '0 0 * * *') {
-        console.log('Running daily cron: pre-computing sitemaps into KV');
-        await precomputeSitemaps(env);
+        console.log('Running daily cron: sitemap edge cache will auto-refresh on next request');
       }
     } catch (error) {
       console.error('Scheduled cron proxy failed:', error);
