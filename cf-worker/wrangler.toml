@@ -1,16 +1,15 @@
 name = "anixo-worker"
 main = "src/index.js"
-account_id = "f3d813c5eac7b8c151de1cc0bed88f50"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
 CF_WORKER = "true"
 
-# KV Namespace for pre-computed sitemaps
-[[kv_namespaces]]
-binding = "SEO_KV"
-id = "c5e03baf065540d3acbdd10b590d80bf"
+# NOTE: KV namespace binding is configured via Cloudflare Dashboard
+# (Worker Settings > Bindings > KV Namespace > SEO_KV)
+# This keeps CI deploys working without needing KV permissions in the API token.
+# The worker code gracefully falls back to edge cache when KV is unavailable.
 
 [triggers]
 crons = ["*/10 * * * *", "*/15 * * * *", "*/30 * * * *", "0 0 * * *"]
