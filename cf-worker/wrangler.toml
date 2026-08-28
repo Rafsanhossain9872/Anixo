@@ -1,5 +1,6 @@
 name = "anixo-worker"
 main = "src/index.js"
+account_id = "f3d813c5eac7b8c151de1cc0bed88f50"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
