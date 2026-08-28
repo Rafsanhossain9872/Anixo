@@ -76,13 +76,11 @@ function getWatchSlug(id, titleObj) {
 // ═══════════════════════════════════════════
 
 function matchSEORoute(pathname) {
-  // /watch/:animeId/:slug  (episode page)
+  // /watch/:animeId(/:slug)  — the main watch/details page
+  // NOTE: /anime/:id was removed in v2.1 because the frontend has no such route.
+  //       All SEO rewriting targets /watch/:id and /watch/:id/:slug only.
   const watchMatch = pathname.match(/^\/watch\/(\d+)/);
   if (watchMatch) return { type: 'watch', animeId: watchMatch[1] };
-
-  // /anime/:animeId  (anime info page)
-  const animeMatch = pathname.match(/^\/anime\/(\d+)/);
-  if (animeMatch) return { type: 'anime', animeId: animeMatch[1] };
 
   return null;
 }
@@ -247,9 +245,17 @@ function escXml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 }
 
-function cleanDesc(text) {
+/** Safely serialize JSON-LD — prevents XSS via </script> injection in anime titles */
+function safeJsonLd(obj) {
+  return JSON.stringify(obj).replace(/<\//g, '<\\/');
+}
+
+/** Clean and truncate description at word boundary to avoid broken entities/words */
+function cleanDesc(text, maxLen = 300) {
   if (!text) return '';
-  return text.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim().substring(0, 320);
+  const clean = text.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
+  if (clean.length <= maxLen) return clean;
+  return clean.substring(0, maxLen).replace(/\s+\S*$/, '') + '…';
 }
 
 function getTitle(anime) {
@@ -278,6 +284,12 @@ function buildWatchTitle(anime, ep) {
 function buildAnimeTitle(anime) {
   const year = anime.seasonYear || anime.startDate?.year || '';
   return `${getTitle(anime)}${year ? ` (${year})` : ''} - Watch Online Free | ${SITE_NAME}`;
+}
+
+/** Title for watch page without specific episode */
+function buildWatchDetailTitle(anime) {
+  const year = anime.seasonYear || anime.startDate?.year || '';
+  return `${getTitle(anime)}${year ? ` (${year})` : ''} - All Episodes | ${SITE_NAME}`;
 }
 
 // ─── Multilingual Meta Description ───
@@ -349,7 +361,7 @@ function buildVideoObjectLD(anime, ep, url) {
   const title = getTitle(anime);
   const desc = cleanDesc(anime.description) ||
     `Watch ${title} Episode ${ep} online in HD on ${SITE_NAME}.`;
-  return JSON.stringify({
+  return safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'VideoObject',
     name: `${title} Episode ${ep}`,
@@ -362,7 +374,7 @@ function buildVideoObjectLD(anime, ep, url) {
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
-      userInteractionCount: anime.popularity || 5000,
+      userInteractionCount: anime.popularity || 0,
     },
     publisher: {
       '@type': 'Organization',
@@ -388,20 +400,22 @@ function buildTVSeriesLD(anime, url) {
     numberOfEpisodes: anime.episodes || undefined,
   };
   if (studio) obj.productionCompany = { '@type': 'Organization', name: studio };
-  if (anime.averageScore) {
+  // Only include aggregateRating with REAL data from AniList — never fabricate.
+  // Google explicitly penalizes fake review/rating markup with manual actions.
+  if (anime.averageScore && anime.popularity > 100) {
     obj.aggregateRating = {
       '@type': 'AggregateRating',
       ratingValue: (anime.averageScore / 10).toFixed(1),
       bestRating: '10',
       worstRating: '1',
-      ratingCount: Math.max(500, Math.floor((anime.popularity || 5000) / 10)),
+      ratingCount: anime.popularity,
     };
   }
-  return JSON.stringify(obj);
+  return safeJsonLd(obj);
 }
 
 function buildBreadcrumbLD(items) {
-  return JSON.stringify({
+  return safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: items.map((item, i) => ({
@@ -414,7 +428,7 @@ function buildBreadcrumbLD(items) {
 }
 
 function buildSearchActionLD() {
-  return JSON.stringify({
+  return safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: SITE_NAME,
@@ -548,39 +562,50 @@ async function handleSEOPage(request, route, ctx) {
   }
 
   const ep = url.searchParams.get('ep') || '1';
-  const isWatch = route.type === 'watch';
 
   // 3. Build all SEO strings
-  const seoTitle = isWatch ? buildWatchTitle(anime, ep) : buildAnimeTitle(anime);
-  const seoDesc = buildMultilingualDescription(anime, isWatch ? ep : null);
-  const seoKeywords = buildKeywords(anime, isWatch ? ep : null);
+  const seoTitle = buildWatchTitle(anime, ep);
+  const seoDesc = buildMultilingualDescription(anime, ep);
+  const seoKeywords = buildKeywords(anime, ep);
   const seoImage = getImage(anime);
 
   // 4. Build the HTML to append into <head>
+  //    BELT & SUSPENDERS: inject ALL meta tags via HeadAppender so they are
+  //    guaranteed to exist, even if the React SPA's index.html is missing them.
+  //    The MetaRewriter overwrites existing tags; HeadAppender adds new ones.
+  //    If duplicates exist, Google/social crawlers use the last occurrence.
   let appendHtml = '\n<!-- Tenzora SEO Engine v2.1 -->\n';
 
-  // Inject missing meta tags that React SPA might not have
+  // Core meta tags (always injected)
+  appendHtml += `<meta name="description" content="${esc(seoDesc)}" />\n`;
   appendHtml += `<meta name="keywords" content="${seoKeywords}" />\n`;
   appendHtml += `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />\n`;
+
+  // Open Graph tags (always injected)
+  appendHtml += `<meta property="og:title" content="${esc(seoTitle)}" />\n`;
+  appendHtml += `<meta property="og:description" content="${esc(seoDesc)}" />\n`;
+  appendHtml += `<meta property="og:image" content="${esc(seoImage)}" />\n`;
+  appendHtml += `<meta property="og:url" content="${esc(canonicalUrl)}" />\n`;
+  appendHtml += `<meta property="og:type" content="video.episode" />\n`;
+  appendHtml += `<meta property="og:site_name" content="${SITE_NAME}" />\n`;
+
+  // Twitter Card tags (always injected)
+  appendHtml += `<meta name="twitter:card" content="summary_large_image" />\n`;
+  appendHtml += `<meta name="twitter:title" content="${esc(seoTitle)}" />\n`;
+  appendHtml += `<meta name="twitter:description" content="${esc(seoDesc)}" />\n`;
+  appendHtml += `<meta name="twitter:image" content="${esc(seoImage)}" />\n`;
 
   // Hreflang tags
   appendHtml += buildHreflangTags(canonicalUrl);
 
-  // JSON-LD schemas
-  if (isWatch) {
-    appendHtml += `<script type="application/ld+json">${buildVideoObjectLD(anime, ep, canonicalUrl)}</script>\n`;
-    appendHtml += `<script type="application/ld+json">${buildBreadcrumbLD([
-      { name: 'Home', url: SITE_URL },
-      { name: getTitle(anime), url: `${SITE_URL}/anime/${route.animeId}` },
-      { name: `Episode ${ep}`, url: canonicalUrl },
-    ])}</script>\n`;
-  } else {
-    appendHtml += `<script type="application/ld+json">${buildTVSeriesLD(anime, canonicalUrl)}</script>\n`;
-    appendHtml += `<script type="application/ld+json">${buildBreadcrumbLD([
-      { name: 'Home', url: SITE_URL },
-      { name: getTitle(anime), url: canonicalUrl },
-    ])}</script>\n`;
-  }
+  // JSON-LD schemas — VideoObject + TVSeries + Breadcrumb + SearchAction
+  appendHtml += `<script type="application/ld+json">${buildVideoObjectLD(anime, ep, canonicalUrl)}</script>\n`;
+  appendHtml += `<script type="application/ld+json">${buildTVSeriesLD(anime, canonicalUrl)}</script>\n`;
+  appendHtml += `<script type="application/ld+json">${buildBreadcrumbLD([
+    { name: 'Home', url: SITE_URL },
+    { name: getTitle(anime), url: `${SITE_URL}/watch/${route.animeId}` },
+    { name: `Episode ${ep}`, url: canonicalUrl },
+  ])}</script>\n`;
   appendHtml += `<script type="application/ld+json">${buildSearchActionLD()}</script>\n`;
   appendHtml += '<!-- /Tenzora SEO Engine v2.1 -->\n';
 
@@ -677,8 +702,11 @@ function buildAnimeListSitemapXml(animeList, priority = 0.7) {
   for (const anime of animeList) {
     const slug = getWatchSlug(anime.id, anime.title);
 
-    // Anime info page
-    xml += `  <url>\n    <loc>${escXml(`${SITE_URL}/anime/${anime.id}`)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${(priority + 0.1).toFixed(1)}</priority>\n  </url>\n`;
+    // Watch/details page (main entry point for the anime)
+    const detailLoc = slug
+      ? `${SITE_URL}/watch/${anime.id}/${slug}`
+      : `${SITE_URL}/watch/${anime.id}`;
+    xml += `  <url>\n    <loc>${escXml(detailLoc)}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${(priority + 0.1).toFixed(1)}</priority>\n  </url>\n`;
 
     // Episode pages (use exact frontend slug)
     const eps = Math.min(anime.episodes || 12, 100);
@@ -882,15 +910,27 @@ async function handleJikanProxy(request, origin) {
 function handleRobotsTxt() {
   const body = `User-agent: *
 Allow: /
-Allow: /anime/
 Allow: /watch/
 Allow: /browse
 Allow: /popular
 Allow: /movies
 Allow: /schedule
+Allow: /community
+Allow: /stories
+Allow: /character/
+Allow: /staff/
 Disallow: /api/
 Disallow: /auth/
 Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /watchlist
+Disallow: /notifications
+Disallow: /import
+Disallow: /nsfw/
+Disallow: /forgot-password
+Disallow: /reset-password/
+Crawl-delay: 1
 
 Sitemap: ${SITE_URL}/sitemap.xml
 Host: ${SITE_URL}
