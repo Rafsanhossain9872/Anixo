@@ -201,7 +201,7 @@ export default function Home() {
               <div className="w-fit mx-auto flex items-center justify-center gap-2 py-2 px-6 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] mb-2">
                 <Info size={16} className="text-indigo-400 flex-shrink-0" />
                 <span className="whitespace-normal md:whitespace-nowrap text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
-                  System stabilized and bugs resolved. We are currently developing the next update
+                  ⚠️ Missing new episodes? Please clear your Browser History & Cache (Site Data) to apply our latest fixes! We are currently working on a major upcoming update.
                 </span>
               </div>
             )}
