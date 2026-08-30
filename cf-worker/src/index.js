@@ -1076,6 +1076,12 @@ export default {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` },
         });
+        
+        console.log('Running 15m cron: triggering scraper check-missed');
+        await fetch(`${backendUrl}/scraper/cron/check-missed`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.CRON_SECRET || ''}` },
+        });
       }
 
       // ── Daily Cron (midnight UTC) — reserved for future use ──
