@@ -28,7 +28,7 @@ const SITE_NAME = 'Tenzora';
 const SITE_URL = 'https://tenzora.top';
 
 // Cache TTLs (seconds)
-const ANILIST_CACHE_TTL = 60 * 60 * 24;     // 24h — anime metadata rarely changes
+const ANILIST_CACHE_TTL = 60 * 60 * 2;       // 2h  — new episodes surface faster
 const JIKAN_CACHE_TTL = 60 * 60;             // 1h  — Jikan data is fairly static
 const SEO_PAGE_CACHE_TTL = 60 * 60 * 4;      // 4h  — rewritten HTML pages
 const SITEMAP_CACHE_TTL = 60 * 60 * 48;      // 48h — sitemap XML (KV-backed)
@@ -804,7 +804,7 @@ async function handleAnilistProxy(request, origin) {
         const cachedBody = await cached.text();
         return new Response(cachedBody, {
           status: 200,
-          headers: { ...corsHeaders, 'X-Cache': 'HIT' },
+          headers: { ...corsHeaders, 'X-Cache': 'HIT', 'Cache-Control': 'no-store' },
         });
       }
     }
@@ -836,7 +836,7 @@ async function handleAnilistProxy(request, origin) {
 
     return new Response(responseText, {
       status: anilistResponse.status,
-      headers: { ...corsHeaders, 'X-Cache': 'MISS' },
+      headers: { ...corsHeaders, 'X-Cache': 'MISS', 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'AniList proxy failed', detail: error.message }), {
@@ -871,7 +871,7 @@ async function handleJikanProxy(request, origin) {
       const cachedBody = await cached.text();
       return new Response(cachedBody, {
         status: 200,
-        headers: { ...corsHeaders, 'X-Cache': 'HIT' },
+        headers: { ...corsHeaders, 'X-Cache': 'HIT', 'Cache-Control': 'no-store' },
       });
     }
 
@@ -893,7 +893,7 @@ async function handleJikanProxy(request, origin) {
 
     return new Response(responseText, {
       status: jikanResponse.status,
-      headers: { ...corsHeaders, 'X-Cache': 'MISS' },
+      headers: { ...corsHeaders, 'X-Cache': 'MISS', 'Cache-Control': 'no-store' },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Jikan proxy failed', detail: error.message }), {

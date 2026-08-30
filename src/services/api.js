@@ -25,13 +25,13 @@ export const WT_SERVER = import.meta.env.VITE_WATCH2GETHER_API || import.meta.en
 
 // --- ADVANCED HYBRID CACHE MANAGER ---
 const CACHE_TTL = {
-  GENRES: 1000 * 60 * 60 * 24 * 30, // 30 days
-  RECENT_DUBS: 1000 * 60 * 60 * 2,  // 2 hours
-  BROWSE: 1000 * 60 * 60 * 24,      // 24 hours
-  TRENDING: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
-  POPULAR: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
-  DETAILS: 1000 * 60 * 60 * 24 * 7, // 1 week (7 days)
-  SCHEDULE: 1000 * 60 * 60 * 6,     // 6 hours
+  GENRES: 1000 * 60 * 60 * 24 * 30, // 30 days (genres never change)
+  RECENT_DUBS: 1000 * 60 * 30,      // 30 minutes
+  BROWSE: 1000 * 60 * 60 * 2,       // 2 hours
+  TRENDING: 1000 * 60 * 60 * 2,     // 2 hours (new episodes show up in trending)
+  POPULAR: 1000 * 60 * 60 * 6,      // 6 hours (popularity shifts slowly)
+  DETAILS: 1000 * 60 * 60 * 2,      // 2 hours (new episodes = metadata change)
+  SCHEDULE: 1000 * 60 * 60,         // 1 hour (schedule changes matter)
 };
 
 const MemoryCache = new Map();
