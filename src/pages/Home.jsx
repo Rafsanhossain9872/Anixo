@@ -198,9 +198,9 @@ export default function Home() {
             
             {/* Announcement Banner */}
             {new Date() < new Date('2026-10-25') && (
-              <div className="w-fit mx-auto flex items-center justify-center gap-2 py-2 px-6 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] mb-2">
-                <Info size={16} className="text-indigo-400 flex-shrink-0" />
-                <span className="whitespace-normal md:whitespace-nowrap text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
+              <div className="w-full max-w-3xl mx-auto flex items-start sm:items-center justify-center gap-3 py-3 px-6 bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/30 rounded-2xl md:rounded-full shadow-[0_0_15px_rgba(99,102,241,0.15)] mb-4 text-center">
+                <Info size={20} className="text-indigo-400 flex-shrink-0 mt-0.5 sm:mt-0" />
+                <span className="whitespace-normal text-sm md:text-base font-bold bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-wide">
                   ⚠️ Missing new episodes? Please clear your Browser History & Cache (Site Data) to apply our latest fixes! We are currently working on a major upcoming update.
                 </span>
               </div>
