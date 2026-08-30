@@ -999,22 +999,6 @@ query ($id: Int, $idMal: Int) {
               relationType
               node {
                 ...RelationFields
-                relations {
-                  edges {
-                    relationType
-                    node {
-                      ...RelationFields
-                      relations {
-                        edges {
-                          relationType
-                          node {
-                            ...RelationFields
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
               }
             }
           }
