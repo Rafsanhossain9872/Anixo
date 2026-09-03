@@ -1113,6 +1113,11 @@ export async function getAnimeDetails(id, isMal = false) {
         timeout: 10000,
       });
       data = response.data;
+      // If proxy returned errors (e.g. 403 block from AniList), discard and fall through to direct
+      if (data?.errors && !data?.data?.Media) {
+        console.warn("[AnimeDetails] Proxy returned errors, discarding:", data.errors[0]?.message);
+        data = null;
+      }
     } catch (err) {
       console.warn("[AnimeDetails] Proxy failed, trying direct AniList...", err.message);
     }

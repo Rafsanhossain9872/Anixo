@@ -616,8 +616,14 @@ def api_anilist_proxy():
             if resp.status_code == 200:
                 _anilist_status["is_blocked"] = False
                 data = resp.json()
-                if "errors" in data and any("disabled" in str(e.get("message", "")).lower() for e in data["errors"]):
-                    log.warning("AniList Proxy: ⚠️ API reported as DISABLED. Triggering fallback...")
+                # Check for ANY error response from AniList (blocked, disabled, rate limited, etc.)
+                if "errors" in data and (not data.get("data") or not data["data"].get("Media")):
+                    error_msgs = [e.get("message", "") for e in data["errors"]]
+                    log.warning(f"AniList Proxy: ⚠️ API returned errors: {error_msgs}. Triggering fallback...")
+                    # Mark as blocked if it's a manual block to prevent hammering
+                    if any("blocked" in str(m).lower() for m in error_msgs):
+                        _anilist_status["is_blocked"] = True
+                        _anilist_status["reset"] = time.time() + 300  # 5 min cooldown
                     use_fallback = True
                 else:
                     data["source"] = "anilist"
