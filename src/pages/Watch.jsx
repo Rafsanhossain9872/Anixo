@@ -470,6 +470,8 @@ export default function Watch({ isWatch2GetherMode }) {
     enabled: !!id,
     staleTime: 1000 * 60 * 60 * 24, // 24 Hours Cache - Reduces 90% of repeat detail requests
     cacheTime: 1000 * 60 * 60 * 24,
+    retry: 2,              // Retry up to 2 times on failure
+    retryDelay: 1000,      // Wait 1s between retries
   });
 
   // URL Auto-Replace for SEO
