@@ -96,6 +96,7 @@ export default function AvatarDropdown() {
               <Users size={16} />
               <span>Watch Together</span>
             </Link>
+            {import.meta.env.VITE_ENABLE_NSFW === 'true' && (
             <Link
               to="/nsfw"
               onClick={() => setIsOpen(false)}
@@ -104,6 +105,7 @@ export default function AvatarDropdown() {
               <Flame size={16} />
               <span>Hentai (18+)</span>
             </Link>
+            )}
             
             <div className="h-[1px] bg-white/[0.05] my-1 mx-1" />
             <Link
