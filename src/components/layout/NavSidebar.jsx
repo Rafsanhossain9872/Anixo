@@ -126,7 +126,7 @@ export default function NavSidebar({ open, onClose, initialTab = "menu" }) {
  <div className="flex flex-col gap-2.5">
  {[
  { label: "Home", path: "/home" },
- ...(import.meta.env.VITE_ENABLE_NSFW === 'true' ? [{ label: "HENTAI (18+)", path: "/nsfw" }] : []),
+ ...(import.meta.env.VITE_ENABLE_NSFW !== 'false' ? [{ label: "HENTAI (18+)", path: "/nsfw" }] : []),
  { label: "Live Chat", path: "/chat" },
  { label: "Watch Together", path: "/watch2gether" },
  { label: "Community", path: "/community" },

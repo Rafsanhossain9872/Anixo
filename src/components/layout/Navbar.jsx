@@ -133,7 +133,7 @@ export default function Navbar() {
              <button onClick={() => window.dispatchEvent(new CustomEvent('open-ai-chat'))} className="text-textMuted hover:text-discord-400 text-[13px] font-semibold transition-colors whitespace-nowrap cursor-pointer">AI Chat</button>
              <Link to="/chat" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Live Chat</Link>
              <Link to="/community" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Community</Link>
-             {import.meta.env.VITE_ENABLE_NSFW === 'true' && <Link to="/nsfw" className="text-textMuted hover:text-primary text-[13px] font-semibold transition-colors whitespace-nowrap">Hentai</Link>}
+             {import.meta.env.VITE_ENABLE_NSFW !== 'false' && <Link to="/nsfw" className="text-textMuted hover:text-primary text-[13px] font-semibold transition-colors whitespace-nowrap">Hentai</Link>}
              <Link to="/watchlist" className="text-textMuted hover:text-white text-[13px] font-semibold transition-colors whitespace-nowrap">Watch Later</Link>
           </div>
 
