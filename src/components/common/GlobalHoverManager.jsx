@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from "../../context/LanguageContext";
 import { getWatchUrl } from "../../utils/url";
 import { Play, X } from "lucide-react";
@@ -10,6 +10,13 @@ export default function GlobalHoverManager() {
   const hoverRef = useRef(null);
   const { getTitle } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Auto-dismiss hover card on route change
+  useEffect(() => {
+    setIsHovered(false);
+    setHoverData({ anime: null, rect: null });
+  }, [location.pathname]);
 
   useEffect(() => {
     let hideTimeout;
