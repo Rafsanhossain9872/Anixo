@@ -16,7 +16,7 @@ export default function GlobalHoverManager() {
   useEffect(() => {
     setIsHovered(false);
     setHoverData({ anime: null, rect: null });
-  }, [location.pathname]);
+  }, [location]);
 
   useEffect(() => {
     let hideTimeout;
@@ -129,6 +129,7 @@ export default function GlobalHoverManager() {
       <button 
         onClick={() => {
           setIsHovered(false);
+          setHoverData({ anime: null, rect: null });
           navigate(getWatchUrl(anime.id, anime.title));
         }}
         className="w-full bg-white text-black font-bold py-2.5 rounded hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
