@@ -1,4 +1,5 @@
 import axios from "axios";
+import { adapterGetAnimeDetails, adapterFetchList } from './animeAdapter';
 
 export const PYTHON_API = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
   ? (import.meta.env.VITE_PYTHON_API || "http://localhost:7860")
@@ -222,80 +223,9 @@ const NON_GRAPHQL_FIELDS = new Set(["genres", "language"]);
 
 async function fetchFromAniList(query, variables = {}, signal) {
   try {
-    // Clean up variables: strip non-GraphQL fields and empty values
-    const cleanVariables = Object.fromEntries(
-      Object.entries(variables).filter(([k, v]) =>
-        !NON_GRAPHQL_FIELDS.has(k) &&
-        v !== null &&
-        v !== undefined &&
-        v !== "" &&
-        (Array.isArray(v) ? v.length > 0 : true)
-      )
-    );
-
-    const payload = { query, variables: cleanVariables };
-    const headers = { "Content-Type": "application/json", "Accept": "application/json" };
-
-    // Helper to extract and validate result from AniList response
-    const extractResult = (data) => {
-      if (!data) return null;
-      if (data.errors && Array.isArray(data.errors)) {
-        console.warn("[AniList] Response contained errors:", data.errors[0]?.message);
-        return null;
-      }
-      let result = data.data?.Page || data.Page || data.data || data;
-      if (result) {
-        if (Array.isArray(result.media)) {
-          result.media = cleanMediaList(result.media);
-        } else if (result.Page && Array.isArray(result.Page.media)) {
-          result.Page.media = cleanMediaList(result.Page.media);
-        }
-        if (result.media || result.Page || result.Media) {
-          return result;
-        }
-      }
-      return null;
-    };
-
-    // ── SOURCE 1: Direct AniList (browser → AniList, bypasses proxy) ──
-    try {
-      const { data } = await axios.post("https://graphql.anilist.co", payload, {
-        headers,
-        timeout: 10000,
-        signal,
-      });
-      const result = extractResult(data);
-      if (result) {
-        console.info("[AniList] ✓ Direct AniList succeeded");
-        return result;
-      }
-    } catch (err) {
-      if (err.response?.status === 400 && err.response?.data?.errors?.some(e => e.message?.includes("Page depth exceeds maximum allowed"))) {
-         return { media: [], pageInfo: { total: 0, hasNextPage: false } };
-      }
-      console.warn("[AniList] Direct failed, trying proxy...", err.message);
-    }
-
-    // ── SOURCE 2: Server Proxy (may have cached data even if AniList is down) ──
-    try {
-      const { data } = await smartRequest("post", "/api/anilist/proxy", {
-        data: payload,
-        headers,
-        timeout: 10000,
-        signal,
-      });
-      const result = extractResult(data);
-      if (result) {
-        if (data?.source) console.info(`[AniList] ✓ Proxy succeeded (source: ${data.source})`);
-        return result;
-      }
-    } catch (err) {
-      if (err.response?.status === 400 && err.response?.data?.errors?.some(e => e.message?.includes("Page depth exceeds maximum allowed"))) {
-         return { media: [], pageInfo: { total: 0, hasNextPage: false } };
-      }
-      console.warn("[AniList] Proxy also failed:", err.message);
-    }
-
+    // Use the adapter for list/browse queries
+    const result = await adapterFetchList(query, variables, signal);
+    if (result) return result;
     return { media: [], pageInfo: { total: 0 } };
   } catch (err) {
     if (axios.isCancel(err)) return { media: [], pageInfo: { total: 0 } };
@@ -1049,161 +979,17 @@ export async function getAnimeDetails(id, isMal = false) {
   const cachedData = cache.get(cacheKey);
   if (cachedData) return cachedData;
 
-  let finalId = id;
-  let finalIsMal = isMal;
+  // Delegate to the custom multi-source adapter
+  const result = await adapterGetAnimeDetails(id, isMal, {
+    smartRequest,
+    cacheGet: (key) => cache.get(key),
+    cacheSet: (key, val) => cache.set(key, val, CACHE_TTL.DETAILS),
+  });
 
-  if (!finalId) {
-    console.error("[Watch] Aborting: No ID provided.");
-    return null;
+  if (result) {
+    cache.set(cacheKey, result, CACHE_TTL.DETAILS);
   }
-
-  const variables = finalIsMal ? { idMal: finalId } : { id: finalId };
-  const payload = { query: DETAIL_QUERY, variables };
-  const gqlHeaders = { "Content-Type": "application/json", "Accept": "application/json" };
-
-  // ═══════════════════════════════════════════════════════════════════
-  //  RESILIENT MULTI-SOURCE ADAPTER
-  //  Priority: Direct AniList → Proxy → Direct Jikan
-  //  Each source is fully isolated — one failure cannot break the next.
-  // ═══════════════════════════════════════════════════════════════════
-
-  let data = null;
-
-  // ── SOURCE 1: Direct AniList (browser → AniList, no proxy) ──
-  // This is the most reliable path since it uses the user's IP.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const response = await axios.post("https://graphql.anilist.co", payload, {
-        headers: gqlHeaders,
-        timeout: attempt === 0 ? 8000 : 12000,
-      });
-      if (response.data?.data?.Media) {
-        data = response.data;
-        console.info("[AnimeDetails] ✓ Direct AniList succeeded");
-        break;
-      }
-      // AniList returned 200 but with errors (complexity limit, etc.)
-      if (response.data?.errors) {
-        console.warn("[AnimeDetails] Direct AniList returned errors:", response.data.errors[0]?.message);
-        // Don't retry errors that won't change on retry (not transient)
-        break;
-      }
-    } catch (err) {
-      console.warn(`[AnimeDetails] Direct AniList attempt ${attempt + 1} failed:`, err.message);
-      if (attempt === 0) await new Promise(r => setTimeout(r, 500)); // brief pause before retry
-    }
-  }
-
-  // ── SOURCE 2: Server Proxy (for cached/edge responses) ──
-  if (!data) {
-    try {
-      const response = await smartRequest("post", "/api/anilist/proxy", {
-        data: payload,
-        headers: gqlHeaders,
-        timeout: 10000,
-      });
-      if (response.data?.data?.Media) {
-        data = response.data;
-        console.info("[AnimeDetails] ✓ Proxy succeeded");
-      } else {
-        console.warn("[AnimeDetails] Proxy returned no valid Media data");
-      }
-    } catch (err) {
-      console.warn("[AnimeDetails] Proxy failed:", err.message);
-    }
-  }
-
-  // ── SOURCE 3: Direct Jikan (browser → Jikan API, no proxy) ──
-  // This is the last resort. We need a MAL ID — if we only have an AniList ID,
-  // we try to get the MAL ID from the ani.zip mapping service first.
-  if (!data) {
-    console.warn("[AnimeDetails] All AniList sources failed. Trying Jikan fallback...");
-    try {
-      let malId = finalIsMal ? finalId : null;
-
-      // If we have an AniList ID, try to resolve the MAL ID via ani.zip
-      if (!malId && !finalIsMal) {
-        try {
-          const mappingResp = await axios.get(`https://api.ani.zip/mappings?anilist_id=${finalId}`, { timeout: 5000 });
-          malId = mappingResp.data?.mappings?.myanimelist_id || null;
-          if (malId) console.info(`[AnimeDetails] Resolved AniList ${finalId} → MAL ${malId}`);
-        } catch { /* mapping failed, not critical */ }
-      }
-
-      if (malId) {
-        // Try direct Jikan first (bypass proxy)
-        let jikanData = null;
-        try {
-          const jResp = await axios.get(`${JIKAN_BASE_URL}/anime/${malId}`, { timeout: 8000 });
-          jikanData = jResp.data?.data || null;
-        } catch (e) {
-          console.warn("[AnimeDetails] Direct Jikan failed:", e.message);
-        }
-
-        // If direct Jikan fails, try through proxy
-        if (!jikanData) {
-          try {
-            const jResp = await smartRequest("get", "/api/jikan/proxy", {
-              params: { path: `/v4/anime/${malId}` },
-              timeout: 8000,
-            });
-            jikanData = jResp.data?.data || null;
-          } catch { /* proxy jikan also failed */ }
-        }
-
-        if (jikanData) {
-          const result = transformJikanToAnilist(jikanData);
-          cache.set(cacheKey, result, CACHE_TTL.DETAILS);
-          console.info("[AnimeDetails] ✓ Jikan fallback succeeded:", result.title?.romaji);
-          return result;
-        }
-      }
-    } catch (err) {
-      console.error("[AnimeDetails] Jikan fallback error:", err.message);
-    }
-
-    console.error("[AnimeDetails] ✗ ALL sources exhausted for ID:", finalId);
-    return null;
-  }
-
-  // ── PROCESS SUCCESSFUL ANILIST RESPONSE ──
-  const media = data.data?.Media || data.Media;
-  if (!media) {
-    console.warn("[AnimeDetails] No media found in response for ID:", finalId);
-    return null;
-  }
-
-  // Flatten deep relations for season navigation
-  if (media.relations?.edges) {
-    const flatRelationsMap = new Map();
-
-      const flattenEdges = (edges) => {
-        if (!edges) return;
-        edges.forEach(edge => {
-          if (!edge.node) return;
-          // IMPORTANT: Only include ANIME media. Clicking on Manga/LN causes "Anime Not Found" errors.
-          if (edge.node.type !== 'ANIME') return;
-
-          if (!flatRelationsMap.has(edge.node.id) && edge.node.id !== media.id) {
-            const cleanNode = { ...edge.node };
-            delete cleanNode.relations;
-            flatRelationsMap.set(edge.node.id, {
-              relationType: edge.relationType,
-              node: cleanNode
-            });
-          }
-          if (edge.node.relations?.edges) {
-            flattenEdges(edge.node.relations.edges);
-          }
-        });
-      };
-
-      flattenEdges(media.relations.edges);
-      media.relations.edges = Array.from(flatRelationsMap.values());
-    }
-
-    cache.set(cacheKey, media, CACHE_TTL.DETAILS);
-    return media;
+  return result;
 }
 
 
