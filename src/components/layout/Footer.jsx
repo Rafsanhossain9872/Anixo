@@ -231,7 +231,7 @@ export default function Footer() {
               <span className="flex items-center gap-1 hidden sm:flex">
                 Made with <Heart size={10} className="text-discord-600" fill="currentColor" /> by the community
               </span>
-              <Link to="/nsfw" className="ml-2 text-white/10 hover:text-discord-600 transition-colors">18+</Link>
+              {import.meta.env.VITE_ENABLE_NSFW === 'true' && <Link to="/nsfw" className="ml-2 text-white/10 hover:text-discord-600 transition-colors">18+</Link>}
             </div>
 
             {/* Online Users & Timer */}
