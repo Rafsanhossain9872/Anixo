@@ -7,7 +7,6 @@ routes = [{ pattern = "tenzora.top/*", zone_name = "tenzora.top" }]
 
 [vars]
 CF_WORKER = "true"
-SEO_CATALOG_API_URL = "https://anixo-wckh.onrender.com"
 
 [triggers]
 crons = ["*/10 * * * *", "*/15 * * * *", "*/30 * * * *", "0 0 * * *"]

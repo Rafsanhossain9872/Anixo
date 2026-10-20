@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { login, register, loginWithGoogle } from "../../services/authService";
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { Link, useNavigate } from "react-router-dom";
@@ -21,6 +21,7 @@ export default function LoginModal({ isOpen, onClose }) {
   
   const { loginAuth } = useAuth();
   const navigate = useNavigate();
+  const handleTurnstileVerify = useCallback((token) => setTurnstileToken(token), []);
 
 
 
@@ -71,6 +72,11 @@ export default function LoginModal({ isOpen, onClose }) {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (!turnstileToken) {
+      setError("Please complete the verification challenge.");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     try {
@@ -187,6 +193,8 @@ export default function LoginModal({ isOpen, onClose }) {
                 </button>
               </div>
             )}
+
+            <TurnstileChallenge onVerify={handleTurnstileVerify} />
 
 
 

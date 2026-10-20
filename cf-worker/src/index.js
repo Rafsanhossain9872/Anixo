@@ -32,12 +32,30 @@ import {
   normalizeSearchText,
 } from '../../seoCatalogModel.mjs';
 
-const RENDER_BACKEND_URL = 'https://anixo-wckh.onrender.com';
 // This is an internal origin fetch target only. It must never be used in
 // canonical, Open Graph, schema, robots, or sitemap output.
 const FRONTEND_URL = 'https://anixo.pages.dev';
 const SITE_NAME = 'Tenzora';
 const SITE_URL = SEO_SITE_URL;
+
+const MISSING_BACKEND_URL_MESSAGE = 'RENDER_BACKEND_URL environment variable is missing in Cloudflare Worker settings.';
+
+function getBackendUrl(env = {}) {
+  return String(env.RENDER_BACKEND_URL || '').trim().replace(/\/+$/, '');
+}
+
+function missingBackendUrlResponse(origin = '*') {
+  return new Response(JSON.stringify({ success: false, message: MISSING_BACKEND_URL_MESSAGE }), {
+    status: 500,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Cache-Control': 'no-store',
+      'CDN-Cache-Control': 'no-store',
+    },
+  });
+}
 
 const STATIC_SEO_ROUTES = Object.freeze({
   '/home': {
@@ -249,7 +267,7 @@ async function fetchWithRetry(url, options, retries = MAX_RETRIES) {
 }
 
 function catalogApiBase(env = {}) {
-  return String(env.SEO_CATALOG_API_URL || env.RENDER_BACKEND_URL || RENDER_BACKEND_URL).replace(/\/$/, '');
+  return getBackendUrl(env);
 }
 
 function catalogSecret(env = {}) {
@@ -1565,8 +1583,11 @@ function isBackendPath(pathname, request) {
 export default {
   async fetch(request, env, ctx) {
     const origin = request.headers.get('Origin') || '*';
-    const backendUrl = env.RENDER_BACKEND_URL || RENDER_BACKEND_URL;
     const url = new URL(request.url);
+    const backendUrl = getBackendUrl(env);
+    const backendPath = isBackendPath(url.pathname, request);
+    const providerProxyPath = url.pathname === '/api/anilist/proxy' || url.pathname === '/api/jikan/proxy';
+    if (backendPath && !providerProxyPath && !backendUrl) return missingBackendUrlResponse(origin);
 
     // ── 0. OPTIONS PREFLIGHT ──
     if (request.method === 'OPTIONS') {
@@ -1637,7 +1658,6 @@ export default {
     // ── 7. API requests proxy to the backend; all page/assets requests go
     // to the Pages origin. This is required when the Worker is attached to
     // tenzora.top/*, otherwise static assets would be sent to Render. ──
-    const backendPath = isBackendPath(url.pathname, request);
     const targetBase = backendPath ? backendUrl : (env.FRONTEND_URL || FRONTEND_URL);
     const targetUrl = targetBase + url.pathname + url.search;
     const targetHeaders = new Headers(request.headers);
@@ -1696,7 +1716,11 @@ export default {
   // ═══════════════════════════════════════════
 
   async scheduled(event, env) {
-    const backendUrl = env.RENDER_BACKEND_URL || RENDER_BACKEND_URL;
+    const backendUrl = getBackendUrl(env);
+    if (!backendUrl) {
+      console.error(MISSING_BACKEND_URL_MESSAGE);
+      return;
+    }
 
     try {
       // ── AI Bot Crons ──

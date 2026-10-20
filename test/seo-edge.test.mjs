@@ -2,6 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import worker from '../cf-worker/src/index.js';
 
+test('worker rejects requests when RENDER_BACKEND_URL is not configured', async () => {
+  const response = await worker.fetch(new Request('https://tenzora.top/auth/google', { method: 'POST' }), {}, {});
+  assert.equal(response.status, 500);
+  assert.deepEqual(await response.json(), {
+    success: false,
+    message: 'RENDER_BACKEND_URL environment variable is missing in Cloudflare Worker settings.',
+  });
+});
+
 test('edge sitemap uses catalog revisions and production-only canonical URLs', async t => {
   const entries = new Map();
   const previousCaches = globalThis.caches;
@@ -36,7 +45,7 @@ test('edge sitemap uses catalog revisions and production-only canonical URLs', a
   const tasks = [];
   const response = await worker.fetch(
     new Request('https://tenzora.top/sitemap.xml'),
-    { SEO_CATALOG_API_URL: 'https://backend.example' },
+    { RENDER_BACKEND_URL: 'https://backend.example' },
     { waitUntil(promise) { tasks.push(promise); } },
   );
   await Promise.all(tasks);
@@ -45,7 +54,7 @@ test('edge sitemap uses catalog revisions and production-only canonical URLs', a
   const recentTasks = [];
   const recentResponse = await worker.fetch(
     new Request('https://tenzora.top/sitemap-recent.xml'),
-    { SEO_CATALOG_API_URL: 'https://backend.example' },
+    { RENDER_BACKEND_URL: 'https://backend.example' },
     { waitUntil(promise) { recentTasks.push(promise); } },
   );
   await Promise.all(recentTasks);
@@ -95,7 +104,7 @@ test('edge serves every catalog sitemap page advertised by the index', async t =
   const indexWaits = [];
   const indexResponse = await worker.fetch(
     new Request('https://tenzora.top/sitemap.xml'),
-    { SEO_CATALOG_API_URL: 'https://backend.example' },
+    { RENDER_BACKEND_URL: 'https://backend.example' },
     { waitUntil(promise) { indexWaits.push(promise); } },
   );
   await Promise.all(indexWaits);
@@ -106,7 +115,7 @@ test('edge serves every catalog sitemap page advertised by the index', async t =
   const waits = [];
   const response = await worker.fetch(
     new Request('https://tenzora.top/sitemap-anime-192.xml'),
-    { SEO_CATALOG_API_URL: 'https://backend.example' },
+    { RENDER_BACKEND_URL: 'https://backend.example' },
     { waitUntil(promise) { waits.push(promise); } },
   );
   await Promise.all(waits);
@@ -271,7 +280,7 @@ test('canonical anime routes reach the HTML rewrite path after catalog resolutio
   const waits = [];
   const response = await worker.fetch(
     new Request('https://tenzora.top/anime/edge-ssr-fixture--abc12345'),
-    { SEO_CATALOG_API_URL: 'https://backend.example', INTERNAL_SERVICE_SECRET: 'test-secret', FRONTEND_URL: 'https://frontend.example' },
+    { RENDER_BACKEND_URL: 'https://backend.example', INTERNAL_SERVICE_SECRET: 'test-secret', FRONTEND_URL: 'https://frontend.example' },
     { waitUntil(promise) { waits.push(promise); } },
   );
   await Promise.all(waits);
