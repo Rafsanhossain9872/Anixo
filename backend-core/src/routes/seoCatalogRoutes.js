@@ -13,7 +13,7 @@ import {
   normalizeText,
   parseSearchIntent,
   shortHash,
-} from '../../../seoCatalogModel.mjs';
+} from '../models/seoCatalogModel.mjs';
 import User from '../models/User.js';
 import Progress from '../models/Progress.js';
 
